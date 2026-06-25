@@ -501,8 +501,8 @@
             </div>
 
             <div class="form-group">
-                <label>LINE ID <span class="required">*</span></label>
-                <input type="text" id="line" placeholder="@lineID ของคุณ" required>
+                <label>LINE ID <span style="color:var(--text-muted);font-weight:400">(ถ้ามี)</span></label>
+                <input type="text" id="line" placeholder="@lineID ของคุณ">
             </div>
 
             <div class="form-group">
@@ -552,7 +552,8 @@
     <!-- NOTE -->
     <div class="note-card">
         <i class="fas fa-info-circle"></i>
-        <p>ขั้นต่ำสั่งซื้อ 2 กก. · สูงสุด 50 กก./ครั้ง · ราคา ฿60/กก. (ไม่รวมค่าจัดส่ง) · ทีมงานจะยืนยันออเดอร์และแจ้งค่าส่งทาง LINE ภายใน 24 ชม.</p>
+        <p>ขั้นต่ำสั่งซื้อ 2 กก. · สูงสุด 50 กก./ครั้ง · ราคา ฿60/กก. · ทีมงานจะยืนยันออเดอร์ทาง LINE ภายใน 24 ชม.</p>
+        <p style="margin-top:8px;color:var(--green);font-weight:600"><i class="fas fa-truck" style="margin-right:6px"></i>จัดส่งฟรี ในพื้นที่ อ.เมือง จ.เชียงใหม่</p>
     </div>
 
 </div>
@@ -593,7 +594,7 @@
         const note    = document.getElementById('note').value.trim();
 
         // Basic validation
-        if (!name || !phone || !line || !qty || !address) {
+        if (!name || !phone || !qty || !address) {
             alert('กรุณากรอกข้อมูลที่มีเครื่องหมาย * ให้ครบครับ');
             return;
         }
