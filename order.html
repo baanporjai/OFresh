@@ -478,7 +478,7 @@
             <p>คัดเกรดพรีเมียม หวานฉ่ำ อุดมวิตามินซี</p>
         </div>
         <div class="price-tag">
-            <div class="amount">฿50</div>
+            <div class="amount">฿60</div>
             <div class="unit">ต่อกิโลกรัม</div>
         </div>
     </div>
@@ -509,7 +509,7 @@
                 <label>จำนวน (กิโลกรัม) <span class="required">*</span></label>
                 <div class="qty-wrap">
                     <button type="button" class="qty-btn" onclick="changeQty(-5)">−</button>
-                    <input type="number" id="qty" class="qty-input" value="10" min="5" step="5" required>
+                    <input type="number" id="qty" class="qty-input" value="2" min="2" max="50" step="1" required>
                     <button type="button" class="qty-btn" onclick="changeQty(5)">+</button>
                 </div>
                 <div class="price-calc">
@@ -552,7 +552,7 @@
     <!-- NOTE -->
     <div class="note-card">
         <i class="fas fa-info-circle"></i>
-        <p>ขั้นต่ำสั่งซื้อ 5 กก. · ราคา ฿50/กก. (ไม่รวมค่าจัดส่ง) · ทีมงานจะยืนยันออเดอร์และแจ้งค่าส่งทาง LINE ภายใน 24 ชม.</p>
+        <p>ขั้นต่ำสั่งซื้อ 2 กก. · สูงสุด 50 กก./ครั้ง · ราคา ฿60/กก. (ไม่รวมค่าจัดส่ง) · ทีมงานจะยืนยันออเดอร์และแจ้งค่าส่งทาง LINE ภายใน 24 ชม.</p>
     </div>
 
 </div>
@@ -568,12 +568,12 @@
 
     function updatePrice() {
         const qty = parseInt(qtyInput.value) || 0;
-        totalPriceEl.textContent = '฿' + (qty * 50).toLocaleString();
+        totalPriceEl.textContent = '฿' + (qty * 60).toLocaleString();
     }
 
     function changeQty(delta) {
         let val = parseInt(qtyInput.value) || 0;
-        val = Math.max(5, val + delta);
+        val = Math.min(50, Math.max(2, val + delta));
         qtyInput.value = val;
         updatePrice();
     }
@@ -588,7 +588,7 @@
         const name    = document.getElementById('name').value.trim();
         const phone   = document.getElementById('phone').value.trim();
         const line    = document.getElementById('line').value.trim();
-        const qty     = parseInt(document.getElementById('qty').value) || 0;
+        const qty     = Math.min(50, parseInt(document.getElementById('qty').value) || 0);
         const address = document.getElementById('address').value.trim();
         const note    = document.getElementById('note').value.trim();
 
@@ -598,8 +598,12 @@
             return;
         }
 
-        if (qty < 5) {
-            alert('ขั้นต่ำสั่งซื้อ 5 กิโลกรัมครับ');
+        if (qty < 2) {
+            alert('ขั้นต่ำสั่งซื้อ 2 กิโลกรัมครับ');
+            return;
+        }
+        if (qty > 50) {
+            alert('สั่งซื้อได้สูงสุด 50 กิโลกรัมต่อครั้งครับ');
             return;
         }
 
