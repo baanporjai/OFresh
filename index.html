@@ -1,0 +1,1594 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>O'Fresh - น้ำส้มคั้นสดอัตโนมัติ</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --orange-primary: #FF6B00;
+            --orange-light: #FF9A3C;
+            --orange-dark: #E55A00;
+            --orange-glow: #FFB347;
+            --green-fresh: #339933;
+            --green-dark: #2E7D32;
+            --dark: #1A1A2E;
+            --dark-light: #16213E;
+            --white: #FFFFFF;
+            --off-white: #FFF8F0;
+            --gray-light: #F5F5F5;
+            --text-dark: #2D2D2D;
+            --text-muted: #6B7280;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Prompt', 'Inter', sans-serif;
+            color: var(--text-dark);
+            overflow-x: hidden;
+            background: var(--white);
+        }
+
+        /* ===== NAVBAR ===== */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 0 40px;
+            height: 72px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(20px);
+            box-shadow: 0 2px 20px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+
+        .navbar.scrolled {
+            height: 60px;
+            box-shadow: 0 4px 30px rgba(0,0,0,0.1);
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .nav-logo img {
+            height: 44px;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-dark);
+            font-weight: 500;
+            font-size: 15px;
+            transition: color 0.3s;
+            position: relative;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--orange-primary);
+            transition: width 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: var(--orange-primary);
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .nav-cta {
+            background: linear-gradient(135deg, var(--orange-primary), var(--orange-dark));
+            color: white !important;
+            padding: 10px 24px;
+            border-radius: 50px;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(255,107,0,0.3);
+            transition: transform 0.3s, box-shadow 0.3s !important;
+        }
+
+        .nav-cta::after {
+            display: none !important;
+        }
+
+        .nav-cta:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(255,107,0,0.4) !important;
+        }
+
+        .mobile-toggle {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: var(--text-dark);
+            cursor: pointer;
+        }
+
+        /* ===== HERO ===== */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, #FFF5EB 0%, #FFF0E0 50%, #FFECD2 100%);
+        }
+
+        .hero-bg-circles {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .hero-bg-circles .circle {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.08;
+        }
+
+        .hero-bg-circles .circle-1 {
+            width: 600px;
+            height: 600px;
+            background: var(--orange-primary);
+            top: -200px;
+            right: -100px;
+            animation: float 8s ease-in-out infinite;
+        }
+
+        .hero-bg-circles .circle-2 {
+            width: 400px;
+            height: 400px;
+            background: var(--orange-light);
+            bottom: -100px;
+            left: -100px;
+            animation: float 10s ease-in-out infinite reverse;
+        }
+
+        .hero-bg-circles .circle-3 {
+            width: 200px;
+            height: 200px;
+            background: var(--green-fresh);
+            top: 40%;
+            left: 30%;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-30px) rotate(5deg); }
+        }
+
+        .hero-content {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 120px 40px 80px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .hero-text {
+            animation: slideInLeft 1s ease-out;
+        }
+
+        @keyframes slideInLeft {
+            from { opacity: 0; transform: translateX(-50px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255,107,0,0.1);
+            color: var(--orange-primary);
+            padding: 8px 20px;
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 24px;
+            border: 1px solid rgba(255,107,0,0.2);
+        }
+
+        .hero-badge i {
+            font-size: 12px;
+        }
+
+        .hero-text h1 {
+            font-size: 56px;
+            font-weight: 900;
+            line-height: 1.15;
+            color: var(--dark);
+            margin-bottom: 20px;
+        }
+
+        .hero-text h1 .highlight {
+            color: var(--orange-primary);
+            position: relative;
+        }
+
+        .hero-text h1 .highlight::after {
+            content: '';
+            position: absolute;
+            bottom: 4px;
+            left: 0;
+            right: 0;
+            height: 8px;
+            background: rgba(255,107,0,0.15);
+            border-radius: 4px;
+            z-index: -1;
+        }
+
+        .hero-text p {
+            font-size: 18px;
+            color: var(--text-muted);
+            line-height: 1.7;
+            margin-bottom: 32px;
+            font-weight: 300;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: linear-gradient(135deg, var(--orange-primary), var(--orange-dark));
+            color: white;
+            padding: 16px 36px;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: 600;
+            text-decoration: none;
+            box-shadow: 0 8px 30px rgba(255,107,0,0.35);
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 40px rgba(255,107,0,0.45);
+        }
+
+        .btn-secondary {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: white;
+            color: var(--text-dark);
+            padding: 16px 36px;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: 600;
+            text-decoration: none;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--orange-primary);
+            color: var(--orange-primary);
+            transform: translateY(-3px);
+        }
+
+        .hero-visual {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            animation: slideInRight 1s ease-out;
+        }
+
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(50px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .hero-machine {
+            position: relative;
+            width: 340px;
+        }
+
+        .machine-image {
+            width: 100%;
+            height: auto;
+            border-radius: 20px;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.25);
+            object-fit: cover;
+        }
+
+        .hero-floating-badge {
+            position: absolute;
+            background: white;
+            border-radius: 16px;
+            padding: 14px 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: floatBadge 4s ease-in-out infinite;
+        }
+
+        @keyframes floatBadge {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .hero-floating-badge.top-left {
+            top: -20px;
+            left: -40px;
+            animation-delay: 0.5s;
+        }
+
+        .hero-floating-badge.bottom-right {
+            bottom: 20px;
+            right: -40px;
+            animation-delay: 1.5s;
+        }
+
+        .badge-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .badge-icon.orange-bg {
+            background: rgba(255,107,0,0.1);
+            color: var(--orange-primary);
+        }
+
+        .badge-icon.green-bg {
+            background: rgba(76,175,80,0.1);
+            color: var(--green-fresh);
+        }
+
+        .badge-text {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .badge-sub {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        /* ===== STATS BAR ===== */
+        .stats-bar {
+            background: linear-gradient(135deg, var(--dark), var(--dark-light));
+            padding: 50px 40px;
+        }
+
+        .stats-container {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 40px;
+        }
+
+        .stat-item {
+            text-align: center;
+            color: white;
+        }
+
+        .stat-number {
+            font-size: 42px;
+            font-weight: 800;
+            color: var(--orange-glow);
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: rgba(255,255,255,0.6);
+            font-weight: 400;
+        }
+
+        /* ===== SECTION STYLES ===== */
+        .section {
+            padding: 100px 40px;
+        }
+
+        .section-header {
+            text-align: center;
+            max-width: 700px;
+            margin: 0 auto 60px;
+        }
+
+        .section-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255,107,0,0.08);
+            color: var(--orange-primary);
+            padding: 6px 18px;
+            border-radius: 50px;
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 16px;
+        }
+
+        .section-header h2 {
+            font-size: 40px;
+            font-weight: 800;
+            color: var(--dark);
+            margin-bottom: 16px;
+            line-height: 1.2;
+        }
+
+        .section-header p {
+            font-size: 17px;
+            color: var(--text-muted);
+            line-height: 1.7;
+            font-weight: 300;
+        }
+
+        /* ===== QUALITY SECTION ===== */
+        .quality-section {
+            background: var(--off-white);
+        }
+
+        .quality-grid {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+        }
+
+        .quality-card {
+            background: white;
+            border-radius: 24px;
+            padding: 40px 32px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.04);
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .quality-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--orange-primary), var(--orange-light));
+            transform: scaleX(0);
+            transition: transform 0.4s ease;
+        }
+
+        .quality-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 60px rgba(255,107,0,0.12);
+        }
+
+        .quality-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .quality-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 24px;
+            background: linear-gradient(135deg, rgba(255,107,0,0.1), rgba(255,154,60,0.08));
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            color: var(--orange-primary);
+            transition: transform 0.4s;
+        }
+
+        .quality-card:hover .quality-icon {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        .quality-card h3 {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 12px;
+        }
+
+        .quality-card p {
+            font-size: 15px;
+            color: var(--text-muted);
+            line-height: 1.7;
+            font-weight: 300;
+        }
+
+        /* ===== FRESHNESS SECTION ===== */
+        .freshness-section {
+            background: white;
+        }
+
+        .freshness-content {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 80px;
+            align-items: center;
+        }
+
+        .freshness-visual {
+            position: relative;
+        }
+
+        .freshness-image-box {
+            width: 100%;
+            aspect-ratio: 1;
+            background: linear-gradient(135deg, #FFF3E0, #FFE0B2);
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .big-orange {
+            width: 250px;
+            height: 250px;
+            background: radial-gradient(circle at 35% 35%, #FFB347, #FF8C00, #E67300);
+            border-radius: 50%;
+            position: relative;
+            box-shadow: 0 20px 60px rgba(255,140,0,0.3);
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .big-orange::before {
+            content: '';
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 16px;
+            background: var(--green-fresh);
+            border-radius: 50% 50% 0 0;
+        }
+
+        .big-orange::after {
+            content: '';
+            position: absolute;
+            top: 20%;
+            left: 25%;
+            width: 30%;
+            height: 20%;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            transform: rotate(-30deg);
+        }
+
+        .splash-drops {
+            position: absolute;
+            inset: 0;
+        }
+
+        .drop {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: var(--orange-light);
+            border-radius: 50%;
+            opacity: 0.4;
+        }
+
+        .drop:nth-child(1) { top: 15%; left: 20%; animation: float 4s infinite; }
+        .drop:nth-child(2) { top: 25%; right: 25%; animation: float 5s infinite 1s; width: 8px; height: 8px; }
+        .drop:nth-child(3) { bottom: 20%; left: 15%; animation: float 6s infinite 0.5s; width: 16px; height: 16px; }
+        .drop:nth-child(4) { bottom: 30%; right: 20%; animation: float 4.5s infinite 1.5s; }
+
+        .freshness-info h2 {
+            font-size: 38px;
+            font-weight: 800;
+            color: var(--dark);
+            margin-bottom: 20px;
+            line-height: 1.2;
+        }
+
+        .freshness-info h2 .highlight {
+            color: var(--orange-primary);
+        }
+
+        .freshness-info > p {
+            font-size: 17px;
+            color: var(--text-muted);
+            line-height: 1.8;
+            margin-bottom: 32px;
+            font-weight: 300;
+        }
+
+        .freshness-features {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .fresh-feature {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            padding: 16px;
+            background: var(--off-white);
+            border-radius: 16px;
+            transition: all 0.3s;
+        }
+
+        .fresh-feature:hover {
+            background: rgba(255,107,0,0.05);
+            transform: translateX(6px);
+        }
+
+        .fresh-feature .ff-icon {
+            width: 48px;
+            height: 48px;
+            min-width: 48px;
+            background: linear-gradient(135deg, var(--orange-primary), var(--orange-light));
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+        }
+
+        .fresh-feature h4 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 4px;
+        }
+
+        .fresh-feature p {
+            font-size: 14px;
+            color: var(--text-muted);
+            line-height: 1.6;
+            font-weight: 300;
+        }
+
+        /* ===== HOW TO USE ===== */
+        .howto-section {
+            background: linear-gradient(180deg, var(--off-white), white);
+        }
+
+        .howto-steps {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            position: relative;
+        }
+
+        .howto-steps::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: linear-gradient(180deg, var(--orange-primary), var(--orange-light), var(--green-fresh));
+            border-radius: 3px;
+            transform: translateX(-50%);
+        }
+
+        .step {
+            display: grid;
+            grid-template-columns: 1fr 80px 1fr;
+            align-items: center;
+            gap: 0;
+            padding: 30px 0;
+        }
+
+        .step:nth-child(odd) .step-content {
+            grid-column: 1;
+            text-align: right;
+            padding-right: 40px;
+        }
+
+        .step:nth-child(odd) .step-visual {
+            grid-column: 3;
+            padding-left: 40px;
+        }
+
+        .step:nth-child(even) .step-content {
+            grid-column: 3;
+            text-align: left;
+            padding-left: 40px;
+        }
+
+        .step:nth-child(even) .step-visual {
+            grid-column: 1;
+            grid-row: 1;
+            padding-right: 40px;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .step-number-wrap {
+            grid-column: 2;
+            display: flex;
+            justify-content: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .step-number {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, var(--orange-primary), var(--orange-dark));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 800;
+            color: white;
+            box-shadow: 0 8px 25px rgba(255,107,0,0.35);
+            border: 4px solid white;
+        }
+
+        .step-content h3 {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 10px;
+        }
+
+        .step-content p {
+            font-size: 15px;
+            color: var(--text-muted);
+            line-height: 1.7;
+            font-weight: 300;
+        }
+
+        .step-icon-box {
+            width: 180px;
+            height: 140px;
+            background: white;
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.06);
+            font-size: 56px;
+            transition: transform 0.4s;
+            overflow: hidden;
+        }
+
+        .step-icon-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 24px;
+        }
+
+        .step:hover .step-icon-box {
+            transform: scale(1.08) rotate(3deg);
+        }
+
+        /* ===== BENEFITS ===== */
+        .benefits-section {
+            background: linear-gradient(135deg, var(--dark), var(--dark-light));
+            color: white;
+        }
+
+        .benefits-section .section-header h2 {
+            color: white;
+        }
+
+        .benefits-section .section-header p {
+            color: rgba(255,255,255,0.6);
+        }
+
+        .benefits-section .section-tag {
+            background: rgba(255,107,0,0.15);
+        }
+
+        .benefits-grid {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+        }
+
+        .benefit-card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 20px;
+            padding: 36px;
+            display: flex;
+            gap: 20px;
+            transition: all 0.4s;
+            backdrop-filter: blur(10px);
+        }
+
+        .benefit-card:hover {
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(255,107,0,0.3);
+            transform: translateY(-4px);
+        }
+
+        .benefit-icon {
+            width: 56px;
+            height: 56px;
+            min-width: 56px;
+            background: linear-gradient(135deg, rgba(255,107,0,0.2), rgba(255,107,0,0.1));
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: var(--orange-glow);
+        }
+
+        .benefit-card h3 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .benefit-card p {
+            font-size: 14px;
+            color: rgba(255,255,255,0.6);
+            line-height: 1.7;
+            font-weight: 300;
+        }
+
+        /* ===== CTA SECTION ===== */
+        .cta-section {
+            background: linear-gradient(135deg, var(--orange-primary), var(--orange-dark));
+            padding: 80px 40px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 60%);
+        }
+
+        .cta-content {
+            position: relative;
+            z-index: 2;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .cta-content h2 {
+            font-size: 38px;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 16px;
+        }
+
+        .cta-content p {
+            font-size: 18px;
+            color: rgba(255,255,255,0.85);
+            margin-bottom: 32px;
+            font-weight: 300;
+        }
+
+        .btn-white {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: white;
+            color: var(--orange-primary);
+            padding: 16px 40px;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: 700;
+            text-decoration: none;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+            transition: all 0.3s;
+        }
+
+        .btn-white:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+        }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            background: var(--dark);
+            color: rgba(255,255,255,0.6);
+            padding: 60px 40px 30px;
+        }
+
+        .footer-content {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .footer-brand .footer-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .footer-brand .footer-logo img {
+            height: 40px;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .footer-brand p {
+            font-size: 14px;
+            line-height: 1.8;
+            margin-bottom: 20px;
+        }
+
+        .footer-socials {
+            display: flex;
+            gap: 12px;
+        }
+
+        .footer-socials a {
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.08);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255,255,255,0.6);
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .footer-socials a:hover {
+            background: var(--orange-primary);
+            color: white;
+        }
+
+        .footer-col h4 {
+            color: white;
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        .footer-col ul {
+            list-style: none;
+        }
+
+        .footer-col ul li {
+            margin-bottom: 12px;
+        }
+
+        .footer-col ul a {
+            color: rgba(255,255,255,0.6);
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s;
+        }
+
+        .footer-col ul a:hover {
+            color: var(--orange-primary);
+        }
+
+        .footer-bottom {
+            max-width: 1280px;
+            margin: 0 auto;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            padding-top: 24px;
+            text-align: center;
+            font-size: 13px;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 1024px) {
+            .hero-content {
+                grid-template-columns: 1fr;
+                text-align: center;
+                gap: 40px;
+            }
+
+            .hero-text h1 {
+                font-size: 44px;
+            }
+
+            .hero-buttons {
+                justify-content: center;
+            }
+
+            .hero-visual {
+                order: -1;
+            }
+
+            .hero-machine {
+                width: 280px;
+            }
+
+            .hero-floating-badge.top-left {
+                left: 0;
+            }
+
+            .hero-floating-badge.bottom-right {
+                right: 0;
+            }
+
+            .stats-container {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 30px;
+            }
+
+            .quality-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .freshness-content {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
+
+            .howto-steps::before {
+                left: 32px;
+            }
+
+            .step {
+                grid-template-columns: 64px 1fr;
+                gap: 20px;
+            }
+
+            .step-number-wrap {
+                grid-column: 1;
+                grid-row: 1;
+            }
+
+            .step:nth-child(odd) .step-content,
+            .step:nth-child(even) .step-content {
+                grid-column: 2;
+                text-align: left;
+                padding: 0;
+            }
+
+            .step:nth-child(odd) .step-visual,
+            .step:nth-child(even) .step-visual {
+                display: none;
+            }
+
+            .benefits-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .footer-content {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 0 20px;
+            }
+
+            .nav-links {
+                display: none;
+                position: fixed;
+                top: 72px;
+                left: 0;
+                right: 0;
+                background: white;
+                flex-direction: column;
+                padding: 24px;
+                gap: 16px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            }
+
+            .nav-links.active {
+                display: flex;
+            }
+
+            .mobile-toggle {
+                display: block;
+            }
+
+            .hero-content {
+                padding: 100px 20px 60px;
+            }
+
+            .hero-text h1 {
+                font-size: 34px;
+            }
+
+            .hero-text p {
+                font-size: 16px;
+            }
+
+            .section {
+                padding: 60px 20px;
+            }
+
+            .section-header h2 {
+                font-size: 30px;
+            }
+
+            .quality-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .freshness-info h2 {
+                font-size: 30px;
+            }
+
+            .stats-container {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .stat-number {
+                font-size: 32px;
+            }
+
+            .footer-content {
+                grid-template-columns: 1fr;
+            }
+
+            .cta-content h2 {
+                font-size: 28px;
+            }
+        }
+
+        /* ===== SCROLL ANIMATIONS ===== */
+        .animate-on-scroll {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.7s ease-out;
+        }
+
+        .animate-on-scroll.animated {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <!-- NAVBAR -->
+    <nav class="navbar" id="navbar">
+        <a href="#" class="nav-logo">
+            <img src="Design/OFresh_Logo_transparent.png" alt="O'Fresh Logo">
+        </a>
+        <ul class="nav-links" id="navLinks">
+            <li><a href="#quality">คุณภาพ</a></li>
+            <li><a href="#freshness">ความสดใหม่</a></li>
+            <li><a href="#howto">วิธีใช้งาน</a></li>
+            <li><a href="#benefits">จุดเด่น</a></li>
+            <li><a href="#contact" class="nav-cta">ติดต่อเรา</a></li>
+        </ul>
+        <button class="mobile-toggle" onclick="toggleNav()" aria-label="Toggle menu">
+            <i class="fas fa-bars"></i>
+        </button>
+    </nav>
+
+    <!-- HERO -->
+    <section class="hero" id="home">
+        <div class="hero-bg-circles">
+            <div class="circle circle-1"></div>
+            <div class="circle circle-2"></div>
+            <div class="circle circle-3"></div>
+        </div>
+        <div class="hero-content">
+            <div class="hero-text">
+                <div class="hero-badge">
+                    <i class="fas fa-leaf"></i>
+                    สดจากธรรมชาติ 100%
+                </div>
+                <h1>
+                    น้ำส้ม<span class="highlight">คั้นสด</span><br>
+                    ทุกแก้ว ทุกหยด<br>
+                    จากผลส้มจริง
+                </h1>
+                <p>ตู้น้ำส้มคั้นสดอัตโนมัติ พร้อมดื่ม — Serve freshly squeezed juice everywhere, every time, and to everyone. ไม่ผสมน้ำแข็ง ไม่ใส่น้ำตาล ควบคุมอุณหภูมิส้มในตู้ 3-9°C ตลอดเวลา</p>
+                <div class="hero-buttons">
+                    <a href="#howto" class="btn-primary">
+                        <i class="fas fa-play-circle"></i>
+                        ดูวิธีใช้งาน
+                    </a>
+                    <a href="#quality" class="btn-secondary">
+                        <i class="fas fa-leaf"></i>
+                        เรียนรู้เพิ่มเติม
+                    </a>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <div class="hero-machine">
+                    <img src="Design/OFresh_Machine_Front.png" alt="ตู้น้ำส้มคั้นสด O'Fresh" class="machine-image">
+                    <div class="hero-floating-badge top-left">
+                        <div class="badge-icon orange-bg"><i class="fas fa-bolt"></i></div>
+                        <div>
+                            <div class="badge-text">คั้นสดใน 30-45 วิ</div>
+                            <div class="badge-sub">รวดเร็วทันใจ</div>
+                        </div>
+                    </div>
+                    <div class="hero-floating-badge bottom-right">
+                        <div class="badge-icon green-bg"><i class="fas fa-check-circle"></i></div>
+                        <div>
+                            <div class="badge-text">ปลอดภัย 100%</div>
+                            <div class="badge-sub">ไม่มีสารเจือปน</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- STATS BAR -->
+    <section class="stats-bar">
+        <div class="stats-container">
+            <div class="stat-item animate-on-scroll">
+                <div class="stat-number" data-count="100">100%</div>
+                <div class="stat-label">น้ำส้มคั้นสดแท้</div>
+            </div>
+            <div class="stat-item animate-on-scroll">
+                <div class="stat-number">3-9°C</div>
+                <div class="stat-label">ควบคุมอุณหภูมิตลอดเวลา</div>
+            </div>
+            <div class="stat-item animate-on-scroll">
+                <div class="stat-number">&lt; 45 วิ</div>
+                <div class="stat-label">เวลาคั้นต่อแก้ว</div>
+            </div>
+            <div class="stat-item animate-on-scroll">
+                <div class="stat-number">0%</div>
+                <div class="stat-label">น้ำตาลและสารเจือปน</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- QUALITY SECTION -->
+    <section class="section quality-section" id="quality">
+        <div class="section-header animate-on-scroll">
+            <div class="section-tag"><i class="fas fa-award"></i> คุณภาพระดับพรีเมียม</div>
+            <h2>ทำไมต้อง O'Fresh?</h2>
+            <p>เราคัดสรรส้มคุณภาพดีที่สุด ผ่านกระบวนการที่สะอาดและปลอดภัย เพื่อส่งมอบน้ำส้มคั้นสดรสชาติดีที่สุดให้คุณ</p>
+        </div>
+        <div class="quality-grid">
+            <div class="quality-card animate-on-scroll">
+                <div class="quality-icon">🍊</div>
+                <h3>ส้มคุณภาพคัดพิเศษ</h3>
+                <p>คัดเลือกส้มแมนดารินไต้หวันเกรดพรีเมียม หวานฉ่ำ อุดมด้วยวิตามินซี</p>
+            </div>
+            <div class="quality-card animate-on-scroll">
+                <div class="quality-icon">💧</div>
+                <h3>สดทุกหยด ไม่ผสมน้ำแข็ง</h3>
+                <p>น้ำส้มทุกแก้วคั้นสดจากผลส้มจริง 100% ไม่ผสมน้ำแข็ง หรือน้ำตาล รสชาติเข้มข้นตามธรรมชาติ</p>
+            </div>
+            <div class="quality-card animate-on-scroll">
+                <div class="quality-icon">🛡️</div>
+                <h3>ปลอดภัย ไร้สารเคมี</h3>
+                <p>ไม่มีน้ำตาลเพิ่ม ไม่มีสารกันบูด ไม่มีสีผสมอาหาร ทุกแก้วบริสุทธิ์จากธรรมชาติล้วน</p>
+            </div>
+            <div class="quality-card animate-on-scroll">
+                <div class="quality-icon">❄️</div>
+                <h3>เย็นสดชื่น 3-9°C</h3>
+                <p>ระบบทำความเย็นภายในตู้ คงอุณหภูมิ 3-9°C ตลอดเวลา พร้อมเสิร์ฟน้ำส้มเย็นฉ่ำ ควรดื่มภายใน 2 ชั่วโมงเพื่อรสชาติดีที่สุด</p>
+            </div>
+            <div class="quality-card animate-on-scroll">
+                <div class="quality-icon">⚙️</div>
+                <h3>ระบบอัตโนมัติอัจฉริยะ</h3>
+                <p>เทคโนโลยีคั้นน้ำส้มอัตโนมัติ แม่นยำ สะอาด ทุกขั้นตอนเป็นระบบปิด ปลอดเชื้อโรค</p>
+            </div>
+            <div class="quality-card animate-on-scroll">
+                <div class="quality-icon">🌿</div>
+                <h3>รักษ์สิ่งแวดล้อม</h3>
+                <p>แก้วบรรจุรีไซเคิลได้ ลดขยะพลาสติก ดีต่อโลก</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- FRESHNESS SECTION -->
+    <section class="section freshness-section" id="freshness">
+        <div class="freshness-content">
+            <div class="freshness-visual animate-on-scroll">
+                <div class="freshness-image-box">
+                    <div class="big-orange"></div>
+                    <div class="splash-drops">
+                        <div class="drop"></div>
+                        <div class="drop"></div>
+                        <div class="drop"></div>
+                        <div class="drop"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="freshness-info animate-on-scroll">
+                <h2>คั้นสดต่อหน้า<br><span class="highlight">ไม่มีอะไรซ่อน</span></h2>
+                <p>ตู้ O'Fresh ออกแบบให้คุณมองเห็นกระบวนการคั้นน้ำส้มสดทุกขั้นตอนผ่านหน้าต่างใส สัมผัสได้ถึงความสดใหม่ตั้งแต่ผลส้มถูกหั่นจนกลายเป็นน้ำส้มหอมหวานในแก้วของคุณ</p>
+                <div class="freshness-features">
+                    <div class="fresh-feature">
+                        <div class="ff-icon"><i class="fas fa-eye"></i></div>
+                        <div>
+                            <h4>โปร่งใส มองเห็นทุกขั้นตอน</h4>
+                            <p>หน้าต่างใสให้คุณดูกระบวนการคั้นสดตั้งแต่ต้นจนจบ</p>
+                        </div>
+                    </div>
+                    <div class="fresh-feature">
+                        <div class="ff-icon"><i class="fas fa-clock"></i></div>
+                        <div>
+                            <h4>สดใหม่ ไม่ค้างคืน</h4>
+                            <p>ทุกแก้วคั้นสดทันที ไม่มีน้ำส้มค้างสต๊อก ไม่มีการเก็บข้ามวัน</p>
+                        </div>
+                    </div>
+                    <div class="fresh-feature">
+                        <div class="ff-icon"><i class="fas fa-heartbeat"></i></div>
+                        <div>
+                            <h4>ดีต่อสุขภาพ อุดมวิตามิน</h4>
+                            <p>วิตามินซีสูง พร้อมสารต้านอนุมูลอิสระจากส้มสดแท้</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- HOW TO USE -->
+    <section class="section howto-section" id="howto">
+        <div class="section-header animate-on-scroll">
+            <div class="section-tag"><i class="fas fa-hand-pointer"></i> ง่ายมาก</div>
+            <h2>วิธีใช้งานตู้ O'Fresh</h2>
+            <p>แค่ 3 ขั้นตอนง่ายๆ ก็ได้ดื่มน้ำส้มคั้นสดแท้ ไม่ต้องรอนาน ไม่ยุ่งยาก</p>
+        </div>
+        <div class="howto-steps">
+            <!-- Step 1 -->
+            <div class="step animate-on-scroll">
+                <div class="step-content">
+                    <h3>กดปุ่ม "Card" จากหน้าจอ</h3>
+                    <p>เดินเข้าไปที่ตู้ O'Fresh แล้วกดปุ่ม <strong>"Card"</strong> ที่แสดงบนหน้าจอสัมผัสของตู้ เพื่อเริ่มต้นสั่งน้ำส้มคั้นสดของคุณ</p>
+                </div>
+                <div class="step-number-wrap">
+                    <div class="step-number">1</div>
+                </div>
+                <div class="step-visual">
+                    <div class="step-icon-box"><img src="Design/20260117_173203.jpg" alt="กดปุ่ม Card จากหน้าจอ"></div>
+                </div>
+            </div>
+            <!-- Step 2 -->
+            <div class="step animate-on-scroll">
+                <div class="step-content">
+                    <h3>เลือกวิธีชำระเงินจากกล่องดำ</h3>
+                    <p>เลือกรูปแบบการชำระเงินที่สะดวกจาก<strong>กล่องดำด้านล่างตู้</strong> รองรับ PromptPay, TrueMoney, WeChat Pay และ VISA/Mastercard ผ่านบัตร (ยังไม่รองรับ Google Wallet, Apple Pay)</p>
+                </div>
+                <div class="step-number-wrap">
+                    <div class="step-number">2</div>
+                </div>
+                <div class="step-visual">
+                    <div class="step-icon-box"><img src="Design/20260117_175410.jpg" alt="เลือกวิธีชำระเงินจากกล่องดำ Nayax"></div>
+                </div>
+            </div>
+            <!-- Step 3 -->
+            <div class="step animate-on-scroll">
+                <div class="step-content">
+                    <h3>รอรับน้ำส้มคั้นสด ประมาณ 30-45 วินาที</h3>
+                    <p>แค่รอประมาณ 30-45 วินาที ตู้จะคั้นส้มสดให้คุณต่อหน้า มองเห็นทุกขั้นตอนผ่านหน้าต่างใส <strong>ซีลฝาแก้วด้วยฟิล์มเสร็จ ฝาประตูจะเปิด</strong> พร้อมหยิบแก้วน้ำส้มคั้นสดเย็นฉ่ำจากช่องรับด้านล่างได้เลย!</p>
+                </div>
+                <div class="step-number-wrap">
+                    <div class="step-number">3</div>
+                </div>
+                <div class="step-visual">
+                    <div class="step-icon-box"><img src="Design/20260117_173156.jpg" alt="ช่องรับแก้ว AUTO UP"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BENEFITS -->
+    <section class="section benefits-section" id="benefits">
+        <div class="section-header animate-on-scroll">
+            <div class="section-tag"><i class="fas fa-star"></i> จุดเด่น</div>
+            <h2>ทำไมน้ำส้มคั้นสดจาก O'Fresh ถึงดีกว่า?</h2>
+            <p>เพราะเราใส่ใจทุกรายละเอียด ตั้งแต่คัดเลือกส้ม จนถึงแก้วน้ำส้มในมือคุณ</p>
+        </div>
+        <div class="benefits-grid">
+            <div class="benefit-card animate-on-scroll">
+                <div class="benefit-icon"><i class="fas fa-lemon"></i></div>
+                <div>
+                    <h3>ส้มสดแท้ ไม่ใช่น้ำหัวเชื้อ</h3>
+                    <p>ต่างจากน้ำส้มทั่วไปที่ผสมจากหัวเชื้อเข้มข้น O'Fresh คั้นจากผลส้มจริงทุกแก้ว ให้รสชาติและคุณค่าทางอาหารที่แตกต่างอย่างชัดเจน</p>
+                </div>
+            </div>
+            <div class="benefit-card animate-on-scroll">
+                <div class="benefit-icon"><i class="fas fa-shield-alt"></i></div>
+                <div>
+                    <h3>ระบบปิดสะอาดปลอดภัย</h3>
+                    <p>ทุกขั้นตอนการคั้นอยู่ในระบบปิด ไม่สัมผัสมือคน ลดความเสี่ยงจากเชื้อโรคและสิ่งปนเปื้อน</p>
+                </div>
+            </div>
+            <div class="benefit-card animate-on-scroll">
+                <div class="benefit-icon"><i class="fas fa-map-marker-alt"></i></div>
+                <div>
+                    <h3>ตั้งอยู่ในจุดที่สะดวก</h3>
+                    <p>ตู้ O'Fresh ตั้งอยู่ในห้างสรรพสินค้า สถานีรถไฟฟ้า และจุดที่เข้าถึงง่าย พร้อมเสิร์ฟความสดชื่นทุกเวลา</p>
+                </div>
+            </div>
+            <div class="benefit-card animate-on-scroll">
+                <div class="benefit-icon"><i class="fas fa-wallet"></i></div>
+                <div>
+                    <h3>ราคาคุ้มค่า จ่ายสะดวก</h3>
+                    <p>น้ำส้มคั้นสดคุณภาพพรีเมียมในราคาที่เข้าถึงได้ รองรับหลายช่องทางการชำระเงิน ทั้งบัตรและ Contactless</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta-section" id="contact">
+        <div class="cta-content animate-on-scroll">
+            <h2>พร้อมลิ้มรสน้ำส้มคั้นสดแท้?</h2>
+            <p>ตอนนี้ ตู้ตั้งอยู่ที่ห้างเซ็นทรัล เฟสติวัล เชียงใหม่ ชั้น 4 โซนศูนย์อาหาร มาสัมผัสความสดใหม่ในทุกแก้ว</p>
+            <a href="https://maps.app.goo.gl/CentralFestivalChiangMai" target="_blank" class="btn-white">
+                <i class="fas fa-map-marker-alt"></i>
+                นำทางไปยังตู้ O'Fresh
+            </a>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <div class="footer-logo">
+                    <img src="Design/OFresh_Logo_transparent.png" alt="O'Fresh Logo">
+                </div>
+                <p>ตู้น้ำส้มคั้นสดอัตโนมัติ พร้อมดื่ม<br>100% Natural · No Sugar Added<br>Temperature kept within 3-9°C</p>
+                <div class="footer-socials">
+                    <a href="https://www.facebook.com/profile.php?id=61584601749720" target="_blank" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                    <a href="https://lin.ee/Xp47yqZ" target="_blank" aria-label="Line"><i class="fab fa-line"></i></a>
+                    <a href="#" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+                </div>
+            </div>
+            <div class="footer-col">
+                <h4>เมนู</h4>
+                <ul>
+                    <li><a href="#home">หน้าแรก</a></li>
+                    <li><a href="#quality">คุณภาพ</a></li>
+                    <li><a href="#freshness">ความสดใหม่</a></li>
+                    <li><a href="#howto">วิธีใช้งาน</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>ข้อมูล</h4>
+                <ul>
+                    <li><a href="#">เกี่ยวกับเรา</a></li>
+                    <li><a href="#">สาขา</a></li>
+                    <li><a href="#">ข่าวสาร</a></li>
+                    <li><a href="#">นโยบายความเป็นส่วนตัว</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>ติดต่อ</h4>
+                <ul>
+                    <li><a href="tel:+66879867000"><i class="fas fa-phone"></i> 087-986-7000</a></li>
+                    <li><a href="https://lin.ee/Xp47yqZ" target="_blank"><i class="fab fa-line"></i> @ofresh</a></li>
+                    <li><a href="https://www.facebook.com/profile.php?id=61584601749720" target="_blank"><i class="fab fa-facebook"></i> O'FRESH</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            &copy; 2026 O'Fresh. All rights reserved. น้ำส้มคั้นสดอัตโนมัติ
+        </div>
+    </footer>
+
+    <script>
+        // Navbar scroll effect
+        window.addEventListener('scroll', () => {
+            const navbar = document.getElementById('navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
+        // Mobile nav toggle
+        function toggleNav() {
+            document.getElementById('navLinks').classList.toggle('active');
+        }
+
+        // Close mobile nav on link click
+        document.querySelectorAll('.nav-links a').forEach(link => {
+            link.addEventListener('click', () => {
+                document.getElementById('navLinks').classList.remove('active');
+            });
+        });
+
+        // Scroll animations
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('animated');
+                }
+            });
+        }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+        document.querySelectorAll('.animate-on-scroll').forEach(el => {
+            observer.observe(el);
+        });
+
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
