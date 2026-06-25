@@ -33,406 +33,181 @@
 
         /* ===== NAVBAR ===== */
         .navbar {
-            position: fixed;
-            top: 0; left: 0; right: 0;
-            z-index: 1000;
-            padding: 0 40px;
-            height: 68px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+            position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+            padding: 0 40px; height: 68px;
+            display: flex; align-items: center; justify-content: space-between;
             background: rgba(255,255,255,0.95);
             backdrop-filter: blur(20px);
             box-shadow: 0 2px 20px rgba(0,0,0,0.07);
         }
-
-        .nav-logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            text-decoration: none;
-        }
-
+        .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
         .nav-logo img { height: 40px; width: auto; object-fit: contain; }
-
+        .nav-right { display: flex; align-items: center; gap: 16px; }
         .nav-back {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: var(--text-muted);
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 500;
-            transition: color 0.3s;
+            display: flex; align-items: center; gap: 8px;
+            color: var(--text-muted); text-decoration: none;
+            font-size: 14px; font-weight: 500; transition: color 0.3s;
         }
-
         .nav-back:hover { color: var(--orange); }
+
+        /* ===== LANG SWITCHER ===== */
+        .lang-switcher {
+            display: flex; align-items: center; gap: 4px;
+            background: rgba(0,0,0,0.05); border-radius: 50px; padding: 4px;
+        }
+        .lang-btn {
+            background: none; border: none; cursor: pointer;
+            font-size: 13px; font-weight: 600; padding: 5px 10px;
+            border-radius: 50px; color: var(--text-muted);
+            font-family: 'Prompt', sans-serif; transition: all 0.2s;
+        }
+        .lang-btn:hover { color: var(--orange); }
+        .lang-btn.active { background: var(--orange); color: white; box-shadow: 0 2px 8px rgba(255,107,0,0.3); }
 
         /* ===== HERO HEADER ===== */
         .page-hero {
             background: linear-gradient(135deg, var(--orange) 0%, var(--orange-dark) 100%);
-            padding: 110px 40px 60px;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
+            padding: 110px 40px 60px; text-align: center;
+            position: relative; overflow: hidden;
         }
-
         .page-hero::before {
-            content: '';
-            position: absolute;
-            inset: 0;
+            content: ''; position: absolute; inset: 0;
             background: radial-gradient(circle at 30% 50%, rgba(255,255,255,0.12) 0%, transparent 60%);
         }
-
         .page-hero-content { position: relative; z-index: 2; }
-
         .page-hero .icon-wrap {
-            width: 72px; height: 72px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 20px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 36px;
-            margin: 0 auto 20px;
+            width: 72px; height: 72px; background: rgba(255,255,255,0.2);
+            border-radius: 20px; display: flex; align-items: center; justify-content: center;
+            font-size: 36px; margin: 0 auto 20px;
         }
-
-        .page-hero h1 {
-            font-size: 36px;
-            font-weight: 800;
-            color: white;
-            margin-bottom: 10px;
-        }
-
-        .page-hero p {
-            font-size: 16px;
-            color: rgba(255,255,255,0.85);
-            font-weight: 300;
-        }
+        .page-hero h1 { font-size: 36px; font-weight: 800; color: white; margin-bottom: 10px; }
+        .page-hero p { font-size: 16px; color: rgba(255,255,255,0.85); font-weight: 300; }
 
         /* ===== MAIN CONTENT ===== */
         .main {
-            max-width: 720px;
-            margin: -30px auto 60px;
-            padding: 0 20px;
-            position: relative;
-            z-index: 10;
+            max-width: 720px; margin: -30px auto 60px;
+            padding: 0 20px; position: relative; z-index: 10;
         }
 
         /* ===== PRICE BANNER ===== */
         .price-banner {
-            background: white;
-            border-radius: 20px;
-            padding: 24px 28px;
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.08);
-            margin-bottom: 24px;
+            background: white; border-radius: 20px; padding: 24px 28px;
+            display: flex; align-items: center; gap: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.08); margin-bottom: 24px;
         }
-
         .price-icon {
             width: 60px; height: 60px;
             background: linear-gradient(135deg, rgba(255,107,0,0.12), rgba(255,154,60,0.08));
-            border-radius: 16px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 28px;
-            flex-shrink: 0;
+            border-radius: 16px; display: flex; align-items: center; justify-content: center;
+            font-size: 28px; flex-shrink: 0;
         }
-
-        .price-info h3 {
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--text-dark);
-            margin-bottom: 4px;
-        }
-
-        .price-info p {
-            font-size: 14px;
-            color: var(--text-muted);
-            font-weight: 300;
-        }
-
-        .price-tag {
-            margin-left: auto;
-            text-align: right;
-            flex-shrink: 0;
-        }
-
-        .price-tag .amount {
-            font-size: 32px;
-            font-weight: 900;
-            color: var(--orange);
-            line-height: 1;
-        }
-
-        .price-tag .unit {
-            font-size: 13px;
-            color: var(--text-muted);
-            font-weight: 400;
-        }
+        .price-info h3 { font-size: 18px; font-weight: 700; color: var(--text-dark); margin-bottom: 4px; }
+        .price-info p { font-size: 14px; color: var(--text-muted); font-weight: 300; }
+        .price-tag { margin-left: auto; text-align: right; flex-shrink: 0; }
+        .price-tag .amount { font-size: 32px; font-weight: 900; color: var(--orange); line-height: 1; }
+        .price-tag .unit { font-size: 13px; color: var(--text-muted); font-weight: 400; }
 
         /* ===== FORM CARD ===== */
         .form-card {
-            background: white;
-            border-radius: 24px;
-            padding: 36px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.08);
-            margin-bottom: 24px;
+            background: white; border-radius: 24px; padding: 36px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.08); margin-bottom: 24px;
         }
-
         .form-card h2 {
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--text-dark);
-            margin-bottom: 24px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            font-size: 20px; font-weight: 700; color: var(--text-dark);
+            margin-bottom: 24px; display: flex; align-items: center; gap: 10px;
         }
-
-        .form-card h2 i {
-            color: var(--orange);
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--text-dark);
-            margin-bottom: 8px;
-        }
-
-        .form-group label .required {
-            color: var(--orange);
-            margin-left: 2px;
-        }
-
+        .form-card h2 i { color: var(--orange); }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-size: 14px; font-weight: 600; color: var(--text-dark); margin-bottom: 8px; }
+        .form-group label .required { color: var(--orange); margin-left: 2px; }
         .form-group input,
-        .form-group textarea,
-        .form-group select {
-            width: 100%;
-            padding: 14px 16px;
-            border: 2px solid var(--border);
-            border-radius: 12px;
-            font-size: 15px;
-            font-family: 'Prompt', sans-serif;
-            color: var(--text-dark);
-            background: white;
-            transition: border-color 0.3s, box-shadow 0.3s;
-            outline: none;
-            appearance: none;
-        }
-
-        .form-group input:focus,
-        .form-group textarea:focus,
-        .form-group select:focus {
-            border-color: var(--orange);
-            box-shadow: 0 0 0 4px rgba(255,107,0,0.08);
-        }
-
         .form-group textarea {
-            resize: vertical;
-            min-height: 90px;
+            width: 100%; padding: 14px 16px; border: 2px solid var(--border);
+            border-radius: 12px; font-size: 15px; font-family: 'Prompt', sans-serif;
+            color: var(--text-dark); background: white;
+            transition: border-color 0.3s, box-shadow 0.3s; outline: none;
         }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
+        .form-group input:focus,
+        .form-group textarea:focus {
+            border-color: var(--orange); box-shadow: 0 0 0 4px rgba(255,107,0,0.08);
         }
+        .form-group textarea { resize: vertical; min-height: 90px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 
         /* ===== QTY CALCULATOR ===== */
-        .qty-wrap {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
+        .qty-wrap { display: flex; align-items: center; gap: 12px; }
         .qty-btn {
-            width: 48px; height: 48px;
-            border: 2px solid var(--border);
-            border-radius: 12px;
-            background: white;
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--text-dark);
-            cursor: pointer;
+            width: 48px; height: 48px; border: 2px solid var(--border);
+            border-radius: 12px; background: white; font-size: 20px; font-weight: 700;
+            color: var(--text-dark); cursor: pointer;
             display: flex; align-items: center; justify-content: center;
-            transition: all 0.2s;
-            flex-shrink: 0;
+            transition: all 0.2s; flex-shrink: 0;
         }
-
-        .qty-btn:hover {
-            border-color: var(--orange);
-            color: var(--orange);
-            background: rgba(255,107,0,0.05);
-        }
-
-        .qty-input {
-            flex: 1;
-            text-align: center;
-            font-size: 20px;
-            font-weight: 700;
-        }
-
+        .qty-btn:hover { border-color: var(--orange); color: var(--orange); background: rgba(255,107,0,0.05); }
+        .qty-input { flex: 1; text-align: center; font-size: 20px; font-weight: 700; }
         .price-calc {
-            margin-top: 12px;
-            padding: 14px 16px;
+            margin-top: 12px; padding: 14px 16px;
             background: linear-gradient(135deg, rgba(255,107,0,0.06), rgba(255,154,60,0.04));
-            border: 1px solid rgba(255,107,0,0.15);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+            border: 1px solid rgba(255,107,0,0.15); border-radius: 12px;
+            display: flex; align-items: center; justify-content: space-between;
         }
-
-        .price-calc .label {
-            font-size: 14px;
-            color: var(--text-muted);
-        }
-
-        .price-calc .total {
-            font-size: 22px;
-            font-weight: 800;
-            color: var(--orange);
-        }
+        .price-calc .label { font-size: 14px; color: var(--text-muted); }
+        .price-calc .total { font-size: 22px; font-weight: 800; color: var(--orange); }
 
         /* ===== SUBMIT BUTTON ===== */
         .btn-submit {
-            width: 100%;
-            padding: 18px;
+            width: 100%; padding: 18px;
             background: linear-gradient(135deg, var(--orange), var(--orange-dark));
-            color: white;
-            border: none;
-            border-radius: 16px;
-            font-size: 17px;
-            font-weight: 700;
-            font-family: 'Prompt', sans-serif;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            box-shadow: 0 8px 24px rgba(255,107,0,0.3);
-            transition: all 0.3s;
+            color: white; border: none; border-radius: 16px;
+            font-size: 17px; font-weight: 700; font-family: 'Prompt', sans-serif;
+            cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;
+            box-shadow: 0 8px 24px rgba(255,107,0,0.3); transition: all 0.3s;
         }
-
-        .btn-submit:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 32px rgba(255,107,0,0.4);
-        }
-
-        .btn-submit:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-            transform: none;
-        }
+        .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(255,107,0,0.4); }
+        .btn-submit:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
 
         /* ===== SUCCESS STATE ===== */
         .success-card {
-            background: white;
-            border-radius: 24px;
-            padding: 48px 36px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.08);
-            text-align: center;
-            display: none;
+            background: white; border-radius: 24px; padding: 48px 36px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.08); text-align: center; display: none;
         }
-
         .success-card.show { display: block; }
-
         .success-icon {
             width: 80px; height: 80px;
             background: linear-gradient(135deg, #22c55e, #16a34a);
-            border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 36px;
-            color: white;
-            margin: 0 auto 20px;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 36px; color: white; margin: 0 auto 20px;
         }
-
-        .success-card h2 {
-            font-size: 24px;
-            font-weight: 800;
-            color: var(--text-dark);
-            margin-bottom: 10px;
-        }
-
-        .success-card p {
-            font-size: 15px;
-            color: var(--text-muted);
-            line-height: 1.7;
-            margin-bottom: 24px;
-        }
-
-        .order-summary {
-            background: var(--off-white);
-            border-radius: 16px;
-            padding: 20px;
-            text-align: left;
-            margin-bottom: 24px;
-        }
-
+        .success-card h2 { font-size: 24px; font-weight: 800; color: var(--text-dark); margin-bottom: 10px; }
+        .success-card p { font-size: 15px; color: var(--text-muted); line-height: 1.7; margin-bottom: 24px; }
+        .order-summary { background: var(--off-white); border-radius: 16px; padding: 20px; text-align: left; margin-bottom: 24px; }
         .order-summary-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            font-size: 14px;
-            border-bottom: 1px solid rgba(0,0,0,0.06);
+            display: flex; justify-content: space-between; padding: 8px 0;
+            font-size: 14px; border-bottom: 1px solid rgba(0,0,0,0.06);
         }
-
         .order-summary-row:last-child { border-bottom: none; }
-
         .order-summary-row .key { color: var(--text-muted); }
         .order-summary-row .val { font-weight: 600; color: var(--text-dark); }
         .order-summary-row.total .val { color: var(--orange); font-size: 18px; font-weight: 800; }
-
         .btn-new-order {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: var(--orange);
-            color: white;
-            padding: 14px 32px;
-            border-radius: 50px;
-            font-size: 15px;
-            font-weight: 600;
-            font-family: 'Prompt', sans-serif;
-            border: none;
-            cursor: pointer;
-            transition: all 0.3s;
+            display: inline-flex; align-items: center; gap: 8px;
+            background: var(--orange); color: white; padding: 14px 32px;
+            border-radius: 50px; font-size: 15px; font-weight: 600;
+            font-family: 'Prompt', sans-serif; border: none; cursor: pointer; transition: all 0.3s;
         }
-
-        .btn-new-order:hover {
-            background: var(--orange-dark);
-            transform: translateY(-2px);
-        }
+        .btn-new-order:hover { background: var(--orange-dark); transform: translateY(-2px); }
 
         /* ===== NOTE CARD ===== */
         .note-card {
-            background: white;
-            border-radius: 20px;
-            padding: 20px 24px;
+            background: white; border-radius: 20px; padding: 20px 24px;
             box-shadow: 0 4px 16px rgba(0,0,0,0.05);
-            display: flex;
-            gap: 14px;
-            align-items: flex-start;
+            display: flex; flex-direction: column; gap: 6px;
         }
-
-        .note-card i {
-            color: var(--orange);
-            font-size: 18px;
-            margin-top: 2px;
-            flex-shrink: 0;
-        }
-
-        .note-card p {
-            font-size: 13px;
-            color: var(--text-muted);
-            line-height: 1.7;
-        }
+        .note-card .note-row { display: flex; gap: 14px; align-items: flex-start; }
+        .note-card i { color: var(--orange); font-size: 16px; margin-top: 2px; flex-shrink: 0; }
+        .note-card .delivery-icon { color: var(--green); }
+        .note-card p { font-size: 13px; color: var(--text-muted); line-height: 1.7; }
+        .note-card .delivery-text { color: var(--green); font-weight: 600; font-size: 13px; }
 
         /* ===== RESPONSIVE ===== */
         @media (max-width: 640px) {
@@ -443,6 +218,7 @@
             .form-row { grid-template-columns: 1fr; }
             .price-banner { flex-wrap: wrap; }
             .price-tag { margin-left: 0; }
+            .lang-btn { padding: 4px 8px; font-size: 12px; }
         }
     </style>
 </head>
@@ -453,17 +229,24 @@
     <a href="index.html" class="nav-logo">
         <img src="OFresh_Logo_transparent.png" alt="O'Fresh Logo">
     </a>
-    <a href="index.html" class="nav-back">
-        <i class="fas fa-arrow-left"></i> กลับหน้าหลัก
-    </a>
+    <div class="nav-right">
+        <div class="lang-switcher">
+            <button class="lang-btn active" data-lang="th" onclick="applyLanguage('th')">TH</button>
+            <button class="lang-btn" data-lang="en" onclick="applyLanguage('en')">EN</button>
+            <button class="lang-btn" data-lang="zh" onclick="applyLanguage('zh')">中文</button>
+        </div>
+        <a href="index.html" class="nav-back">
+            <i class="fas fa-arrow-left"></i> <span data-i18n="order_back">กลับหน้าหลัก</span>
+        </a>
+    </div>
 </nav>
 
 <!-- HERO -->
 <div class="page-hero">
     <div class="page-hero-content">
         <div class="icon-wrap">🍊</div>
-        <h1>สั่งซื้อส้มคั้นสด</h1>
-        <p>ส้มแมนดารินคุณภาพพรีเมียม ส่งตรงถึงตู้ O'Fresh ของคุณ</p>
+        <h1 data-i18n="order_hero_h1">สั่งซื้อส้มคั้นสด</h1>
+        <p data-i18n="order_hero_p">ส้มแมนดารินคุณภาพพรีเมียม ส่งตรงถึงตู้ O'Fresh ของคุณ</p>
     </div>
 </div>
 
@@ -474,96 +257,101 @@
     <div class="price-banner">
         <div class="price-icon">🍊</div>
         <div class="price-info">
-            <h3>ส้มแมนดารินไต้หวัน</h3>
-            <p>คัดเกรดพรีเมียม หวานฉ่ำ อุดมวิตามินซี</p>
+            <h3 data-i18n="order_price_name">ส้มแมนดารินไต้หวัน</h3>
+            <p data-i18n="order_price_desc">คัดเกรดพรีเมียม หวานฉ่ำ อุดมวิตามินซี</p>
         </div>
         <div class="price-tag">
             <div class="amount">฿60</div>
-            <div class="unit">ต่อกิโลกรัม</div>
+            <div class="unit" data-i18n="order_price_unit">ต่อกิโลกรัม</div>
         </div>
     </div>
 
-    <!-- FORM CARD (แสดงก่อน) -->
+    <!-- FORM CARD -->
     <div class="form-card" id="formCard">
-        <h2><i class="fas fa-shopping-basket"></i> ข้อมูลสั่งซื้อ</h2>
+        <h2><i class="fas fa-shopping-basket"></i> <span data-i18n="order_form_h2">ข้อมูลสั่งซื้อ</span></h2>
 
         <form id="orderForm" novalidate>
-
             <div class="form-row">
                 <div class="form-group">
-                    <label>ชื่อ-นามสกุล <span class="required">*</span></label>
-                    <input type="text" id="name" placeholder="กรอกชื่อ-นามสกุล" required>
+                    <label><span data-i18n="order_name_label">ชื่อ-นามสกุล</span> <span class="required">*</span></label>
+                    <input type="text" id="name" data-i18n-placeholder="order_name_placeholder" placeholder="กรอกชื่อ-นามสกุล" required>
                 </div>
                 <div class="form-group">
-                    <label>เบอร์โทรศัพท์ <span class="required">*</span></label>
-                    <input type="tel" id="phone" placeholder="0xx-xxx-xxxx" required>
+                    <label><span data-i18n="order_phone_label">เบอร์โทรศัพท์</span> <span class="required">*</span></label>
+                    <input type="tel" id="phone" data-i18n-placeholder="order_phone_placeholder" placeholder="0xx-xxx-xxxx" required>
                 </div>
             </div>
 
             <div class="form-group">
-                <label>LINE ID <span style="color:var(--text-muted);font-weight:400">(ถ้ามี)</span></label>
-                <input type="text" id="line" placeholder="@lineID ของคุณ">
+                <label>
+                    <span data-i18n="order_line_label">LINE ID</span>
+                    <span style="color:var(--text-muted);font-weight:400"> (<span data-i18n="order_line_optional">ถ้ามี</span>)</span>
+                </label>
+                <input type="text" id="line" data-i18n-placeholder="order_line_placeholder" placeholder="@lineID ของคุณ">
             </div>
 
             <div class="form-group">
-                <label>จำนวน (กิโลกรัม) <span class="required">*</span></label>
+                <label><span data-i18n="order_qty_label">จำนวน (กิโลกรัม)</span> <span class="required">*</span></label>
                 <div class="qty-wrap">
-                    <button type="button" class="qty-btn" onclick="changeQty(-5)">−</button>
+                    <button type="button" class="qty-btn" onclick="changeQty(-1)">−</button>
                     <input type="number" id="qty" class="qty-input" value="2" min="2" max="50" step="1" required>
-                    <button type="button" class="qty-btn" onclick="changeQty(5)">+</button>
+                    <button type="button" class="qty-btn" onclick="changeQty(1)">+</button>
                 </div>
                 <div class="price-calc">
-                    <span class="label">ยอดรวมโดยประมาณ</span>
-                    <span class="total" id="totalPrice">฿500</span>
+                    <span class="label" data-i18n="order_total_label">ยอดรวมโดยประมาณ</span>
+                    <span class="total" id="totalPrice">฿120</span>
                 </div>
             </div>
 
             <div class="form-group">
-                <label>ที่อยู่จัดส่ง <span class="required">*</span></label>
-                <textarea id="address" placeholder="บ้านเลขที่ / ถนน / แขวง / เขต / จังหวัด / รหัสไปรษณีย์" required></textarea>
+                <label><span data-i18n="order_address_label">ที่อยู่จัดส่ง</span> <span class="required">*</span></label>
+                <textarea id="address" data-i18n-placeholder="order_address_placeholder" placeholder="บ้านเลขที่ / ถนน / แขวง / เขต / จังหวัด / รหัสไปรษณีย์" required></textarea>
             </div>
 
             <div class="form-group">
-                <label>หมายเหตุ <span style="color:var(--text-muted);font-weight:400">(ถ้ามี)</span></label>
-                <textarea id="note" placeholder="เช่น วันที่ต้องการรับของ หรือข้อมูลเพิ่มเติม" style="min-height:70px"></textarea>
+                <label>
+                    <span data-i18n="order_note_label">หมายเหตุ</span>
+                    <span style="color:var(--text-muted);font-weight:400"> (<span data-i18n="order_note_optional">ถ้ามี</span>)</span>
+                </label>
+                <textarea id="note" data-i18n-placeholder="order_note_placeholder" placeholder="เช่น วันที่ต้องการรับของ หรือข้อมูลเพิ่มเติม" style="min-height:70px"></textarea>
             </div>
 
             <button type="submit" class="btn-submit" id="submitBtn">
                 <i class="fab fa-line"></i>
-                ส่งคำสั่งซื้อ
+                <span data-i18n="order_submit_btn">ส่งคำสั่งซื้อ</span>
             </button>
-
         </form>
     </div>
 
-    <!-- SUCCESS CARD (ซ่อนก่อน) -->
+    <!-- SUCCESS CARD -->
     <div class="success-card" id="successCard">
         <div class="success-icon">✓</div>
-        <h2>ส่งคำสั่งซื้อสำเร็จ!</h2>
-        <p>ทีมงาน O'Fresh ได้รับออเดอร์ของคุณแล้ว<br>จะติดต่อกลับภายใน 24 ชั่วโมงครับ</p>
-
+        <h2 data-i18n="order_success_h2">ส่งคำสั่งซื้อสำเร็จ!</h2>
+        <p data-i18n="order_success_p">ทีมงาน O'Fresh ได้รับออเดอร์ของคุณแล้ว<br>จะติดต่อกลับภายใน 24 ชั่วโมงครับ</p>
         <div class="order-summary" id="orderSummary"></div>
-
         <button class="btn-new-order" onclick="resetForm()">
-            <i class="fas fa-plus"></i> สั่งซื้อใหม่
+            <i class="fas fa-plus"></i> <span data-i18n="order_new_btn">สั่งซื้อใหม่</span>
         </button>
     </div>
 
     <!-- NOTE -->
     <div class="note-card">
-        <i class="fas fa-info-circle"></i>
-        <p>ขั้นต่ำสั่งซื้อ 2 กก. · สูงสุด 50 กก./ครั้ง · ราคา ฿60/กก. · ทีมงานจะยืนยันออเดอร์ทาง LINE ภายใน 24 ชม.</p>
-        <p style="margin-top:8px;color:var(--green);font-weight:600"><i class="fas fa-truck" style="margin-right:6px"></i>จัดส่งฟรี ในพื้นที่ อ.เมือง จ.เชียงใหม่</p>
+        <div class="note-row">
+            <i class="fas fa-info-circle"></i>
+            <p data-i18n="order_note_info">ขั้นต่ำสั่งซื้อ 2 กก. · สูงสุด 50 กก./ครั้ง · ราคา ฿60/กก. · ทีมงานจะยืนยันออเดอร์ทาง LINE ภายใน 24 ชม.</p>
+        </div>
+        <div class="note-row">
+            <i class="fas fa-truck delivery-icon"></i>
+            <p class="delivery-text" data-i18n="order_free_delivery">จัดส่งฟรี ในพื้นที่ อ.เมือง จ.เชียงใหม่</p>
+        </div>
     </div>
 
 </div>
 
+<script src="i18n.js"></script>
 <script>
-    // ====== CONFIG ======
-    // เปลี่ยน URL นี้ให้ตรงกับ Cloudflare Worker ที่จะสร้าง
     const API_URL = 'https://fancy-dust-060c.yai-taweewoot.workers.dev/api/order';
 
-    // ====== QTY CALCULATOR ======
     const qtyInput = document.getElementById('qty');
     const totalPriceEl = document.getElementById('totalPrice');
 
@@ -582,7 +370,15 @@
     qtyInput.addEventListener('input', updatePrice);
     updatePrice();
 
-    // ====== FORM SUBMIT ======
+    function getLang() {
+        return localStorage.getItem('ofresh_lang') || 'th';
+    }
+
+    function t(key) {
+        const lang = getLang();
+        return (translations[lang] && translations[lang][key]) || translations['th'][key] || key;
+    }
+
     document.getElementById('orderForm').addEventListener('submit', async (e) => {
         e.preventDefault();
 
@@ -593,25 +389,17 @@
         const address = document.getElementById('address').value.trim();
         const note    = document.getElementById('note').value.trim();
 
-        // Basic validation
         if (!name || !phone || !qty || !address) {
-            alert('กรุณากรอกข้อมูลที่มีเครื่องหมาย * ให้ครบครับ');
+            alert(t('order_err_required'));
             return;
         }
+        if (qty < 2) { alert(t('order_err_min')); return; }
+        if (qty > 50) { alert(t('order_err_max')); return; }
 
-        if (qty < 2) {
-            alert('ขั้นต่ำสั่งซื้อ 2 กิโลกรัมครับ');
-            return;
-        }
-        if (qty > 50) {
-            alert('สั่งซื้อได้สูงสุด 50 กิโลกรัมต่อครั้งครับ');
-            return;
-        }
-
-        const total = qty * 50;
+        const total = qty * 60;
         const submitBtn = document.getElementById('submitBtn');
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังส่ง...';
+        submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t('order_sending')}`;
 
         try {
             const res = await fetch(API_URL, {
@@ -619,16 +407,12 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name, phone, line, qty, total, address, note })
             });
-
             if (!res.ok) throw new Error('API error');
-
-            // Show success
             showSuccess({ name, phone, line, qty, total, address, note });
-
         } catch (err) {
-            alert('เกิดข้อผิดพลาด กรุณาลองใหม่หรือติดต่อ 087-986-7000 ครับ');
+            alert(t('order_err_fail'));
             submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="fab fa-line"></i> ส่งคำสั่งซื้อ';
+            submitBtn.innerHTML = `<i class="fab fa-line"></i> ${t('order_submit_btn')}`;
         }
     });
 
@@ -637,47 +421,33 @@
         const successCard = document.getElementById('successCard');
         successCard.classList.add('show');
 
-        document.getElementById('orderSummary').innerHTML = `
-            <div class="order-summary-row">
-                <span class="key">ชื่อ-นามสกุล</span>
-                <span class="val">${data.name}</span>
-            </div>
-            <div class="order-summary-row">
-                <span class="key">เบอร์โทร</span>
-                <span class="val">${data.phone}</span>
-            </div>
-            <div class="order-summary-row">
-                <span class="key">LINE ID</span>
-                <span class="val">${data.line}</span>
-            </div>
-            <div class="order-summary-row">
-                <span class="key">จำนวน</span>
-                <span class="val">${data.qty} กิโลกรัม</span>
-            </div>
-            <div class="order-summary-row">
-                <span class="key">ที่อยู่</span>
-                <span class="val">${data.address}</span>
-            </div>
-            ${data.note ? `<div class="order-summary-row"><span class="key">หมายเหตุ</span><span class="val">${data.note}</span></div>` : ''}
-            <div class="order-summary-row total">
-                <span class="key">ยอดรวม (ไม่รวมค่าส่ง)</span>
-                <span class="val">฿${data.total.toLocaleString()}</span>
-            </div>
+        const qtyUnit = t('order_summary_qty_unit');
+        let rows = `
+            <div class="order-summary-row"><span class="key">${t('order_summary_name')}</span><span class="val">${data.name}</span></div>
+            <div class="order-summary-row"><span class="key">${t('order_summary_phone')}</span><span class="val">${data.phone}</span></div>
+            ${data.line ? `<div class="order-summary-row"><span class="key">${t('order_summary_line')}</span><span class="val">${data.line}</span></div>` : ''}
+            <div class="order-summary-row"><span class="key">${t('order_summary_qty')}</span><span class="val">${data.qty} ${qtyUnit}</span></div>
+            <div class="order-summary-row"><span class="key">${t('order_summary_address')}</span><span class="val">${data.address}</span></div>
+            ${data.note ? `<div class="order-summary-row"><span class="key">${t('order_summary_note')}</span><span class="val">${data.note}</span></div>` : ''}
+            <div class="order-summary-row total"><span class="key">${t('order_summary_total')}</span><span class="val">฿${data.total.toLocaleString()}</span></div>
         `;
-
+        document.getElementById('orderSummary').innerHTML = rows;
         successCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     function resetForm() {
         document.getElementById('orderForm').reset();
-        document.getElementById('qty').value = 10;
+        document.getElementById('qty').value = 2;
         updatePrice();
         document.getElementById('formCard').style.display = 'block';
         document.getElementById('successCard').classList.remove('show');
         document.getElementById('submitBtn').disabled = false;
-        document.getElementById('submitBtn').innerHTML = '<i class="fab fa-line"></i> ส่งคำสั่งซื้อ';
+        document.getElementById('submitBtn').innerHTML = `<i class="fab fa-line"></i> ${t('order_submit_btn')}`;
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+
+    // Init language
+    initI18n();
 </script>
 
 </body>
