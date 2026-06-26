@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>O'Fresh — Numbers Don't Lie</title>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Prompt', sans-serif;
+  background: #0f0a00;
+  color: #fff;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 20% 10%, rgba(255,107,0,.18) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 80% 80%, rgba(255,154,60,.12) 0%, transparent 55%);
+  pointer-events: none; z-index: 0;
+}
+
+/* ── LANG TOGGLE ── */
+.lang-bar {
+  position: fixed; top: 16px; right: 20px; z-index: 50;
+  display: flex; gap: 0; background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.14); border-radius: 30px;
+  padding: 4px; backdrop-filter: blur(12px);
+}
+.lang-btn {
+  padding: 6px 16px; border-radius: 24px; border: none;
+  font-family: 'Prompt', sans-serif; font-size: .8rem; font-weight: 700;
+  cursor: pointer; transition: all .2s; background: transparent; color: rgba(255,255,255,.4);
+}
+.lang-btn.active { background: #FF6B00; color: #fff; box-shadow: 0 0 12px rgba(255,107,0,.5); }
+
+/* ── HERO ── */
+.hero {
+  position: relative; z-index: 1;
+  text-align: center; padding: 72px 24px 40px;
+}
+.hero-logo { font-size: 3.2rem; margin-bottom: 8px; }
+.hero h1 {
+  font-size: clamp(1.5rem, 4vw, 2.6rem);
+  font-weight: 900; letter-spacing: -1px;
+  background: linear-gradient(135deg, #FF9A3C 0%, #FF6B00 50%, #FFD700 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.hero p { color: rgba(255,255,255,.45); font-size: .9rem; margin-top: 8px; }
+
+.live-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12);
+  border-radius: 30px; padding: 6px 18px; font-size: .78rem;
+  color: rgba(255,255,255,.55); margin-top: 18px; backdrop-filter: blur(8px);
+}
+.live-dot {
+  width: 7px; height: 7px; border-radius: 50%; background: #4ade80;
+  box-shadow: 0 0 8px #4ade80; animation: blink 1.8s ease-in-out infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* ── PAGE ── */
+.page { max-width: 1100px; margin: 0 auto; padding: 0 20px 80px; position: relative; z-index: 1; }
+
+/* ── BIG NUMBERS ── */
+.bignums {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px; margin-bottom: 24px;
+}
+.bignum {
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 20px; padding: 28px 24px 22px;
+  backdrop-filter: blur(12px);
+  position: relative; overflow: hidden;
+  transition: transform .2s, box-shadow .2s;
+}
+.bignum:hover { transform: translateY(-3px); box-shadow: 0 16px 40px rgba(255,107,0,.15); }
+.bignum::before {
+  content: ''; position: absolute; inset: 0; border-radius: 20px;
+  background: linear-gradient(135deg, rgba(255,107,0,.08) 0%, transparent 60%);
+}
+.bignum-icon { font-size: 2rem; margin-bottom: 10px; }
+.bignum-label { font-size: .72rem; text-transform: uppercase; letter-spacing: 1.2px; color: rgba(255,255,255,.4); font-weight: 600; }
+.bignum-value {
+  font-size: clamp(2rem, 5vw, 3rem); font-weight: 900; line-height: 1; margin: 8px 0 4px;
+  background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,.75) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.bignum.orange .bignum-value {
+  background: linear-gradient(135deg, #FF9A3C, #FF6B00);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.bignum-sub { font-size: .78rem; color: rgba(255,255,255,.35); }
+
+/* ── CARDS ── */
+.cards-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+@media (max-width: 640px) { .cards-row { grid-template-columns: 1fr; } }
+.card-full { grid-column: 1 / -1; }
+
+.card {
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 20px; padding: 26px;
+  backdrop-filter: blur(12px);
+}
+.card h2 {
+  font-size: .82rem; text-transform: uppercase; letter-spacing: 1px;
+  color: rgba(255,255,255,.4); font-weight: 700; margin-bottom: 20px;
+  display: flex; align-items: center; gap: 8px;
+}
+
+/* ── HEATMAP ── */
+.hour-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 5px; }
+.hour-cell {
+  aspect-ratio: 1; border-radius: 6px;
+  background: rgba(255,255,255,.05);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  transition: transform .15s; cursor: default;
+}
+.hour-cell:hover { transform: scale(1.12); z-index: 2; }
+.hour-cell .count { font-size: .72rem; font-weight: 700; color: rgba(255,255,255,.7); line-height: 1; }
+.hour-cell .lbl { font-size: .5rem; color: rgba(255,255,255,.3); margin-top: 2px; }
+.hour-cell.peak1 { background: rgba(255,107,0,.85); box-shadow: 0 0 14px rgba(255,107,0,.45); }
+.hour-cell.peak1 .count, .hour-cell.peak1 .lbl { color: #fff; }
+.hour-cell.peak2 { background: rgba(255,107,0,.55); }
+.hour-cell.peak2 .count, .hour-cell.peak2 .lbl { color: #fff; }
+.hour-cell.peak3 { background: rgba(255,107,0,.28); }
+.hour-cell.peak3 .count { color: rgba(255,255,255,.9); }
+
+/* ── DAY BARS ── */
+.day-list { display: flex; flex-direction: column; gap: 10px; }
+.day-row { display: grid; grid-template-columns: 90px 1fr 44px; align-items: center; gap: 10px; }
+.day-label { font-size: .72rem; color: rgba(255,255,255,.5); line-height: 1.3; }
+.day-bar-wrap { background: rgba(255,255,255,.06); border-radius: 20px; height: 10px; overflow: hidden; }
+.day-bar { height: 100%; border-radius: 20px; background: linear-gradient(90deg,#FF6B00,#FF9A3C); }
+.day-bar.top { background: linear-gradient(90deg,#FFD700,#FF9A3C); box-shadow: 0 0 10px rgba(255,215,0,.4); }
+.day-count { font-size: .85rem; font-weight: 700; color: rgba(255,255,255,.7); text-align: right; }
+
+/* ── PAYMENT ── */
+.pay-pills { display: flex; flex-direction: column; gap: 14px; }
+.pay-pill { display: grid; grid-template-columns: 36px 1fr auto; align-items: center; gap: 12px; }
+.pay-emoji { font-size: 1.4rem; }
+.pay-info-wrap { min-width: 0; }
+.pay-name { font-size: .85rem; font-weight: 600; color: rgba(255,255,255,.8); }
+.pay-bar-wrap { background: rgba(255,255,255,.06); border-radius: 20px; height: 7px; margin-top: 5px; }
+.pay-bar-fill { height: 100%; border-radius: 20px; }
+.pay-pct { font-size: .9rem; font-weight: 700; color: rgba(255,255,255,.6); min-width: 40px; text-align: right; }
+
+/* ── SPOTLIGHT ── */
+.spotlight {
+  background: linear-gradient(135deg, rgba(255,215,0,.1) 0%, rgba(255,107,0,.08) 100%);
+  border: 1px solid rgba(255,215,0,.2);
+  border-radius: 20px; padding: 28px 30px;
+  display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.spotlight-trophy { font-size: 3rem; flex-shrink: 0; }
+.spotlight-title { font-size: .72rem; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,215,0,.6); font-weight: 700; }
+.spotlight-day { font-size: clamp(1.2rem, 3vw, 2rem); font-weight: 900; color: #FFD700; margin: 4px 0; }
+.spotlight-sub { font-size: .88rem; color: rgba(255,255,255,.5); }
+
+/* ── QR CARD ── */
+.qr-card {
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 20px; padding: 32px;
+  backdrop-filter: blur(12px);
+  display: flex; align-items: center; gap: 32px;
+  flex-wrap: wrap; margin-bottom: 20px;
+}
+.qr-box {
+  background: #fff; border-radius: 16px;
+  padding: 12px; flex-shrink: 0;
+  width: 130px; height: 130px;
+  display: flex; align-items: center; justify-content: center;
+}
+.qr-box canvas, .qr-box img { max-width: 100%; max-height: 100%; display: block; }
+.qr-text { flex: 1; min-width: 200px; }
+.qr-text h3 {
+  font-size: 1.2rem; font-weight: 800;
+  background: linear-gradient(135deg,#FF9A3C,#FFD700);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  margin-bottom: 8px;
+}
+.qr-text p { font-size: .88rem; color: rgba(255,255,255,.45); line-height: 1.6; }
+.qr-url {
+  display: inline-block; margin-top: 10px;
+  font-size: .78rem; color: #FF9A3C; font-weight: 600;
+  background: rgba(255,107,0,.1); padding: 4px 12px; border-radius: 20px;
+  border: 1px solid rgba(255,107,0,.2);
+}
+
+/* ── FOOTER ── */
+footer {
+  text-align: center; color: rgba(255,255,255,.18);
+  font-size: .75rem; padding: 0 20px 40px;
+  position: relative; z-index: 1;
+}
+
+/* ── LOADING ── */
+#loading {
+  position: fixed; inset: 0; background: #0f0a00;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  z-index: 100; transition: opacity .5s;
+}
+#loading .spin { font-size: 3rem; animation: spin 1.2s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+#loading p { color: rgba(255,255,255,.4); font-size: .9rem; margin-top: 16px; }
+</style>
+</head>
+<body>
+
+<!-- LANGUAGE TOGGLE -->
+<div class="lang-bar">
+  <button class="lang-btn active" onclick="setLang('th')">TH</button>
+  <button class="lang-btn" onclick="setLang('en')">EN</button>
+</div>
+
+<!-- LOADING -->
+<div id="loading">
+  <div class="spin">🍊</div>
+  <p data-th="กำลังโหลดสถิติ..." data-en="Loading stats...">กำลังโหลดสถิติ...</p>
+</div>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-logo">🍊</div>
+  <h1 data-th="O'Fresh — ตัวเลขที่พูดแทนเรา" data-en="O'Fresh — Numbers Don't Lie">O'Fresh — ตัวเลขที่พูดแทนเรา</h1>
+  <p data-th="สถิติจริง · อัปเดตอัตโนมัติ · น้ำส้มคั้นสดอัตโนมัติ เชียงใหม่"
+     data-en="Real data · Auto-updated · Fresh Orange Juice Machine · Chiang Mai">
+     สถิติจริง · อัปเดตอัตโนมัติ · น้ำส้มคั้นสดอัตโนมัติ เชียงใหม่</p>
+  <div class="live-badge">
+    <div class="live-dot"></div>
+    <span id="lastUpdate">—</span>
+  </div>
+</div>
+
+<div class="page">
+
+  <!-- BIG NUMBERS -->
+  <div class="bignums">
+    <div class="bignum orange">
+      <div class="bignum-icon">🧃</div>
+      <div class="bignum-label" data-th="แก้วที่เสิร์ฟไปทั้งหมด" data-en="Total Cups Served">แก้วที่เสิร์ฟไปทั้งหมด</div>
+      <div class="bignum-value" id="totalCups">—</div>
+      <div class="bignum-sub" data-th="แก้วสด ไม่มีน้ำตาลเพิ่ม" data-en="Fresh · No added sugar">แก้วสด ไม่มีน้ำตาลเพิ่ม</div>
+    </div>
+    <div class="bignum">
+      <div class="bignum-icon">📅</div>
+      <div class="bignum-label" data-th="วันที่เปิดให้บริการ" data-en="Days in Service">วันที่เปิดให้บริการ</div>
+      <div class="bignum-value" id="totalDays">—</div>
+      <div class="bignum-sub" data-th="วัน" data-en="days">วัน</div>
+    </div>
+    <div class="bignum">
+      <div class="bignum-icon">⚡</div>
+      <div class="bignum-label" data-th="สูงสุดในวันเดียว" data-en="Single-Day Record">สูงสุดในวันเดียว</div>
+      <div class="bignum-value" id="peakDayCups">—</div>
+      <div class="bignum-sub" data-th="แก้ว/วัน" data-en="cups in one day">แก้ว/วัน</div>
+    </div>
+    <div class="bignum">
+      <div class="bignum-icon">🕐</div>
+      <div class="bignum-label" data-th="ชั่วโมงยอดนิยม" data-en="Busiest Hour">ชั่วโมงยอดนิยม</div>
+      <div class="bignum-value" id="peakHour">—</div>
+      <div class="bignum-sub" data-th="คนชอบสั่งช่วงนี้มากที่สุด" data-en="Most orders at this hour">คนชอบสั่งช่วงนี้มากที่สุด</div>
+    </div>
+  </div>
+
+  <!-- SPOTLIGHT -->
+  <div class="spotlight">
+    <div class="spotlight-trophy">🏆</div>
+    <div>
+      <div class="spotlight-title" data-th="วันที่ขายดีที่สุดตลอดกาล" data-en="All-Time Best Day">วันที่ขายดีที่สุดตลอดกาล</div>
+      <div class="spotlight-day" id="spotlightDay">—</div>
+      <div class="spotlight-sub" id="spotlightSub">—</div>
+    </div>
+  </div>
+
+  <!-- HEATMAP -->
+  <div class="cards-row">
+    <div class="card card-full">
+      <h2><span>🌡️</span> <span data-th="ช่วงเวลาที่ลูกค้าสั่งมากที่สุด" data-en="Busiest Hours of the Day">ช่วงเวลาที่ลูกค้าสั่งมากที่สุด</span></h2>
+      <div class="hour-grid" id="hourGrid"></div>
+      <div style="margin-top:14px;font-size:.75rem;color:rgba(255,255,255,.3);display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
+        <span data-th="🟠 ยิ่งเข้ม ยิ่งยอดสูง" data-en="🟠 Darker = More orders">🟠 ยิ่งเข้ม ยิ่งยอดสูง</span>
+        <span id="peakHourLabel" style="color:rgba(255,154,60,.75);font-weight:600;"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- BEST DAYS + PAYMENT -->
+  <div class="cards-row">
+    <div class="card">
+      <h2><span>📊</span> <span data-th="7 วันที่ขายดีที่สุด" data-en="Top 7 Best Days">7 วันที่ขายดีที่สุด</span></h2>
+      <div class="day-list" id="dayList"></div>
+    </div>
+    <div class="card">
+      <h2><span>💳</span> <span data-th="วิธีชำระเงิน" data-en="Payment Methods">วิธีชำระเงิน</span></h2>
+      <div class="pay-pills" id="payPills"></div>
+    </div>
+  </div>
+
+  <!-- QR CODE -->
+  <div class="qr-card">
+    <div class="qr-box" id="qrBox"></div>
+    <div class="qr-text">
+      <h3 data-th="สแกนเพื่อสั่งล่วงหน้า & ดูเมนู" data-en="Scan to Pre-order & View Menu">สแกนเพื่อสั่งล่วงหน้า & ดูเมนู</h3>
+      <p data-th="สแกน QR Code เพื่อเข้าเว็บไซต์ O'Fresh ดูตำแหน่งตู้ใกล้บ้าน และสั่งน้ำส้มสดล่วงหน้า"
+         data-en="Scan to visit O'Fresh website — find machine locations, view menu and pre-order your fresh juice.">
+         สแกน QR Code เพื่อเข้าเว็บไซต์ O'Fresh ดูตำแหน่งตู้ใกล้บ้าน และสั่งน้ำส้มสดล่วงหน้า</p>
+      <div class="qr-url">ofresh.baanporjai.com</div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <p>🍊 O'Fresh · <span data-th="น้ำส้มคั้นสดอัตโนมัติ · เชียงใหม่" data-en="Fresh Orange Juice Machine · Chiang Mai">น้ำส้มคั้นสดอัตโนมัติ · เชียงใหม่</span><br>
+  <span data-th="ข้อมูล ณ " data-en="Data as of ">ข้อมูล ณ </span><span id="footerDate">—</span></p>
+</footer>
+
+<script>
+const SITE_URL = 'https://ofresh.baanporjai.com';
+const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT2h6ISFAScNWK3HZPsbNSrFkq_wNJN8AA0M00nvayMf2DcbVmnA51_BFGmMpCbX7Ig6NpP8WBA_blb/pub?output=csv';
+
+// ── LANG ──
+let currentLang = 'th';
+function setLang(lang) {
+  currentLang = lang;
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent === lang.toUpperCase()));
+  document.querySelectorAll('[data-th]').forEach(el => {
+    el.textContent = el.getAttribute(`data-${lang}`);
+  });
+  document.documentElement.lang = lang;
+  // Re-render dynamic content with new lang
+  if (window._lastRows) render(window._lastRows);
+}
+
+// ── QR CODE ──
+function buildQR() {
+  new QRCode(document.getElementById('qrBox'), {
+    text: SITE_URL,
+    width: 106, height: 106,
+    colorDark: '#1a0500', colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.M
+  });
+}
+
+// ── PARSE ──
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/\r/g,''));
+  const idx = n => headers.indexOf(n);
+  const iDt = idx('machineautime'), iPrice = idx('auvalue'), iPay = idx('card_type_desc');
+
+  function parseDate(s) {
+    if (!s) return null;
+    const [dp, tp] = s.trim().split(' ');
+    const [d,m,y] = dp.split('/').map(Number);
+    const [h,mn] = (tp||'0:0').split(':').map(Number);
+    if (!y) return null;
+    return new Date(y, m-1, d, h, mn||0);
+  }
+
+  return lines.slice(1).map(line => {
+    const v = line.split(',');
+    const g = i => (v[i]||'').trim().replace(/\r/g,'');
+    const dt = parseDate(g(iDt));
+    const price = parseFloat(g(iPrice))||0;
+    return { datetime: dt, price, payment: g(iPay)||'Other' };
+  }).filter(r => r.datetime && !isNaN(r.datetime) && r.price > 0);
+}
+
+// ── PAYMENT CONFIG ──
+const payConfig = {
+  th: {
+    'mobile phone':       { label: 'QR / Mobile Banking', emoji: '📱', color: '#a78bfa' },
+    'contactless reader': { label: 'บัตรไร้สัมผัส',        emoji: '💳', color: '#60a5fa' },
+    'contact reader':     { label: 'บัตรชิป',              emoji: '🏦', color: '#34d399' },
+    'magnetic card reader':{ label: 'บัตรแถบแม่เหล็ก',    emoji: '💰', color: '#f59e0b' },
+  },
+  en: {
+    'mobile phone':       { label: 'QR / Mobile Banking',  emoji: '📱', color: '#a78bfa' },
+    'contactless reader': { label: 'Contactless Card',      emoji: '💳', color: '#60a5fa' },
+    'contact reader':     { label: 'Chip Card',             emoji: '🏦', color: '#34d399' },
+    'magnetic card reader':{ label: 'Magnetic Card',        emoji: '💰', color: '#f59e0b' },
+  }
+};
+function payInfo(raw) {
+  const cfg = payConfig[currentLang] || payConfig.th;
+  return cfg[raw.toLowerCase()] || { label: raw, emoji: '💳', color: '#64748b' };
+}
+
+// ── RENDER ──
+function render(rows) {
+  window._lastRows = rows;
+  const N = rows.length;
+  const isTh = currentLang === 'th';
+
+  // Days
+  const daySet = new Set(rows.map(r => r.datetime.toDateString()));
+  const days = daySet.size;
+
+  // Best day
+  const dayCounts = {};
+  rows.forEach(r => {
+    const locale = isTh ? 'th-TH' : 'en-US';
+    const opts = isTh
+      ? { weekday:'long', day:'numeric', month:'long', year:'numeric' }
+      : { weekday:'short', month:'short', day:'numeric', year:'numeric' };
+    const k = r.datetime.toLocaleDateString(locale, opts);
+    dayCounts[k] = (dayCounts[k]||0) + 1;
+  });
+  const sortedDays = Object.entries(dayCounts).sort((a,b) => b[1]-a[1]);
+  const [bestDay, bestCount] = sortedDays[0] || ['—', 0];
+
+  // Hours
+  const hourCounts = Array(24).fill(0);
+  rows.forEach(r => hourCounts[r.datetime.getHours()]++);
+  const maxH = Math.max(...hourCounts);
+  const peakH = hourCounts.indexOf(maxH);
+
+  // Payment
+  const payCounts = {};
+  rows.forEach(r => payCounts[r.payment] = (payCounts[r.payment]||0)+1);
+  const sortedPay = Object.entries(payCounts).sort((a,b) => b[1]-a[1]);
+
+  // ── KPI ──
+  animateNum('totalCups', N);
+  animateNum('totalDays', days);
+  animateNum('peakDayCups', bestCount);
+  document.getElementById('peakHour').textContent = `${peakH}:00`;
+
+  // ── SPOTLIGHT ──
+  document.getElementById('spotlightDay').textContent = bestDay;
+  document.getElementById('spotlightSub').textContent = isTh
+    ? `ขายได้ถึง ${bestCount} แก้วในวันเดียว 🔥`
+    : `Sold ${bestCount} cups in a single day 🔥`;
+
+  // ── HEATMAP ──
+  const grid = document.getElementById('hourGrid');
+  grid.innerHTML = '';
+  hourCounts.forEach((cnt, h) => {
+    const p = maxH > 0 ? cnt/maxH : 0;
+    const cls = p >= .85 ? 'peak1' : p >= .55 ? 'peak2' : p >= .3 ? 'peak3' : '';
+    grid.innerHTML += `<div class="hour-cell ${cls}">
+      <div class="count">${cnt||''}</div>
+      <div class="lbl">${h}:00</div>
+    </div>`;
+  });
+  document.getElementById('peakHourLabel').textContent = isTh
+    ? `🔥 ยอดฮิต ${peakH}:00–${peakH+1}:00 (${maxH} แก้ว)`
+    : `🔥 Peak ${peakH}:00–${peakH+1}:00 (${maxH} cups)`;
+
+  // ── BEST DAYS ──
+  const top7 = sortedDays.slice(0,7);
+  const maxDay = top7[0]?.[1] || 1;
+  document.getElementById('dayList').innerHTML = top7.map(([day, cnt], i) => `
+    <div class="day-row">
+      <div class="day-label">${day}</div>
+      <div class="day-bar-wrap"><div class="day-bar ${i===0?'top':''}" style="width:${(cnt/maxDay*100).toFixed(1)}%"></div></div>
+      <div class="day-count">${cnt}</div>
+    </div>`).join('');
+
+  // ── PAYMENT ──
+  const maxPay = sortedPay[0]?.[1] || 1;
+  document.getElementById('payPills').innerHTML = sortedPay.map(([raw, cnt]) => {
+    const info = payInfo(raw);
+    return `<div class="pay-pill">
+      <div class="pay-emoji">${info.emoji}</div>
+      <div class="pay-info-wrap">
+        <div class="pay-name">${info.label}</div>
+        <div class="pay-bar-wrap">
+          <div class="pay-bar-fill" style="width:${(cnt/maxPay*100).toFixed(1)}%;background:${info.color}"></div>
+        </div>
+      </div>
+      <div class="pay-pct">${(cnt/N*100).toFixed(0)}%</div>
+    </div>`;
+  }).join('');
+
+  // ── TIMESTAMPS ──
+  const now = new Date();
+  const locale = isTh ? 'th-TH' : 'en-US';
+  const fmt = d => d.toLocaleString(locale, { dateStyle:'medium', timeStyle:'short' });
+  document.getElementById('lastUpdate').textContent = (isTh ? 'อัปเดต ' : 'Updated ') + fmt(now);
+  document.getElementById('footerDate').textContent = fmt(now);
+}
+
+// ── ANIMATE NUMBER ──
+function animateNum(id, target) {
+  const el = document.getElementById(id);
+  const dur = 1200, steps = 40, interval = dur / steps;
+  let step = 0;
+  const tick = () => {
+    step++;
+    const p = Math.min(step/steps, 1);
+    const ease = 1 - Math.pow(1-p, 3);
+    el.textContent = Math.round(ease*target).toLocaleString();
+    if (p < 1) setTimeout(tick, interval);
+  };
+  setTimeout(tick, 16);
+}
+
+// ── LOAD (cache วันละครั้ง) ──
+const CACHE_KEY = 'ofresh_csv_cache';
+
+async function load() {
+  try {
+    const today = new Date().toDateString();
+    const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
+
+    let rows;
+    if (cached && cached.date === today) {
+      // ใช้ cache ของวันนี้
+      rows = cached.rows.map(r => ({ ...r, datetime: new Date(r.datetime) }));
+    } else {
+      // โหลดใหม่ + บันทึก cache
+      const res = await fetch(SHEET_CSV_URL);
+      const text = await res.text();
+      rows = parseCSV(text);
+      localStorage.setItem(CACHE_KEY, JSON.stringify({ date: today, rows }));
+    }
+
+    render(rows);
+  } catch(e) {
+    document.getElementById('lastUpdate').textContent = currentLang === 'th' ? 'โหลดไม่สำเร็จ' : 'Load failed';
+    console.error(e);
+  } finally {
+    const el = document.getElementById('loading');
+    el.style.opacity = '0';
+    setTimeout(() => el.style.display = 'none', 500);
+  }
+}
+
+buildQR();
+load();
+</script>
+</body>
+</html>
