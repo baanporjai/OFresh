@@ -16,7 +16,7 @@
     <meta property="og:url" content="https://ofresh.baanporjai.com">
     <meta property="og:title" content="O'Fresh — น้ำส้มคั้นสดอัตโนมัติ 100% Natural">
     <meta property="og:description" content="คั้นสดทุกแก้วใน 30-45 วินาที ไม่ใส่น้ำตาล ไม่ผสมน้ำแข็ง ที่เซ็นทรัล เฟสติวัล เชียงใหม่ ชั้น 4">
-    <meta property="og:image" content="https://ofresh.baanporjai.com/Design/OFresh_Machine_Front.png">
+    <meta property="og:image" content="https://ofresh.baanporjai.com/OFresh_Machine_Front.png">
     <meta property="og:locale" content="th_TH">
     <meta property="og:site_name" content="O'Fresh">
 
@@ -24,7 +24,7 @@
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="O'Fresh — น้ำส้มคั้นสดอัตโนมัติ 100% Natural">
     <meta name="twitter:description" content="คั้นสดทุกแก้วใน 30-45 วินาที ไม่ใส่น้ำตาล ไม่ผสมน้ำแข็ง">
-    <meta name="twitter:image" content="https://ofresh.baanporjai.com/Design/OFresh_Machine_Front.png">
+    <meta name="twitter:image" content="https://ofresh.baanporjai.com/OFresh_Machine_Front.png">
 
     <!-- Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-5TYMW19MND"></script>
@@ -479,6 +479,33 @@
             .cta-content h2 { font-size: 28px; }
         }
 
+        /* ===== FAQ ===== */
+        .faq-item {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+            border: 1px solid rgba(255,107,0,0.08);
+            transition: box-shadow 0.3s;
+        }
+        .faq-item:hover { box-shadow: 0 8px 28px rgba(255,107,0,0.1); }
+        .faq-q {
+            width: 100%; background: none; border: none; cursor: pointer;
+            padding: 22px 28px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+            font-family: 'Prompt','Inter',sans-serif; font-size: 16px; font-weight: 600;
+            color: var(--text-dark); text-align: left; transition: color 0.3s;
+        }
+        .faq-q:hover { color: var(--orange-primary); }
+        .faq-icon { font-size: 14px; color: var(--orange-primary); flex-shrink: 0; transition: transform 0.3s; }
+        .faq-item.open .faq-icon { transform: rotate(180deg); }
+        .faq-a {
+            max-height: 0; overflow: hidden;
+            transition: max-height 0.4s ease, padding 0.3s;
+            padding: 0 28px;
+        }
+        .faq-item.open .faq-a { max-height: 200px; padding: 0 28px 20px; }
+        .faq-a p { font-size: 15px; color: var(--text-muted); line-height: 1.7; font-weight: 300; border-top: 1px solid rgba(0,0,0,0.06); padding-top: 16px; }
+
         /* ===== SCROLL ANIMATIONS ===== */
         .animate-on-scroll { opacity: 0; transform: translateY(30px); transition: all 0.7s ease-out; }
         .animate-on-scroll.animated { opacity: 1; transform: translateY(0); }
@@ -754,6 +781,74 @@
         </div>
     </section>
 
+    <!-- FAQ -->
+    <section class="section" id="faq" style="background:var(--off-white)">
+        <div class="section-header animate-on-scroll">
+            <div class="section-tag"><i class="fas fa-question-circle"></i> <span data-i18n="faq_tag">คำถามที่พบบ่อย</span></div>
+            <h2 data-i18n="faq_h2">มีข้อสงสัยไหม?</h2>
+            <p data-i18n="faq_p">รวมคำถามที่ลูกค้าถามบ่อยเกี่ยวกับ O'Fresh</p>
+        </div>
+        <div style="max-width:800px;margin:0 auto;display:flex;flex-direction:column;gap:16px">
+
+            <div class="faq-item animate-on-scroll">
+                <button class="faq-q" onclick="toggleFaq(this)">
+                    <span data-i18n="faq1_q">💰 ราคาแก้วละเท่าไหร่?</span>
+                    <i class="fas fa-chevron-down faq-icon"></i>
+                </button>
+                <div class="faq-a"><p data-i18n="faq1_a">ราคา 69 บาทต่อแก้ว (ปริมาณน้ำส้ม 280 ml) ชำระผ่าน QR Code หรือบัตรเครดิต/เดบิตได้เลย</p></div>
+            </div>
+
+            <div class="faq-item animate-on-scroll">
+                <button class="faq-q" onclick="toggleFaq(this)">
+                    <span data-i18n="faq2_q">📍 ตู้ตั้งอยู่ที่ไหน?</span>
+                    <i class="fas fa-chevron-down faq-icon"></i>
+                </button>
+                <div class="faq-a"><p data-i18n="faq2_a">ตู้ O'Fresh ตั้งอยู่ที่ห้างเซ็นทรัล เฟสติวัล เชียงใหม่ ชั้น 4 โซนศูนย์อาหาร เปิดให้บริการตลอด 24 ชั่วโมง</p></div>
+            </div>
+
+            <div class="faq-item animate-on-scroll">
+                <button class="faq-q" onclick="toggleFaq(this)">
+                    <span data-i18n="faq3_q">💳 ชำระเงินด้วยอะไรได้บ้าง?</span>
+                    <i class="fas fa-chevron-down faq-icon"></i>
+                </button>
+                <div class="faq-a"><p data-i18n="faq3_a">รองรับ QR Code / PromptPay, TrueMoney, WeChat Pay และบัตรเครดิต/เดบิต (VISA, Mastercard) ยังไม่รองรับ Google Wallet และ Apple Pay</p></div>
+            </div>
+
+            <div class="faq-item animate-on-scroll">
+                <button class="faq-q" onclick="toggleFaq(this)">
+                    <span data-i18n="faq4_q">⏱️ ดื่มได้นานแค่ไหน?</span>
+                    <i class="fas fa-chevron-down faq-icon"></i>
+                </button>
+                <div class="faq-a"><p data-i18n="faq4_a">ควรดื่มภายใน 2 ชั่วโมงหลังคั้น เพื่อรสชาติและคุณค่าทางโภชนาการที่ดีที่สุด เพราะเป็นน้ำส้มสดไม่มีสารกันบูด</p></div>
+            </div>
+
+            <div class="faq-item animate-on-scroll">
+                <button class="faq-q" onclick="toggleFaq(this)">
+                    <span data-i18n="faq5_q">🍊 ส้มใช้พันธุ์อะไร มาจากไหน?</span>
+                    <i class="fas fa-chevron-down faq-icon"></i>
+                </button>
+                <div class="faq-a"><p data-i18n="faq5_a">ใช้ส้มแมนดารินจากไต้หวัน คัดเกรดพรีเมียม หวานฉ่ำ อุดมด้วยวิตามินซี ควบคุมอุณหภูมิในตู้ที่ 3-9°C ตลอดเวลา</p></div>
+            </div>
+
+            <div class="faq-item animate-on-scroll">
+                <button class="faq-q" onclick="toggleFaq(this)">
+                    <span data-i18n="faq6_q">🚫 มีน้ำตาลหรือสารเจือปนไหม?</span>
+                    <i class="fas fa-chevron-down faq-icon"></i>
+                </button>
+                <div class="faq-a"><p data-i18n="faq6_a">ไม่มีเลยครับ — ไม่ใส่น้ำตาล ไม่ผสมน้ำแข็ง ไม่มีสารกันบูด ไม่มีสีผสมอาหาร เป็นน้ำส้มคั้นสด 100% ล้วนๆ</p></div>
+            </div>
+
+            <div class="faq-item animate-on-scroll">
+                <button class="faq-q" onclick="toggleFaq(this)">
+                    <span data-i18n="faq7_q">⚙️ ถ้าตู้มีปัญหา ติดต่อใคร?</span>
+                    <i class="fas fa-chevron-down faq-icon"></i>
+                </button>
+                <div class="faq-a"><p data-i18n="faq7_a">ติดต่อได้ที่ โทร 087-986-7000 หรือ LINE @ofresh ทีมงานพร้อมช่วยเหลือทุกวันครับ</p></div>
+            </div>
+
+        </div>
+    </section>
+
     <!-- CTA -->
     <section class="cta-section" id="contact">
         <div class="cta-content animate-on-scroll">
@@ -850,6 +945,14 @@ Temperature kept within 3-9°C</p>
                 if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
             });
         });
+
+        // FAQ toggle
+        function toggleFaq(btn) {
+            const item = btn.closest('.faq-item');
+            const isOpen = item.classList.contains('open');
+            document.querySelectorAll('.faq-item.open').forEach(el => el.classList.remove('open'));
+            if (!isOpen) item.classList.add('open');
+        }
 
         // Init language
         initI18n();
