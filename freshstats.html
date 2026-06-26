@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>O'Fresh — Numbers Don't Lie</title>
 <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
@@ -45,7 +44,7 @@ body::before {
   position: relative; z-index: 1;
   text-align: center; padding: 72px 24px 40px;
 }
-.hero-logo { font-size: 3.2rem; margin-bottom: 8px; }
+.hero-logo-img { height: 80px; width: auto; display: block; margin: 0 auto 12px; filter: drop-shadow(0 0 16px rgba(255,107,0,.4)); }
 .hero h1 {
   font-size: clamp(1.5rem, 4vw, 2.6rem);
   font-weight: 900; letter-spacing: -1px;
@@ -169,36 +168,6 @@ body::before {
 .spotlight-day { font-size: clamp(1.2rem, 3vw, 2rem); font-weight: 900; color: #FFD700; margin: 4px 0; }
 .spotlight-sub { font-size: .88rem; color: rgba(255,255,255,.5); }
 
-/* ── QR CARD ── */
-.qr-card {
-  background: rgba(255,255,255,.04);
-  border: 1px solid rgba(255,255,255,.08);
-  border-radius: 20px; padding: 32px;
-  backdrop-filter: blur(12px);
-  display: flex; align-items: center; gap: 32px;
-  flex-wrap: wrap; margin-bottom: 20px;
-}
-.qr-box {
-  background: #fff; border-radius: 16px;
-  padding: 12px; flex-shrink: 0;
-  width: 130px; height: 130px;
-  display: flex; align-items: center; justify-content: center;
-}
-.qr-box canvas, .qr-box img { max-width: 100%; max-height: 100%; display: block; }
-.qr-text { flex: 1; min-width: 200px; }
-.qr-text h3 {
-  font-size: 1.2rem; font-weight: 800;
-  background: linear-gradient(135deg,#FF9A3C,#FFD700);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-  margin-bottom: 8px;
-}
-.qr-text p { font-size: .88rem; color: rgba(255,255,255,.45); line-height: 1.6; }
-.qr-url {
-  display: inline-block; margin-top: 10px;
-  font-size: .78rem; color: #FF9A3C; font-weight: 600;
-  background: rgba(255,107,0,.1); padding: 4px 12px; border-radius: 20px;
-  border: 1px solid rgba(255,107,0,.2);
-}
 
 /* ── FOOTER ── */
 footer {
@@ -234,8 +203,8 @@ footer {
 
 <!-- HERO -->
 <div class="hero">
-  <div class="hero-logo">🍊</div>
-  <h1 data-th="O'Fresh — ตัวเลขที่พูดแทนเรา" data-en="O'Fresh — Numbers Don't Lie">O'Fresh — ตัวเลขที่พูดแทนเรา</h1>
+  <img src="OFresh/OFresh_Logo_transparent.png" alt="O'Fresh" class="hero-logo-img">
+  <h1 data-th="ตัวเลขที่พูดแทนเรา" data-en="Numbers Don't Lie">ตัวเลขที่พูดแทนเรา</h1>
   <p data-th="สถิติจริง · อัปเดตอัตโนมัติ · น้ำส้มคั้นสดอัตโนมัติ เชียงใหม่"
      data-en="Real data · Auto-updated · Fresh Orange Juice Machine · Chiang Mai">
      สถิติจริง · อัปเดตอัตโนมัติ · น้ำส้มคั้นสดอัตโนมัติ เชียงใหม่</p>
@@ -309,17 +278,6 @@ footer {
     </div>
   </div>
 
-  <!-- QR CODE -->
-  <div class="qr-card">
-    <div class="qr-box" id="qrBox"></div>
-    <div class="qr-text">
-      <h3 data-th="สแกนเพื่อสั่งล่วงหน้า & ดูเมนู" data-en="Scan to Pre-order & View Menu">สแกนเพื่อสั่งล่วงหน้า & ดูเมนู</h3>
-      <p data-th="สแกน QR Code เพื่อเข้าเว็บไซต์ O'Fresh ดูตำแหน่งตู้ใกล้บ้าน และสั่งน้ำส้มสดล่วงหน้า"
-         data-en="Scan to visit O'Fresh website — find machine locations, view menu and pre-order your fresh juice.">
-         สแกน QR Code เพื่อเข้าเว็บไซต์ O'Fresh ดูตำแหน่งตู้ใกล้บ้าน และสั่งน้ำส้มสดล่วงหน้า</p>
-      <div class="qr-url">ofresh.baanporjai.com</div>
-    </div>
-  </div>
 
 </div>
 
@@ -541,7 +499,6 @@ async function load() {
   }
 }
 
-buildQR();
 load();
 </script>
 </body>
