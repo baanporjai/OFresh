@@ -203,7 +203,7 @@ footer {
 
 <!-- HERO -->
 <div class="hero">
-  <img src="OFresh_Logo_transparent.png" alt="O'Fresh" class="hero-logo-img">
+  <img src="OFresh/OFresh_Logo_transparent.png" alt="O'Fresh" class="hero-logo-img">
   <h1 data-th="ตัวเลขที่พูดแทนเรา" data-en="Numbers Don't Lie">ตัวเลขที่พูดแทนเรา</h1>
   <p data-th="สถิติจริง · อัปเดตอัตโนมัติ · น้ำส้มคั้นสดอัตโนมัติ เชียงใหม่"
      data-en="Real data · Auto-updated · Fresh Orange Juice Machine · Chiang Mai">
@@ -446,11 +446,11 @@ function render(rows) {
   }).join('');
 
   // ── TIMESTAMPS ──
-  const now = new Date();
   const locale = isTh ? 'th-TH' : 'en-US';
   const fmt = d => d.toLocaleString(locale, { dateStyle:'medium', timeStyle:'short' });
-  document.getElementById('lastUpdate').textContent = (isTh ? 'อัปเดต ' : 'Updated ') + fmt(now);
-  document.getElementById('footerDate').textContent = fmt(now);
+  const latestTx = rows.reduce((max, r) => r.datetime > max ? r.datetime : max, rows[0].datetime);
+  document.getElementById('lastUpdate').textContent = (isTh ? 'ลูกค้ากดล่าสุด ' : 'Last order ') + fmt(latestTx);
+  document.getElementById('footerDate').textContent = fmt(latestTx);
 }
 
 // ── ANIMATE NUMBER ──
