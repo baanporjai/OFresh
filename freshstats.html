@@ -203,7 +203,7 @@ footer {
 
 <!-- HERO -->
 <div class="hero">
-  <img src="OFresh_Logo_transparent.png" alt="O'Fresh" class="hero-logo-img">
+  <img src="OFresh/OFresh_Logo_transparent.png" alt="O'Fresh" class="hero-logo-img">
   <h1 data-th="ตัวเลขที่พูดแทนเรา" data-en="Numbers Don't Lie">ตัวเลขที่พูดแทนเรา</h1>
   <p data-th="สถิติจริง · อัปเดตอัตโนมัติ · น้ำส้มคั้นสดอัตโนมัติ เชียงใหม่"
      data-en="Real data · Auto-updated · Fresh Orange Juice Machine · Chiang Mai">
@@ -470,22 +470,23 @@ function animateNum(id, target) {
 
 // ── LOAD (cache วันละครั้ง) ──
 const CACHE_KEY = 'ofresh_csv_cache';
+const CACHE_TTL_MS = 60 * 60 * 1000; // cache 1 ชั่วโมง
 
 async function load() {
   try {
-    const today = new Date().toDateString();
+    const now = Date.now();
     const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
 
     let rows;
-    if (cached && cached.date === today) {
-      // ใช้ cache ของวันนี้
+    if (cached && (now - cached.ts) < CACHE_TTL_MS) {
+      // ใช้ cache ถ้าไม่เกิน 1 ชั่วโมง
       rows = cached.rows.map(r => ({ ...r, datetime: new Date(r.datetime) }));
     } else {
-      // โหลดใหม่ + บันทึก cache
-      const res = await fetch(SHEET_CSV_URL);
+      // โหลดใหม่ + bypass Google cache + บันทึก cache
+      const res = await fetch(SHEET_CSV_URL + '&t=' + now);
       const text = await res.text();
       rows = parseCSV(text);
-      localStorage.setItem(CACHE_KEY, JSON.stringify({ date: today, rows }));
+      localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: now, rows }));
     }
 
     render(rows);
