@@ -773,8 +773,10 @@
             .freshness-visual { margin-right: 0; }
             .howto-steps::before { left: 32px; }
             .step { -webkit-flex-wrap: wrap; flex-wrap: wrap; }
+            /* วงเลขขึ้นก่อนเสมอ (ซ้าย) ทุก step */
+            .step-number-wrap { -webkit-order: -1; order: -1; }
             .step-content-left,
-            .step-content-right { -webkit-flex: 1 1 200px; flex: 1 1 200px; text-align: left; padding: 0 0 0 20px; }
+            .step-content-right { -webkit-flex: 1 1 200px; flex: 1 1 200px; text-align: left; padding: 0 0 0 20px; -webkit-order: 0; order: 0; }
             .step-visual-left,
             .step-visual-right { display: none; }
         }
@@ -1195,18 +1197,6 @@
                 <div class="faq-a"><p data-i18n="faq7_a">ติดต่อได้ที่ โทร 087-986-7000 หรือ LINE @ofresh ทีมงานพร้อมช่วยเหลือทุกวันครับ</p></div>
             </div>
 
-        </div>
-    </section>
-
-    <!-- CTA -->
-    <section class="cta-section" id="contact">
-        <div class="cta-content animate-on-scroll">
-            <h2 data-i18n="cta_h2">พร้อมลิ้มรสน้ำส้มคั้นสดแท้?</h2>
-            <p data-i18n="cta_p">ตอนนี้ ตู้ตั้งอยู่ที่ห้างเซ็นทรัล เฟสติวัล เชียงใหม่ ชั้น 4 โซนศูนย์อาหาร มาสัมผัสความสดใหม่ในทุกแก้ว</p>
-            <a href="https://www.google.com/maps/search/?api=1&query=CentralFestival+Chiang+Mai&query_place_id=ChIJAw6GHDQl2jAROD6koPXaeQQ" target="_blank" class="btn-white">
-                <i class="fas fa-map-marker-alt"></i>
-                <span data-i18n="cta_btn">นำทางไปยังตู้ O'Fresh</span>
-            </a>
         </div>
     </section>
 
