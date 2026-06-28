@@ -323,8 +323,17 @@
             }
         };
 
+        // localStorage wrapper — ป้องกัน SecurityError บน Android WebView
+        function getLang() {
+            try { return localStorage.getItem('ofresh_lang') || 'th'; } catch (e) { return 'th'; }
+        }
+        function setLang(lang) {
+            try { localStorage.setItem('ofresh_lang', lang); } catch (e) {}
+        }
+
         function applyLang(lang) {
             var t = i18n[lang] || i18n['th'];
+
             document.getElementById('txt-title').innerHTML    = t.title;
             document.getElementById('txt-subtitle').innerHTML = t.subtitle;
             document.getElementById('txt-step1').innerHTML    = t.step1;
@@ -333,12 +342,17 @@
             document.getElementById('txt-footer').innerHTML   = t.footer;
             document.getElementById('txt-back').innerHTML     = t.back;
 
+            // ใช้ add/remove แทน toggle(force) เพราะ force argument มีปัญหาบน WebView บางรุ่น
             var btns = document.querySelectorAll('.lang-btn');
             for (var i = 0; i < btns.length; i++) {
-                btns[i].classList.toggle('active', btns[i].getAttribute('data-lang') === lang);
+                if (btns[i].getAttribute('data-lang') === lang) {
+                    btns[i].classList.add('active');
+                } else {
+                    btns[i].classList.remove('active');
+                }
             }
 
-            localStorage.setItem('ofresh_lang', lang);
+            setLang(lang);
             document.documentElement.lang = lang === 'zh' ? 'zh-CN' : lang;
         }
 
@@ -364,8 +378,7 @@
 
         function init() {
             generateQR();
-            var saved = localStorage.getItem('ofresh_lang') || 'th';
-            applyLang(saved);
+            applyLang(getLang());
         }
 
         if (document.readyState === 'loading') {

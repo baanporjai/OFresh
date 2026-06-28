@@ -1320,6 +1320,62 @@ Temperature kept within 3-9°C</p>
 
         // Init language
         initI18n();
+
+        // ===== AUTO SCROLL =====
+        var scrollSpeed    = 2;      // px ต่อ tick
+        var scrollInterval = 20;     // ms ต่อ tick (~50fps)
+        var resumeDelay    = 3000;   // ms รอหลังแตะก่อน resume
+        var autoScrollTimer = null;
+        var resumeTimer     = null;
+        var isScrolling     = false;
+
+        function startAutoScroll() {
+            if (isScrolling) return;
+            isScrolling = true;
+            autoScrollTimer = setInterval(function() {
+                var atBottom = (window.innerHeight + window.scrollY) >= document.body.scrollHeight - 2;
+                if (atBottom) {
+                    // ถึงล่างสุด — กลับขึ้นบนแล้วเริ่มใหม่
+                    window.scrollTo(0, 0);
+                } else {
+                    window.scrollBy(0, scrollSpeed);
+                }
+            }, scrollInterval);
+        }
+
+        function stopAutoScroll() {
+            isScrolling = false;
+            clearInterval(autoScrollTimer);
+            autoScrollTimer = null;
+        }
+
+        function onUserTouch() {
+            stopAutoScroll();
+            clearTimeout(resumeTimer);
+            // resume หลัง 3 วินาทีถ้าไม่มีการแตะอีก
+            resumeTimer = setTimeout(startAutoScroll, resumeDelay);
+        }
+
+        document.addEventListener('touchstart', onUserTouch);
+        document.addEventListener('mousedown',  onUserTouch);
+
+        // เริ่ม auto scroll หลังโหลดหน้าเสร็จ 1 วินาที
+        setTimeout(startAutoScroll, 1000);
+
+        // ===== AUTO RESET LANGUAGE TO THAI AFTER 2 MIN IDLE =====
+        var langResetTimer = null;
+
+        function resetLangTimer() {
+            clearTimeout(langResetTimer);
+            langResetTimer = setTimeout(function() {
+                applyLanguage('th');
+            }, 2 * 60 * 1000);
+        }
+
+        document.addEventListener('touchstart', resetLangTimer);
+        document.addEventListener('mousedown',  resetLangTimer);
+
+        resetLangTimer(); // เริ่มนับตั้งแต่โหลดหน้า
     </script>
 </body>
 </html>

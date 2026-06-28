@@ -803,24 +803,39 @@ const translations = {
 };
 
 function applyLanguage(lang) {
-  const t = translations[lang];
+  var t = translations[lang];
   if (!t) return;
-  document.querySelectorAll('[data-i18n]').forEach(el => {
-    const key = el.getAttribute('data-i18n');
-    if (t[key] !== undefined) el.innerHTML = t[key];
-  });
-  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-    const key = el.getAttribute('data-i18n-placeholder');
-    if (t[key] !== undefined) el.placeholder = t[key];
-  });
-  localStorage.setItem('ofresh_lang', lang);
-  document.querySelectorAll('.lang-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.lang === lang);
-  });
+
+  var i18nEls = document.querySelectorAll('[data-i18n]');
+  for (var i = 0; i < i18nEls.length; i++) {
+    var key = i18nEls[i].getAttribute('data-i18n');
+    if (t[key] !== undefined) i18nEls[i].innerHTML = t[key];
+  }
+
+  var placeholderEls = document.querySelectorAll('[data-i18n-placeholder]');
+  for (var j = 0; j < placeholderEls.length; j++) {
+    var pkey = placeholderEls[j].getAttribute('data-i18n-placeholder');
+    if (t[pkey] !== undefined) placeholderEls[j].placeholder = t[pkey];
+  }
+
+  // ป้องกัน SecurityError บน Android WebView
+  try { localStorage.setItem('ofresh_lang', lang); } catch (e) {}
+
+  // ใช้ add/remove แทน toggle(force) เพราะ force argument มีปัญหาบน WebView บางรุ่น
+  var btns = document.querySelectorAll('.lang-btn');
+  for (var k = 0; k < btns.length; k++) {
+    if (btns[k].getAttribute('data-lang') === lang) {
+      btns[k].classList.add('active');
+    } else {
+      btns[k].classList.remove('active');
+    }
+  }
+
   document.documentElement.lang = lang === 'zh' ? 'zh-CN' : lang;
 }
 
 function initI18n() {
-  const saved = localStorage.getItem('ofresh_lang') || 'th';
+  var saved = 'th';
+  try { saved = localStorage.getItem('ofresh_lang') || 'th'; } catch (e) {}
   applyLanguage(saved);
 }
