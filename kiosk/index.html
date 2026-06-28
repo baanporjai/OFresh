@@ -40,7 +40,8 @@
     <link rel="shortcut icon" type="image/x-icon" href="../favicon.ico">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800;900&family=Noto+Sans+Thai:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <style>
+    <link rel="stylesheet" href="kiosk.css">
+    <style><!-- legacy inline CSS below — will be removed once kiosk.css is confirmed working -->
         /* ===================================================
            Android 9 / Chromium ~67 Compatible CSS
            - No CSS custom properties (var)
@@ -52,13 +53,42 @@
         =================================================== */
 
         * { margin: 0; padding: 0; -webkit-box-sizing: border-box; box-sizing: border-box; }
-        html { scroll-behavior: smooth; }
+        html, body {
+            overflow: hidden;
+            height: 100%;
+        }
         body {
             font-family: 'Prompt', 'Noto Sans Thai', 'Sarabun', Arial, sans-serif;
             color: #2D2D2D;
-            overflow-x: hidden;
             background: #FFFFFF;
             -webkit-text-size-adjust: 100%;
+        }
+
+        /* ===== CSS AUTO-SCROLL (ไม่ต้อง JS) ===== */
+        .scroll-wrapper {
+            -webkit-animation: kiosk-scroll 120s linear infinite;
+            animation: kiosk-scroll 120s linear infinite;
+            -webkit-transform-origin: top center;
+            transform-origin: top center;
+        }
+        /* แตะค้าง → หยุด, ปล่อย → เลื่อนต่อ */
+        .scroll-wrapper:active {
+            -webkit-animation-play-state: paused;
+            animation-play-state: paused;
+        }
+        @-webkit-keyframes kiosk-scroll {
+            0%      { -webkit-transform: translateY(0); transform: translateY(0); }
+            83%     { -webkit-transform: translateY(calc(-100% + 100vh)); transform: translateY(calc(-100% + 100vh)); }
+            91.6%   { -webkit-transform: translateY(calc(-100% + 100vh)); transform: translateY(calc(-100% + 100vh)); }
+            91.7%   { -webkit-transform: translateY(0); transform: translateY(0); }
+            100%    { -webkit-transform: translateY(0); transform: translateY(0); }
+        }
+        @keyframes kiosk-scroll {
+            0%      { -webkit-transform: translateY(0); transform: translateY(0); }
+            83%     { -webkit-transform: translateY(calc(-100% + 100vh)); transform: translateY(calc(-100% + 100vh)); }
+            91.6%   { -webkit-transform: translateY(calc(-100% + 100vh)); transform: translateY(calc(-100% + 100vh)); }
+            91.7%   { -webkit-transform: translateY(0); transform: translateY(0); }
+            100%    { -webkit-transform: translateY(0); transform: translateY(0); }
         }
 
         /* ===== NAVBAR ===== */
@@ -137,6 +167,9 @@
         }
         .lang-switcher .lang-btn { margin-right: 0; }
         .lang-btn {
+            display: -webkit-inline-flex;
+            display: inline-flex;
+            text-decoration: none;
             background: none; border: none; cursor: pointer;
             font-size: 13px; font-weight: 600; padding: 5px 10px;
             border-radius: 50px; color: #6B7280;
@@ -820,30 +853,24 @@
         .faq-item:last-child { margin-bottom: 0; }
         .faq-item:hover { box-shadow: 0 8px 28px rgba(255,107,0,0.1); }
         .faq-q {
-            width: 100%; background: none; border: none; cursor: pointer;
+            width: 100%; background: none; border: none; cursor: default;
             padding: 22px 28px;
             display: -webkit-flex;
             display: flex;
             -webkit-align-items: center;
             align-items: center;
-            -webkit-justify-content: space-between;
-            justify-content: space-between;
             font-family: 'Prompt', 'Noto Sans Thai', Arial, sans-serif;
             font-size: 16px; font-weight: 600;
             color: #2D2D2D; text-align: left;
-            -webkit-transition: color 0.3s;
-            transition: color 0.3s;
         }
-        .faq-q:hover { color: #FF6B00; }
-        .faq-icon { font-size: 14px; color: #FF6B00; -webkit-flex-shrink: 0; flex-shrink: 0; margin-left: 16px; -webkit-transition: -webkit-transform 0.3s; transition: transform 0.3s; }
-        .faq-item.open .faq-icon { -webkit-transform: rotate(180deg); transform: rotate(180deg); }
+        /* ซ่อน chevron icon เพราะไม่มี accordion แล้ว */
+        .faq-icon { display: none; }
+        /* โชว์คำตอบทุกข้อตลอดเวลา ไม่ต้องกด */
         .faq-a {
-            max-height: 0; overflow: hidden;
-            -webkit-transition: max-height 0.4s ease, padding 0.3s;
-            transition: max-height 0.4s ease, padding 0.3s;
-            padding: 0 28px;
+            max-height: none;
+            overflow: visible;
+            padding: 0 28px 20px;
         }
-        .faq-item.open .faq-a { max-height: 200px; padding: 0 28px 20px; }
         .faq-a p { font-size: 15px; color: #6B7280; line-height: 1.7; font-weight: 300; border-top: 1px solid rgba(0,0,0,0.06); padding-top: 16px; }
 
         /* ===== SCROLL ANIMATIONS ===== */
@@ -875,11 +902,11 @@
         </ul>
         <div class="nav-right">
             <div class="lang-switcher">
-                <button class="lang-btn active" data-lang="th" onclick="applyLanguage('th')">TH</button>
-                <button class="lang-btn" data-lang="en" onclick="applyLanguage('en')">EN</button>
-                <button class="lang-btn" data-lang="zh" onclick="applyLanguage('zh')">中文</button>
-                <button class="lang-btn" data-lang="ja" onclick="applyLanguage('ja')">日本語</button>
-                <button class="lang-btn" data-lang="ko" onclick="applyLanguage('ko')">한국어</button>
+                <a href="index.html" class="lang-btn active">TH</a>
+                <a href="index-en.html" class="lang-btn">EN</a>
+                <a href="index-zh.html" class="lang-btn">中文</a>
+                <a href="index-ja.html" class="lang-btn">日本語</a>
+                <a href="index-ko.html" class="lang-btn">한국어</a>
             </div>
             <button class="mobile-toggle" onclick="toggleNav()" aria-label="Toggle menu">
                 <i class="fas fa-bars"></i>
@@ -887,6 +914,7 @@
         </div>
     </nav>
 
+    <div class="scroll-wrapper">
     <!-- HERO -->
     <section class="hero" id="home">
         <div class="hero-bg-circles">
@@ -1248,162 +1276,6 @@ Temperature kept within 3-9°C</p>
             <span data-i18n="footer_copy">&copy; 2026 O'Fresh. All rights reserved. น้ำส้มคั้นสดอัตโนมัติ</span>
         </div>
     </footer>
-
-    <!-- JS diagnostic: ถ้า JS ทำงาน จะเปลี่ยนเป็น "JS ✓" -->
-    <div id="js-test" style="position:fixed;bottom:6px;right:8px;font-size:11px;font-weight:bold;color:#ff6b00;z-index:9999;background:rgba(255,255,255,0.8);padding:2px 6px;border-radius:4px">JS ✗</div>
-
-    <script src="i18n.js"></script>
-    <script>
-        document.getElementById('js-test').textContent = 'JS ✓';
-        // Navbar scroll effect — no arrow functions (use regular function)
-        window.addEventListener('scroll', function() {
-            var navbar = document.getElementById('navbar');
-            if ((window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0) > 50) {
-                navbar.classList.add('scrolled');
-            } else {
-                navbar.classList.remove('scrolled');
-            }
-        });
-
-        // Mobile nav toggle
-        function toggleNav() {
-            document.getElementById('navLinks').classList.toggle('active');
-        }
-
-        var navLinkEls = document.querySelectorAll('.nav-links a');
-        for (var i = 0; i < navLinkEls.length; i++) {
-            navLinkEls[i].addEventListener('click', function() {
-                document.getElementById('navLinks').classList.remove('active');
-            });
-        }
-
-        // Scroll animations — guard with IntersectionObserver feature check
-        if ('IntersectionObserver' in window) {
-            // Mark body so CSS can apply the hidden-by-default state
-            document.documentElement.classList.add('io-supported');
-
-            var observer = new IntersectionObserver(function(entries) {
-                for (var j = 0; j < entries.length; j++) {
-                    if (entries[j].isIntersecting) {
-                        entries[j].target.classList.add('animated');
-                    }
-                }
-            }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
-
-            var animEls = document.querySelectorAll('.animate-on-scroll');
-            for (var k = 0; k < animEls.length; k++) {
-                observer.observe(animEls[k]);
-            }
-        }
-        // If IntersectionObserver not supported: elements remain visible (opacity:1 by default CSS)
-
-        // Smooth scroll fallback
-        var anchorLinks = document.querySelectorAll('a[href^="#"]');
-        for (var m = 0; m < anchorLinks.length; m++) {
-            anchorLinks[m].addEventListener('click', function(e) {
-                var href = this.getAttribute('href');
-                if (href === '#') return;
-                e.preventDefault();
-                var target = document.querySelector(href);
-                if (target) {
-                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-            });
-        }
-
-        // FAQ toggle
-        function toggleFaq(btn) {
-            var item = btn.parentElement;
-            var isOpen = item.classList.contains('open');
-            var allOpen = document.querySelectorAll('.faq-item.open');
-            for (var n = 0; n < allOpen.length; n++) {
-                allOpen[n].classList.remove('open');
-            }
-            if (!isOpen) item.classList.add('open');
-        }
-
-        // Init language — ห่อ try/catch ป้องกัน error ทำให้ script หยุด
-        try { initI18n(); } catch(e) {}
-
-        // ===== AUTO SCROLL =====
-        var scrollSpeed    = 2;      // px ต่อ tick
-        var scrollInterval = 20;     // ms ต่อ tick (~50fps)
-        var resumeDelay    = 3000;   // ms รอหลังแตะก่อน resume
-        var autoScrollTimer = null;
-        var resumeTimer     = null;
-        var isScrolling     = false;
-        var reloadPending   = false;
-
-        // helper: อ่านและเขียน scrollTop แบบ cross-browser สำหรับ Android WebView
-        function getScrollTop() {
-            return window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
-        }
-        function setScrollTop(val) {
-            document.documentElement.scrollTop = val;
-            document.body.scrollTop = val;
-        }
-
-        function startAutoScroll() {
-            if (isScrolling) return;
-            isScrolling = true;
-            autoScrollTimer = setInterval(function() {
-                var scrollTop  = getScrollTop();
-                var viewHeight = window.innerHeight || document.documentElement.clientHeight;
-                var pageHeight = Math.max(
-                    document.body.scrollHeight,
-                    document.documentElement.scrollHeight,
-                    document.body.offsetHeight,
-                    document.documentElement.offsetHeight
-                );
-                var atBottom = scrollTop + viewHeight >= pageHeight - 50;
-                if (atBottom && !reloadPending) {
-                    reloadPending = true;
-                    stopAutoScroll();
-                    window.scrollTo(0, 0);
-                    setScrollTop(0);
-                    setTimeout(function() {
-                        // ใช้ href แทน reload() เพราะ WebView บาง version block reload()
-                        window.location.href = window.location.href;
-                    }, 10 * 1000);
-                } else {
-                    setScrollTop(scrollTop + scrollSpeed);
-                }
-            }, scrollInterval);
-        }
-
-        function stopAutoScroll() {
-            isScrolling = false;
-            clearInterval(autoScrollTimer);
-            autoScrollTimer = null;
-        }
-
-        function onUserTouch() {
-            stopAutoScroll();
-            clearTimeout(resumeTimer);
-            // resume หลัง 3 วินาทีถ้าไม่มีการแตะอีก
-            resumeTimer = setTimeout(startAutoScroll, resumeDelay);
-        }
-
-        document.addEventListener('touchstart', onUserTouch);
-        document.addEventListener('mousedown',  onUserTouch);
-
-        // เริ่ม auto scroll หลังโหลดหน้าเสร็จ 1 วินาที
-        setTimeout(startAutoScroll, 1000);
-
-        // ===== AUTO RESET LANGUAGE TO THAI AFTER 2 MIN IDLE =====
-        var langResetTimer = null;
-
-        function resetLangTimer() {
-            clearTimeout(langResetTimer);
-            langResetTimer = setTimeout(function() {
-                applyLanguage('th');
-            }, 2 * 60 * 1000);
-        }
-
-        document.addEventListener('touchstart', resetLangTimer);
-        document.addEventListener('mousedown',  resetLangTimer);
-
-        resetLangTimer(); // เริ่มนับตั้งแต่โหลดหน้า
-    </script>
+    </div><!-- end scroll-wrapper -->
 </body>
 </html>
