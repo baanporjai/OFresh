@@ -1249,8 +1249,12 @@ Temperature kept within 3-9°C</p>
         </div>
     </footer>
 
+    <!-- JS diagnostic: ถ้า JS ทำงาน จะเปลี่ยนเป็น "JS ✓" -->
+    <div id="js-test" style="position:fixed;bottom:6px;right:8px;font-size:11px;font-weight:bold;color:#ff6b00;z-index:9999;background:rgba(255,255,255,0.8);padding:2px 6px;border-radius:4px">JS ✗</div>
+
     <script src="i18n.js"></script>
     <script>
+        document.getElementById('js-test').textContent = 'JS ✓';
         // Navbar scroll effect — no arrow functions (use regular function)
         window.addEventListener('scroll', function() {
             var navbar = document.getElementById('navbar');
