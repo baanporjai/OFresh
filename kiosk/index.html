@@ -1328,6 +1328,7 @@ Temperature kept within 3-9°C</p>
         var autoScrollTimer = null;
         var resumeTimer     = null;
         var isScrolling     = false;
+        var reloadPending   = false;
 
         // helper: อ่านและเขียน scrollTop แบบ cross-browser สำหรับ Android WebView
         function getScrollTop() {
@@ -1351,10 +1352,15 @@ Temperature kept within 3-9°C</p>
                     document.documentElement.offsetHeight
                 );
                 var atBottom = scrollTop + viewHeight >= pageHeight - 50;
-                if (atBottom) {
-                    // กลับขึ้นบนสุดด้วยทุกวิธีเพื่อให้ชัวร์บน Android WebView
+                if (atBottom && !reloadPending) {
+                    reloadPending = true;
+                    stopAutoScroll();
                     window.scrollTo(0, 0);
                     setScrollTop(0);
+                    setTimeout(function() {
+                        // ใช้ href แทน reload() เพราะ WebView บาง version block reload()
+                        window.location.href = window.location.href;
+                    }, 10 * 1000);
                 } else {
                     setScrollTop(scrollTop + scrollSpeed);
                 }
