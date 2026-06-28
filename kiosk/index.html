@@ -1254,7 +1254,7 @@ Temperature kept within 3-9°C</p>
         // Navbar scroll effect — no arrow functions (use regular function)
         window.addEventListener('scroll', function() {
             var navbar = document.getElementById('navbar');
-            if (window.scrollY > 50) {
+            if ((window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0) > 50) {
                 navbar.classList.add('scrolled');
             } else {
                 navbar.classList.remove('scrolled');
@@ -1318,8 +1318,8 @@ Temperature kept within 3-9°C</p>
             if (!isOpen) item.classList.add('open');
         }
 
-        // Init language
-        initI18n();
+        // Init language — ห่อ try/catch ป้องกัน error ทำให้ script หยุด
+        try { initI18n(); } catch(e) {}
 
         // ===== AUTO SCROLL =====
         var scrollSpeed    = 2;      // px ต่อ tick
@@ -1329,16 +1329,34 @@ Temperature kept within 3-9°C</p>
         var resumeTimer     = null;
         var isScrolling     = false;
 
+        // helper: อ่านและเขียน scrollTop แบบ cross-browser สำหรับ Android WebView
+        function getScrollTop() {
+            return window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+        }
+        function setScrollTop(val) {
+            document.documentElement.scrollTop = val;
+            document.body.scrollTop = val;
+        }
+
         function startAutoScroll() {
             if (isScrolling) return;
             isScrolling = true;
             autoScrollTimer = setInterval(function() {
-                var atBottom = (window.innerHeight + window.scrollY) >= document.body.scrollHeight - 2;
+                var scrollTop  = getScrollTop();
+                var viewHeight = window.innerHeight || document.documentElement.clientHeight;
+                var pageHeight = Math.max(
+                    document.body.scrollHeight,
+                    document.documentElement.scrollHeight,
+                    document.body.offsetHeight,
+                    document.documentElement.offsetHeight
+                );
+                var atBottom = scrollTop + viewHeight >= pageHeight - 50;
                 if (atBottom) {
-                    // ถึงล่างสุด — กลับขึ้นบนแล้วเริ่มใหม่
+                    // กลับขึ้นบนสุดด้วยทุกวิธีเพื่อให้ชัวร์บน Android WebView
                     window.scrollTo(0, 0);
+                    setScrollTop(0);
                 } else {
-                    window.scrollBy(0, scrollSpeed);
+                    setScrollTop(scrollTop + scrollSpeed);
                 }
             }, scrollInterval);
         }
