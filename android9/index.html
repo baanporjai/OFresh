@@ -1,0 +1,1335 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>ตู้น้ำส้มคั้นสด O'Fresh | น้ำส้มคั้นสดอัตโนมัติ</title>
+
+    <!-- SEO -->
+    <meta name="description" content="น้ำส้มคั้นสดใหม่ทุกแก้ว ไม่มีน้ำตาลเพิ่ม สะอาด ราคาไม่แพง หาตู้ O'Fresh ใกล้บ้านคุณในเชียงใหม่ได้เลย">
+    <meta name="keywords" content="ตู้น้ำส้มคั้นสด, น้ำส้มคั้นสด, O'Fresh, fresh orange juice vending machine, เชียงใหม่, Chiang Mai, น้ำส้มอัตโนมัติ, ไม่มีน้ำตาล, 100% natural">
+    <meta name="author" content="O'Fresh">
+    <link rel="canonical" href="https://ofresh.baanporjai.com">
+
+    <!-- Open Graph (Facebook / LINE) -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://ofresh.baanporjai.com">
+    <meta property="og:title" content="ตู้น้ำส้มคั้นสด O'Fresh | น้ำส้มคั้นสดอัตโนมัติ">
+    <meta property="og:description" content="น้ำส้มคั้นสดใหม่ทุกแก้ว ไม่มีน้ำตาลเพิ่ม สะอาด ราคาไม่แพง หาตู้ O'Fresh ใกล้บ้านคุณในเชียงใหม่ได้เลย">
+    <meta property="og:image" content="https://ofresh.baanporjai.com/Design/S__59318322.jpg">
+    <meta property="og:locale" content="th_TH">
+    <meta property="og:site_name" content="O'Fresh">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="ตู้น้ำส้มคั้นสด O'Fresh | น้ำส้มคั้นสดอัตโนมัติ">
+    <meta name="twitter:description" content="น้ำส้มคั้นสดใหม่ทุกแก้ว ไม่มีน้ำตาลเพิ่ม สะอาด ราคาไม่แพง หาตู้ O'Fresh ใกล้บ้านคุณในเชียงใหม่ได้เลย">
+    <meta name="twitter:image" content="https://ofresh.baanporjai.com/Design/S__59318322.jpg">
+
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-5TYMW19MND"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-5TYMW19MND');
+    </script>
+
+    <link rel="icon" type="image/png" href="../favicon.png">
+    <link rel="shortcut icon" type="image/x-icon" href="../favicon.ico">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800;900&family=Noto+Sans+Thai:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        /* ===================================================
+           Android 9 / Chromium ~67 Compatible CSS
+           - No CSS custom properties (var)
+           - No Flexbox gap (use margin instead)
+           - No backdrop-filter (replaced with solid bg)
+           - No aspect-ratio (use padding-top trick)
+           - grid-gap instead of gap for Grid
+           - webkit prefixes where needed
+        =================================================== */
+
+        * { margin: 0; padding: 0; -webkit-box-sizing: border-box; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Prompt', 'Noto Sans Thai', 'Sarabun', Arial, sans-serif;
+            color: #2D2D2D;
+            overflow-x: hidden;
+            background: #FFFFFF;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        /* ===== NAVBAR ===== */
+        .navbar {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+            padding: 0 40px; height: 72px;
+            display: -webkit-flex;
+            display: flex;
+            -webkit-align-items: center;
+            align-items: center;
+            -webkit-justify-content: space-between;
+            justify-content: space-between;
+            /* backdrop-filter removed — solid semi-opaque bg instead */
+            background: rgba(255,255,255,0.97);
+            box-shadow: 0 2px 20px rgba(0,0,0,0.05);
+            -webkit-transition: all 0.3s ease;
+            transition: all 0.3s ease;
+        }
+        .navbar.scrolled { height: 60px; box-shadow: 0 4px 30px rgba(0,0,0,0.1); }
+
+        .nav-logo {
+            display: -webkit-flex;
+            display: flex;
+            -webkit-align-items: center;
+            align-items: center;
+            text-decoration: none;
+        }
+        .nav-logo img { height: 44px; width: auto; object-fit: contain; margin-right: 10px; }
+
+        .nav-links {
+            display: -webkit-flex;
+            display: flex;
+            -webkit-align-items: center;
+            align-items: center;
+            list-style: none;
+        }
+        .nav-links li { margin-right: 28px; }
+        .nav-links li:last-child { margin-right: 0; }
+        .nav-links a {
+            text-decoration: none; color: #2D2D2D;
+            font-weight: 500; font-size: 15px;
+            -webkit-transition: color 0.3s;
+            transition: color 0.3s;
+            position: relative;
+        }
+        .nav-links a::after {
+            content: ''; position: absolute; bottom: -4px; left: 0;
+            width: 0; height: 2px; background: #FF6B00;
+            -webkit-transition: width 0.3s;
+            transition: width 0.3s;
+        }
+        .nav-links a:hover { color: #FF6B00; }
+        .nav-links a:hover::after { width: 100%; }
+        .nav-cta {
+            background: -webkit-linear-gradient(315deg, #FF6B00, #E55A00);
+            background: linear-gradient(135deg, #FF6B00, #E55A00);
+            color: white !important; padding: 10px 24px; border-radius: 50px;
+            font-weight: 600; box-shadow: 0 4px 15px rgba(255,107,0,0.3);
+            -webkit-transition: -webkit-transform 0.3s, box-shadow 0.3s !important;
+            transition: transform 0.3s, box-shadow 0.3s !important;
+        }
+        .nav-cta::after { display: none !important; }
+        .nav-cta:hover {
+            -webkit-transform: translateY(-2px);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(255,107,0,0.4) !important;
+        }
+
+        /* ===== LANG SWITCHER ===== */
+        .lang-switcher {
+            display: -webkit-flex;
+            display: flex;
+            -webkit-align-items: center;
+            align-items: center;
+            background: rgba(0,0,0,0.05); border-radius: 50px; padding: 4px;
+        }
+        .lang-switcher .lang-btn { margin-right: 0; }
+        .lang-btn {
+            background: none; border: none; cursor: pointer;
+            font-size: 13px; font-weight: 600; padding: 5px 10px;
+            border-radius: 50px; color: #6B7280;
+            font-family: 'Prompt', 'Noto Sans Thai', Arial, sans-serif;
+            -webkit-transition: all 0.2s;
+            transition: all 0.2s;
+        }
+        .lang-btn:hover { color: #FF6B00; }
+        .lang-btn.active {
+            background: #FF6B00; color: white;
+            box-shadow: 0 2px 8px rgba(255,107,0,0.3);
+        }
+
+        .mobile-toggle {
+            display: none; background: none; border: none;
+            font-size: 24px; color: #2D2D2D; cursor: pointer;
+        }
+        .nav-right {
+            display: -webkit-flex;
+            display: flex;
+            -webkit-align-items: center;
+            align-items: center;
+        }
+        .nav-right > * { margin-left: 16px; }
+        .nav-right > *:first-child { margin-left: 0; }
+
+        /* ===== HERO ===== */
+        .hero {
+            min-height: 100vh;
+            display: -webkit-flex;
+            display: flex;
+            -webkit-align-items: center;
+            align-items: center;
+            position: relative; overflow: hidden;
+            background: -webkit-linear-gradient(315deg, #FFF5EB 0%, #FFF0E0 50%, #FFECD2 100%);
+            background: linear-gradient(135deg, #FFF5EB 0%, #FFF0E0 50%, #FFECD2 100%);
+        }
+        .hero-bg-circles { position: absolute; top: 0; right: 0; bottom: 0; left: 0; overflow: hidden; pointer-events: none; }
+        .hero-bg-circles .circle { position: absolute; border-radius: 50%; opacity: 0.08; }
+        .hero-bg-circles .circle-1 {
+            width: 600px; height: 600px; background: #FF6B00;
+            top: -200px; right: -100px;
+            -webkit-animation: float 8s ease-in-out infinite;
+            animation: float 8s ease-in-out infinite;
+        }
+        .hero-bg-circles .circle-2 {
+            width: 400px; height: 400px; background: #FF9A3C;
+            bottom: -100px; left: -100px;
+            -webkit-animation: float 10s ease-in-out infinite reverse;
+            animation: float 10s ease-in-out infinite reverse;
+        }
+        .hero-bg-circles .circle-3 {
+            width: 200px; height: 200px; background: #339933;
+            top: 40%; left: 30%;
+            -webkit-animation: float 6s ease-in-out infinite;
+            animation: float 6s ease-in-out infinite;
+        }
+        @-webkit-keyframes float {
+            0%, 100% { -webkit-transform: translateY(0) rotate(0deg); transform: translateY(0) rotate(0deg); }
+            50% { -webkit-transform: translateY(-30px) rotate(5deg); transform: translateY(-30px) rotate(5deg); }
+        }
+        @keyframes float {
+            0%, 100% { -webkit-transform: translateY(0) rotate(0deg); transform: translateY(0) rotate(0deg); }
+            50% { -webkit-transform: translateY(-30px) rotate(5deg); transform: translateY(-30px) rotate(5deg); }
+        }
+        .hero-content {
+            max-width: 1280px; margin: 0 auto; padding: 120px 40px 80px;
+            display: -webkit-flex;
+            display: flex;
+            -webkit-flex-wrap: wrap;
+            flex-wrap: wrap;
+            -webkit-align-items: center;
+            align-items: center;
+            position: relative; z-index: 2;
+        }
+        .hero-text {
+            -webkit-flex: 1 1 400px;
+            flex: 1 1 400px;
+            margin-right: 60px;
+            -webkit-animation: slideInLeft 1s ease-out;
+            animation: slideInLeft 1s ease-out;
+        }
+        @-webkit-keyframes slideInLeft {
+            from { opacity: 0; -webkit-transform: translateX(-50px); transform: translateX(-50px); }
+            to { opacity: 1; -webkit-transform: translateX(0); transform: translateX(0); }
+        }
+        @keyframes slideInLeft {
+            from { opacity: 0; -webkit-transform: translateX(-50px); transform: translateX(-50px); }
+            to { opacity: 1; -webkit-transform: translateX(0); transform: translateX(0); }
+        }
+        .hero-badge {
+            display: -webkit-inline-flex;
+            display: inline-flex;
+            -webkit-align-items: center;
+            align-items: center;
+            background: rgba(255,107,0,0.1); color: #FF6B00;
+            padding: 8px 20px; border-radius: 50px; font-size: 14px; font-weight: 600;
+            margin-bottom: 24px; border: 1px solid rgba(255,107,0,0.2);
+        }
+        .hero-badge i { margin-right: 8px; }
+        .hero-text h1 {
+            font-size: 56px; font-weight: 900; line-height: 1.15;
+            color: #1A1A2E; margin-bottom: 20px;
+        }
+        .hero-text h1 .highlight { color: #FF6B00; position: relative; }
+        .hero-text h1 .highlight::after {
+            content: ''; position: absolute; bottom: 4px; left: 0; right: 0;
+            height: 8px; background: rgba(255,107,0,0.15); border-radius: 4px; z-index: -1;
+        }
+        .hero-text p {
+            font-size: 18px; color: #6B7280; line-height: 1.7;
+            margin-bottom: 32px; font-weight: 300;
+        }
+        .hero-buttons {
+            display: -webkit-flex;
+            display: flex;
+            -webkit-flex-wrap: wrap;
+            flex-wrap: wrap;
+        }
+        .hero-buttons > * { margin-right: 16px; margin-bottom: 12px; }
+        .hero-buttons > *:last-child { margin-right: 0; }
+        .btn-primary {
+            display: -webkit-inline-flex;
+            display: inline-flex;
+            -webkit-align-items: center;
+            align-items: center;
+            background: -webkit-linear-gradient(315deg, #FF6B00, #E55A00);
+            background: linear-gradient(135deg, #FF6B00, #E55A00);
+            color: white; padding: 16px 36px; border-radius: 50px;
+            font-size: 16px; font-weight: 600; text-decoration: none;
+            box-shadow: 0 8px 30px rgba(255,107,0,0.35);
+            -webkit-transition: all 0.3s;
+            transition: all 0.3s;
+            border: none; cursor: pointer;
+            font-family: 'Prompt', 'Noto Sans Thai', Arial, sans-serif;
+        }
+        .btn-primary i { margin-right: 10px; }
+        .btn-primary:hover {
+            -webkit-transform: translateY(-3px);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 40px rgba(255,107,0,0.45);
+        }
+        .btn-secondary {
+            display: -webkit-inline-flex;
+            display: inline-flex;
+            -webkit-align-items: center;
+            align-items: center;
+            background: white; color: #2D2D2D; padding: 16px 36px;
+            border-radius: 50px; font-size: 16px; font-weight: 600; text-decoration: none;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            -webkit-transition: all 0.3s;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+        .btn-secondary i { margin-right: 10px; }
+        .btn-secondary:hover {
+            border-color: #FF6B00; color: #FF6B00;
+            -webkit-transform: translateY(-3px);
+            transform: translateY(-3px);
+        }
+        .hero-visual {
+            -webkit-flex: 1 1 300px;
+            flex: 1 1 300px;
+            display: -webkit-flex;
+            display: flex;
+            -webkit-justify-content: center;
+            justify-content: center;
+            -webkit-align-items: center;
+            align-items: center;
+            position: relative;
+            -webkit-animation: slideInRight 1s ease-out;
+            animation: slideInRight 1s ease-out;
+        }
+        @-webkit-keyframes slideInRight {
+            from { opacity: 0; -webkit-transform: translateX(50px); transform: translateX(50px); }
+            to { opacity: 1; -webkit-transform: translateX(0); transform: translateX(0); }
+        }
+        @keyframes slideInRight {
+            from { opacity: 0; -webkit-transform: translateX(50px); transform: translateX(50px); }
+            to { opacity: 1; -webkit-transform: translateX(0); transform: translateX(0); }
+        }
+        .hero-machine { position: relative; width: 340px; }
+        .machine-image {
+            width: 100%; height: auto; object-fit: contain;
+            -webkit-filter: drop-shadow(0 20px 40px rgba(0,0,0,0.15));
+            filter: drop-shadow(0 20px 40px rgba(0,0,0,0.15));
+        }
+        .hero-floating-badge {
+            position: absolute; background: white; border-radius: 16px; padding: 14px 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            display: -webkit-flex;
+            display: flex;
+            -webkit-align-items: center;
+            align-items: center;
+            -webkit-animation: floatBadge 4s ease-in-out infinite;
+            animation: floatBadge 4s ease-in-out infinite;
+        }
+        .hero-floating-badge .badge-icon { margin-right: 12px; }
+        @-webkit-keyframes floatBadge {
+            0%, 100% { -webkit-transform: translateY(0); transform: translateY(0); }
+            50% { -webkit-transform: translateY(-10px); transform: translateY(-10px); }
+        }
+        @keyframes floatBadge {
+            0%, 100% { -webkit-transform: translateY(0); transform: translateY(0); }
+            50% { -webkit-transform: translateY(-10px); transform: translateY(-10px); }
+        }
+        .hero-floating-badge.top-left { top: -20px; left: -40px; -webkit-animation-delay: 0.5s; animation-delay: 0.5s; }
+        .hero-floating-badge.bottom-right { bottom: 20px; right: -40px; -webkit-animation-delay: 1.5s; animation-delay: 1.5s; }
+        .badge-icon { width: 44px; height: 44px; border-radius: 12px; display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center; font-size: 20px; }
+        .badge-icon.orange-bg { background: rgba(255,107,0,0.1); color: #FF6B00; }
+        .badge-icon.green-bg { background: rgba(76,175,80,0.1); color: #339933; }
+        .badge-text { font-size: 13px; font-weight: 600; color: #2D2D2D; }
+        .badge-sub { font-size: 11px; color: #6B7280; font-weight: 400; }
+
+        /* ===== STATS BAR ===== */
+        .stats-bar {
+            background: -webkit-linear-gradient(315deg, #1A1A2E, #16213E);
+            background: linear-gradient(135deg, #1A1A2E, #16213E);
+            padding: 50px 40px;
+        }
+        .stats-container {
+            max-width: 1280px; margin: 0 auto;
+            display: -webkit-flex;
+            display: flex;
+            -webkit-flex-wrap: wrap;
+            flex-wrap: wrap;
+            -webkit-justify-content: space-around;
+            justify-content: space-around;
+        }
+        .stat-item { text-align: center; color: white; padding: 10px 20px; }
+        .stat-number { font-size: 42px; font-weight: 800; color: #FFB347; margin-bottom: 4px; }
+        .stat-label { font-size: 14px; color: rgba(255,255,255,0.6); font-weight: 400; }
+
+        /* ===== SECTION STYLES ===== */
+        .section { padding: 100px 40px; }
+        .section-header { text-align: center; max-width: 700px; margin: 0 auto 60px; }
+        .section-tag {
+            display: -webkit-inline-flex;
+            display: inline-flex;
+            -webkit-align-items: center;
+            align-items: center;
+            background: rgba(255,107,0,0.08); color: #FF6B00;
+            padding: 6px 18px; border-radius: 50px; font-size: 13px; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px;
+        }
+        .section-tag i { margin-right: 8px; }
+        .section-header h2 { font-size: 40px; font-weight: 800; color: #1A1A2E; margin-bottom: 16px; line-height: 1.2; }
+        .section-header p { font-size: 17px; color: #6B7280; line-height: 1.7; font-weight: 300; }
+
+        /* ===== QUALITY SECTION ===== */
+        .quality-section { background: #FFF8F0; }
+        .quality-grid {
+            max-width: 1280px; margin: 0 auto;
+            display: -webkit-flex;
+            display: flex;
+            -webkit-flex-wrap: wrap;
+            flex-wrap: wrap;
+        }
+        .quality-card {
+            -webkit-flex: 1 1 300px;
+            flex: 1 1 300px;
+            margin: 15px;
+            background: white; border-radius: 24px; padding: 40px 32px; text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.04);
+            -webkit-transition: all 0.4s ease;
+            transition: all 0.4s ease;
+            position: relative; overflow: hidden;
+        }
+        .quality-card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+            background: -webkit-linear-gradient(left, #FF6B00, #FF9A3C);
+            background: linear-gradient(90deg, #FF6B00, #FF9A3C);
+            -webkit-transform: scaleX(0);
+            transform: scaleX(0);
+            -webkit-transition: -webkit-transform 0.4s ease;
+            transition: transform 0.4s ease;
+        }
+        .quality-card:hover {
+            -webkit-transform: translateY(-8px);
+            transform: translateY(-8px);
+            box-shadow: 0 20px 60px rgba(255,107,0,0.12);
+        }
+        .quality-card:hover::before {
+            -webkit-transform: scaleX(1);
+            transform: scaleX(1);
+        }
+        .quality-icon {
+            width: 80px; height: 80px; margin: 0 auto 24px;
+            background: -webkit-linear-gradient(315deg, rgba(255,107,0,0.1), rgba(255,154,60,0.08));
+            background: linear-gradient(135deg, rgba(255,107,0,0.1), rgba(255,154,60,0.08));
+            border-radius: 20px;
+            display: -webkit-flex;
+            display: flex;
+            -webkit-align-items: center;
+            align-items: center;
+            -webkit-justify-content: center;
+            justify-content: center;
+            font-size: 36px; color: #FF6B00;
+            -webkit-transition: -webkit-transform 0.4s;
+            transition: transform 0.4s;
+        }
+        .quality-card:hover .quality-icon {
+            -webkit-transform: scale(1.1) rotate(5deg);
+            transform: scale(1.1) rotate(5deg);
+        }
+        .quality-card h3 { font-size: 20px; font-weight: 700; color: #1A1A2E; margin-bottom: 12px; }
+        .quality-card p { font-size: 15px; color: #6B7280; line-height: 1.7; font-weight: 300; }
+
+        /* ===== FRESHNESS SECTION ===== */
+        .freshness-section { background: white; }
+        .freshness-content {
+            max-width: 1280px; margin: 0 auto;
+            display: -webkit-flex;
+            display: flex;
+            -webkit-flex-wrap: wrap;
+            flex-wrap: wrap;
+            -webkit-align-items: center;
+            align-items: center;
+        }
+        .freshness-visual {
+            -webkit-flex: 1 1 300px;
+            flex: 1 1 300px;
+            margin-right: 80px;
+            margin-bottom: 40px;
+        }
+        .freshness-image-box {
+            width: 100%;
+            /* aspect-ratio: 1 is not supported — use padding-top trick */
+            position: relative;
+            padding-top: 100%;
+            background: -webkit-linear-gradient(315deg, #FFF3E0, #FFE0B2);
+            background: linear-gradient(135deg, #FFF3E0, #FFE0B2);
+            border-radius: 30px; overflow: hidden;
+        }
+        .freshness-image-inner {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: -webkit-flex;
+            display: flex;
+            -webkit-align-items: center;
+            align-items: center;
+            -webkit-justify-content: center;
+            justify-content: center;
+        }
+        .big-orange {
+            width: 250px; height: 250px;
+            background: radial-gradient(circle at 35% 35%, #FFB347, #FF8C00, #E67300);
+            border-radius: 50%; position: relative;
+            box-shadow: 0 20px 60px rgba(255,140,0,0.3);
+            -webkit-animation: pulse 3s ease-in-out infinite;
+            animation: pulse 3s ease-in-out infinite;
+        }
+        @-webkit-keyframes pulse {
+            0%, 100% { -webkit-transform: scale(1); transform: scale(1); }
+            50% { -webkit-transform: scale(1.05); transform: scale(1.05); }
+        }
+        @keyframes pulse {
+            0%, 100% { -webkit-transform: scale(1); transform: scale(1); }
+            50% { -webkit-transform: scale(1.05); transform: scale(1.05); }
+        }
+        .big-orange::before {
+            content: ''; position: absolute; top: -12px; left: 50%;
+            -webkit-transform: translateX(-50%);
+            transform: translateX(-50%);
+            width: 20px; height: 16px; background: #339933; border-radius: 50% 50% 0 0;
+        }
+        .big-orange::after {
+            content: ''; position: absolute; top: 20%; left: 25%;
+            width: 30%; height: 20%; background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            -webkit-transform: rotate(-30deg);
+            transform: rotate(-30deg);
+        }
+        .splash-drops { position: absolute; top: 0; right: 0; bottom: 0; left: 0; }
+        .drop {
+            position: absolute; width: 12px; height: 12px;
+            background: #FF9A3C; border-radius: 50%; opacity: 0.4;
+        }
+        .drop:nth-child(1) { top: 15%; left: 20%; -webkit-animation: float 4s infinite; animation: float 4s infinite; }
+        .drop:nth-child(2) { top: 25%; right: 25%; -webkit-animation: float 5s infinite 1s; animation: float 5s infinite 1s; width: 8px; height: 8px; }
+        .drop:nth-child(3) { bottom: 20%; left: 15%; -webkit-animation: float 6s infinite 0.5s; animation: float 6s infinite 0.5s; width: 16px; height: 16px; }
+        .drop:nth-child(4) { bottom: 30%; right: 20%; -webkit-animation: float 4.5s infinite 1.5s; animation: float 4.5s infinite 1.5s; }
+
+        .freshness-info {
+            -webkit-flex: 1 1 300px;
+            flex: 1 1 300px;
+        }
+        .freshness-info h2 { font-size: 38px; font-weight: 800; color: #1A1A2E; margin-bottom: 20px; line-height: 1.2; }
+        .freshness-info h2 .highlight { color: #FF6B00; }
+        .freshness-info > p { font-size: 17px; color: #6B7280; line-height: 1.8; margin-bottom: 32px; font-weight: 300; }
+        .freshness-features {
+            display: -webkit-flex;
+            display: flex;
+            -webkit-flex-direction: column;
+            flex-direction: column;
+        }
+        .fresh-feature {
+            display: -webkit-flex;
+            display: flex;
+            -webkit-align-items: flex-start;
+            align-items: flex-start;
+            padding: 16px;
+            background: #FFF8F0; border-radius: 16px;
+            -webkit-transition: all 0.3s;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+        }
+        .fresh-feature:last-child { margin-bottom: 0; }
+        .fresh-feature:hover { background: rgba(255,107,0,0.05); -webkit-transform: translateX(6px); transform: translateX(6px); }
+        .fresh-feature .ff-icon {
+            width: 48px; height: 48px; min-width: 48px;
+            background: -webkit-linear-gradient(315deg, #FF6B00, #FF9A3C);
+            background: linear-gradient(135deg, #FF6B00, #FF9A3C);
+            border-radius: 14px;
+            display: -webkit-flex;
+            display: flex;
+            -webkit-align-items: center;
+            align-items: center;
+            -webkit-justify-content: center;
+            justify-content: center;
+            color: white; font-size: 20px;
+            margin-right: 16px;
+        }
+        .fresh-feature h4 { font-size: 16px; font-weight: 700; color: #1A1A2E; margin-bottom: 4px; }
+        .fresh-feature p { font-size: 14px; color: #6B7280; line-height: 1.6; font-weight: 300; }
+
+        /* ===== HOW TO USE ===== */
+        .howto-section {
+            background: -webkit-linear-gradient(180deg, #FFF8F0, white);
+            background: linear-gradient(180deg, #FFF8F0, white);
+        }
+        .howto-steps {
+            max-width: 1100px; margin: 0 auto;
+            display: -webkit-flex;
+            display: flex;
+            -webkit-flex-direction: column;
+            flex-direction: column;
+            position: relative;
+        }
+        .howto-steps::before {
+            content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 3px;
+            background: -webkit-linear-gradient(180deg, #FF6B00, #FF9A3C, #339933);
+            background: linear-gradient(180deg, #FF6B00, #FF9A3C, #339933);
+            border-radius: 3px;
+            -webkit-transform: translateX(-50%);
+            transform: translateX(-50%);
+        }
+        .step { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; padding: 30px 0; }
+        .step-content-left { -webkit-flex: 1; flex: 1; text-align: right; padding-right: 40px; }
+        .step-content-right { -webkit-flex: 1; flex: 1; text-align: left; padding-left: 40px; }
+        .step-number-wrap { width: 80px; -webkit-flex-shrink: 0; flex-shrink: 0; display: -webkit-flex; display: flex; -webkit-justify-content: center; justify-content: center; position: relative; z-index: 2; }
+        .step-visual-right { -webkit-flex: 1; flex: 1; padding-left: 40px; }
+        .step-visual-left { -webkit-flex: 1; flex: 1; padding-right: 40px; display: -webkit-flex; display: flex; -webkit-justify-content: flex-end; justify-content: flex-end; }
+        .step-number {
+            width: 64px; height: 64px;
+            background: -webkit-linear-gradient(315deg, #FF6B00, #E55A00);
+            background: linear-gradient(135deg, #FF6B00, #E55A00);
+            border-radius: 50%;
+            display: -webkit-flex;
+            display: flex;
+            -webkit-align-items: center;
+            align-items: center;
+            -webkit-justify-content: center;
+            justify-content: center;
+            font-size: 24px; font-weight: 800; color: white;
+            box-shadow: 0 8px 25px rgba(255,107,0,0.35); border: 4px solid white;
+        }
+        .step-content h3 { font-size: 22px; font-weight: 700; color: #1A1A2E; margin-bottom: 10px; }
+        .step-content p { font-size: 15px; color: #6B7280; line-height: 1.7; font-weight: 300; }
+        .step-icon-box {
+            width: 180px; height: 140px; background: white; border-radius: 24px;
+            display: -webkit-flex;
+            display: flex;
+            -webkit-align-items: center;
+            align-items: center;
+            -webkit-justify-content: center;
+            justify-content: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.06); font-size: 56px;
+            -webkit-transition: -webkit-transform 0.4s;
+            transition: transform 0.4s;
+            overflow: hidden;
+        }
+        .step-icon-box img { width: 100%; height: 100%; object-fit: cover; border-radius: 24px; }
+        .step:hover .step-icon-box {
+            -webkit-transform: scale(1.08) rotate(3deg);
+            transform: scale(1.08) rotate(3deg);
+        }
+
+        /* ===== BENEFITS ===== */
+        .benefits-section {
+            background: -webkit-linear-gradient(315deg, #1A1A2E, #16213E);
+            background: linear-gradient(135deg, #1A1A2E, #16213E);
+            color: white;
+        }
+        .benefits-section .section-header h2 { color: white; }
+        .benefits-section .section-header p { color: rgba(255,255,255,0.6); }
+        .benefits-section .section-tag { background: rgba(255,107,0,0.15); }
+        .benefits-grid {
+            max-width: 1280px; margin: 0 auto;
+            display: -webkit-flex;
+            display: flex;
+            -webkit-flex-wrap: wrap;
+            flex-wrap: wrap;
+        }
+        .benefit-card {
+            -webkit-flex: 1 1 400px;
+            flex: 1 1 400px;
+            margin: 12px;
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 20px; padding: 36px;
+            display: -webkit-flex;
+            display: flex;
+            -webkit-transition: all 0.4s;
+            transition: all 0.4s;
+            /* backdrop-filter removed */
+        }
+        .benefit-card .benefit-icon { margin-right: 20px; }
+        .benefit-card:hover {
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(255,107,0,0.3);
+            -webkit-transform: translateY(-4px);
+            transform: translateY(-4px);
+        }
+        .benefit-icon {
+            width: 56px; height: 56px; min-width: 56px;
+            background: -webkit-linear-gradient(315deg, rgba(255,107,0,0.2), rgba(255,107,0,0.1));
+            background: linear-gradient(135deg, rgba(255,107,0,0.2), rgba(255,107,0,0.1));
+            border-radius: 16px;
+            display: -webkit-flex;
+            display: flex;
+            -webkit-align-items: center;
+            align-items: center;
+            -webkit-justify-content: center;
+            justify-content: center;
+            font-size: 24px; color: #FFB347;
+        }
+        .benefit-card h3 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+        .benefit-card p { font-size: 14px; color: rgba(255,255,255,0.6); line-height: 1.7; font-weight: 300; }
+
+        /* ===== CTA SECTION ===== */
+        .cta-section {
+            background: -webkit-linear-gradient(315deg, #FF6B00, #E55A00);
+            background: linear-gradient(135deg, #FF6B00, #E55A00);
+            padding: 80px 40px; text-align: center; position: relative; overflow: hidden;
+        }
+        .cta-section::before {
+            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 60%);
+        }
+        .cta-content { position: relative; z-index: 2; max-width: 700px; margin: 0 auto; }
+        .cta-content h2 { font-size: 38px; font-weight: 800; color: white; margin-bottom: 16px; }
+        .cta-content p { font-size: 18px; color: rgba(255,255,255,0.85); margin-bottom: 32px; font-weight: 300; }
+        .btn-white {
+            display: -webkit-inline-flex;
+            display: inline-flex;
+            -webkit-align-items: center;
+            align-items: center;
+            background: white; color: #FF6B00; padding: 16px 40px;
+            border-radius: 50px; font-size: 16px; font-weight: 700; text-decoration: none;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+            -webkit-transition: all 0.3s;
+            transition: all 0.3s;
+        }
+        .btn-white i { margin-right: 10px; }
+        .btn-white:hover {
+            -webkit-transform: translateY(-3px);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+        }
+
+        /* ===== FOOTER ===== */
+        .footer { background: #1A1A2E; color: rgba(255,255,255,0.6); padding: 60px 40px 30px; }
+        .footer-content {
+            max-width: 1280px; margin: 0 auto;
+            display: -webkit-flex;
+            display: flex;
+            -webkit-flex-wrap: wrap;
+            flex-wrap: wrap;
+            margin-bottom: 40px;
+        }
+        .footer-brand { -webkit-flex: 2 1 240px; flex: 2 1 240px; margin-right: 40px; margin-bottom: 32px; }
+        .footer-brand .footer-logo {
+            display: -webkit-flex;
+            display: flex;
+            -webkit-align-items: center;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .footer-brand .footer-logo img { height: 40px; width: auto; object-fit: contain; margin-right: 10px; }
+        .footer-brand p { font-size: 14px; line-height: 1.8; margin-bottom: 20px; white-space: pre-line; }
+        .footer-socials {
+            display: -webkit-flex;
+            display: flex;
+        }
+        .footer-socials a {
+            width: 40px; height: 40px; background: rgba(255,255,255,0.08); border-radius: 10px;
+            display: -webkit-flex;
+            display: flex;
+            -webkit-align-items: center;
+            align-items: center;
+            -webkit-justify-content: center;
+            justify-content: center;
+            color: rgba(255,255,255,0.6); text-decoration: none;
+            -webkit-transition: all 0.3s;
+            transition: all 0.3s;
+            margin-right: 12px;
+        }
+        .footer-socials a:last-child { margin-right: 0; }
+        .footer-socials a:hover { background: #FF6B00; color: white; }
+        .footer-col { -webkit-flex: 1 1 120px; flex: 1 1 120px; margin-right: 40px; margin-bottom: 32px; }
+        .footer-col:last-child { margin-right: 0; }
+        .footer-col h4 { color: white; font-size: 16px; font-weight: 700; margin-bottom: 20px; }
+        .footer-col ul { list-style: none; }
+        .footer-col ul li { margin-bottom: 12px; }
+        .footer-col ul a { color: rgba(255,255,255,0.6); text-decoration: none; font-size: 14px; -webkit-transition: color 0.3s; transition: color 0.3s; }
+        .footer-col ul a:hover { color: #FF6B00; }
+        .footer-bottom {
+            max-width: 1280px; margin: 0 auto;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            padding-top: 24px; text-align: center; font-size: 13px;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 1024px) {
+            .hero-content { -webkit-justify-content: center; justify-content: center; text-align: center; }
+            .hero-text { margin-right: 0; margin-bottom: 40px; }
+            .hero-text h1 { font-size: 44px; }
+            .hero-buttons { -webkit-justify-content: center; justify-content: center; }
+            .hero-visual { -webkit-order: -1; order: -1; }
+            .hero-machine { width: 280px; }
+            .hero-floating-badge.top-left { left: 0; }
+            .hero-floating-badge.bottom-right { right: 0; }
+            .freshness-content { -webkit-justify-content: center; justify-content: center; }
+            .freshness-visual { margin-right: 0; }
+            .howto-steps::before { left: 32px; }
+            .step { -webkit-flex-wrap: wrap; flex-wrap: wrap; }
+            .step-content-left,
+            .step-content-right { -webkit-flex: 1 1 200px; flex: 1 1 200px; text-align: left; padding: 0 0 0 20px; }
+            .step-visual-left,
+            .step-visual-right { display: none; }
+        }
+        @media (max-width: 768px) {
+            .navbar { padding: 0 20px; }
+            .nav-links {
+                display: none; position: fixed; top: 72px; left: 0; right: 0;
+                background: white;
+                -webkit-flex-direction: column;
+                flex-direction: column;
+                padding: 24px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            }
+            .nav-links li { margin-right: 0; margin-bottom: 16px; }
+            .nav-links li:last-child { margin-bottom: 0; }
+            .nav-links.active { display: -webkit-flex; display: flex; }
+            .mobile-toggle { display: block; }
+            .lang-switcher { margin-right: 8px; }
+            .lang-btn { padding: 4px 8px; font-size: 12px; }
+            .hero-content { padding: 100px 20px 60px; }
+            .hero-text h1 { font-size: 34px; }
+            .hero-text p { font-size: 16px; }
+            .section { padding: 60px 20px; }
+            .section-header h2 { font-size: 30px; }
+            .freshness-info h2 { font-size: 30px; }
+            .stat-number { font-size: 32px; }
+            .footer-brand { margin-right: 0; }
+            .footer-col { margin-right: 0; }
+            .cta-content h2 { font-size: 28px; }
+        }
+
+        /* ===== FAQ ===== */
+        .faq-item {
+            background: white; border-radius: 16px; overflow: hidden;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+            border: 1px solid rgba(255,107,0,0.08);
+            -webkit-transition: box-shadow 0.3s;
+            transition: box-shadow 0.3s;
+            margin-bottom: 16px;
+        }
+        .faq-item:last-child { margin-bottom: 0; }
+        .faq-item:hover { box-shadow: 0 8px 28px rgba(255,107,0,0.1); }
+        .faq-q {
+            width: 100%; background: none; border: none; cursor: pointer;
+            padding: 22px 28px;
+            display: -webkit-flex;
+            display: flex;
+            -webkit-align-items: center;
+            align-items: center;
+            -webkit-justify-content: space-between;
+            justify-content: space-between;
+            font-family: 'Prompt', 'Noto Sans Thai', Arial, sans-serif;
+            font-size: 16px; font-weight: 600;
+            color: #2D2D2D; text-align: left;
+            -webkit-transition: color 0.3s;
+            transition: color 0.3s;
+        }
+        .faq-q:hover { color: #FF6B00; }
+        .faq-icon { font-size: 14px; color: #FF6B00; -webkit-flex-shrink: 0; flex-shrink: 0; margin-left: 16px; -webkit-transition: -webkit-transform 0.3s; transition: transform 0.3s; }
+        .faq-item.open .faq-icon { -webkit-transform: rotate(180deg); transform: rotate(180deg); }
+        .faq-a {
+            max-height: 0; overflow: hidden;
+            -webkit-transition: max-height 0.4s ease, padding 0.3s;
+            transition: max-height 0.4s ease, padding 0.3s;
+            padding: 0 28px;
+        }
+        .faq-item.open .faq-a { max-height: 200px; padding: 0 28px 20px; }
+        .faq-a p { font-size: 15px; color: #6B7280; line-height: 1.7; font-weight: 300; border-top: 1px solid rgba(0,0,0,0.06); padding-top: 16px; }
+
+        /* ===== SCROLL ANIMATIONS ===== */
+        /* Default: visible (fallback for no IntersectionObserver) */
+        .animate-on-scroll { opacity: 1; -webkit-transform: translateY(0); transform: translateY(0); }
+        /* Only use animation when JS confirms IO support */
+        .io-supported .animate-on-scroll {
+            opacity: 0;
+            -webkit-transform: translateY(30px);
+            transform: translateY(30px);
+            -webkit-transition: all 0.7s ease-out;
+            transition: all 0.7s ease-out;
+        }
+        .io-supported .animate-on-scroll.animated { opacity: 1; -webkit-transform: translateY(0); transform: translateY(0); }
+    </style>
+</head>
+<body>
+    <!-- NAVBAR -->
+    <nav class="navbar" id="navbar">
+        <a href="#" class="nav-logo">
+            <img src="../OFresh_Logo_transparent.png" alt="O'Fresh Logo">
+        </a>
+        <ul class="nav-links" id="navLinks">
+            <li><a href="#quality" data-i18n="nav_quality">คุณภาพ</a></li>
+            <li><a href="#freshness" data-i18n="nav_fresh">ความสดใหม่</a></li>
+            <li><a href="#howto" data-i18n="nav_howto">วิธีใช้งาน</a></li>
+            <li><a href="#benefits" data-i18n="nav_benefits">จุดเด่น</a></li>
+            <li><a href="order.html" class="nav-cta"><i class="fas fa-shopping-basket" style="font-size:13px;margin-right:6px"></i><span data-i18n="nav_order">สั่งซื้อส้ม</span></a></li>
+        </ul>
+        <div class="nav-right">
+            <div class="lang-switcher">
+                <button class="lang-btn active" data-lang="th" onclick="applyLanguage('th')">TH</button>
+                <button class="lang-btn" data-lang="en" onclick="applyLanguage('en')">EN</button>
+                <button class="lang-btn" data-lang="zh" onclick="applyLanguage('zh')">中文</button>
+                <button class="lang-btn" data-lang="ja" onclick="applyLanguage('ja')">日本語</button>
+                <button class="lang-btn" data-lang="ko" onclick="applyLanguage('ko')">한국어</button>
+            </div>
+            <button class="mobile-toggle" onclick="toggleNav()" aria-label="Toggle menu">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- HERO -->
+    <section class="hero" id="home">
+        <div class="hero-bg-circles">
+            <div class="circle circle-1"></div>
+            <div class="circle circle-2"></div>
+            <div class="circle circle-3"></div>
+        </div>
+        <div class="hero-content">
+            <div class="hero-text">
+                <div class="hero-badge">
+                    <i class="fas fa-leaf"></i>
+                    <span data-i18n="hero_badge">สดจากธรรมชาติ 100%</span>
+                </div>
+                <h1>
+                    <span data-i18n="hero_h1a">น้ำส้ม</span><span class="highlight" data-i18n="hero_h1b">คั้นสด</span><br>
+                    <span data-i18n="hero_h1c">ทุกแก้ว ทุกหยด</span><br>
+                    <span data-i18n="hero_h1d">จากผลส้มจริง</span>
+                </h1>
+                <p data-i18n="hero_p">ตู้น้ำส้มคั้นสดอัตโนมัติ พร้อมดื่ม ไม่ผสมน้ำแข็ง ไม่ใส่น้ำตาล ควบคุมอุณหภูมิส้มในตู้ 3-9°C ตลอดเวลา</p>
+                <div class="hero-buttons">
+                    <a href="#howto" class="btn-primary">
+                        <i class="fas fa-play-circle"></i>
+                        <span data-i18n="hero_btn1">ดูวิธีใช้งาน</span>
+                    </a>
+                    <a href="#quality" class="btn-secondary">
+                        <i class="fas fa-leaf"></i>
+                        <span data-i18n="hero_btn2">เรียนรู้เพิ่มเติม</span>
+                    </a>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <div class="hero-machine">
+                    <img src="../Design/S__59318322_nobg.png" alt="ตู้น้ำส้มคั้นสด O'Fresh" class="machine-image">
+                    <div class="hero-floating-badge top-left">
+                        <div class="badge-icon orange-bg"><i class="fas fa-bolt"></i></div>
+                        <div>
+                            <div class="badge-text" data-i18n="hero_badge1_title">คั้นสดใน 30-45 วิ</div>
+                            <div class="badge-sub" data-i18n="hero_badge1_sub">รวดเร็วทันใจ</div>
+                        </div>
+                    </div>
+                    <div class="hero-floating-badge bottom-right">
+                        <div class="badge-icon green-bg"><i class="fas fa-check-circle"></i></div>
+                        <div>
+                            <div class="badge-text" data-i18n="hero_badge2_title">ปลอดภัย 100%</div>
+                            <div class="badge-sub" data-i18n="hero_badge2_sub">ไม่มีสารเจือปน</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- STATS BAR -->
+    <section class="stats-bar">
+        <div class="stats-container">
+            <div class="stat-item animate-on-scroll">
+                <div class="stat-number">100%</div>
+                <div class="stat-label" data-i18n="stat1_label">น้ำส้มคั้นสดแท้</div>
+            </div>
+            <div class="stat-item animate-on-scroll">
+                <div class="stat-number">3-9°C</div>
+                <div class="stat-label" data-i18n="stat2_label">ควบคุมอุณหภูมิตลอดเวลา</div>
+            </div>
+            <div class="stat-item animate-on-scroll">
+                <div class="stat-number">&lt; 45 วิ</div>
+                <div class="stat-label" data-i18n="stat3_label">เวลาคั้นต่อแก้ว</div>
+            </div>
+            <div class="stat-item animate-on-scroll">
+                <div class="stat-number">0%</div>
+                <div class="stat-label" data-i18n="stat4_label">น้ำตาลและสารเจือปน</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- QUALITY SECTION -->
+    <section class="section quality-section" id="quality">
+        <div class="section-header animate-on-scroll">
+            <div class="section-tag"><i class="fas fa-award"></i> <span data-i18n="quality_tag">คุณภาพระดับพรีเมียม</span></div>
+            <h2 style="display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;flex-wrap:wrap">
+                <span data-i18n="quality_h2_pre">ทำไมต้อง</span><img src="../OFresh_Logo_transparent.png" alt="O'Fresh Logo" style="height:44px;width:auto;vertical-align:middle;object-fit:contain;margin:0 8px"><span data-i18n="quality_h2_suf">?</span>
+            </h2>
+            <p data-i18n="quality_p">เราคัดสรรส้มคุณภาพดีที่สุด ผ่านกระบวนการที่สะอาดและปลอดภัย เพื่อส่งมอบน้ำส้มคั้นสดรสชาติดีที่สุดให้คุณ</p>
+        </div>
+        <div class="quality-grid">
+            <div class="quality-card animate-on-scroll">
+                <div class="quality-icon">🍊</div>
+                <h3 data-i18n="q1_h">ส้มคุณภาพคัดพิเศษ</h3>
+                <p data-i18n="q1_p">คัดเลือกส้มแมนดารินไต้หวันเกรดพรีเมียม หวานฉ่ำ อุดมด้วยวิตามินซี</p>
+            </div>
+            <div class="quality-card animate-on-scroll">
+                <div class="quality-icon">💧</div>
+                <h3 data-i18n="q2_h">สดทุกหยด ไม่ผสมน้ำแข็ง</h3>
+                <p data-i18n="q2_p">น้ำส้มทุกแก้วคั้นสดจากผลส้มจริง 100% ไม่ผสมน้ำแข็ง หรือน้ำตาล รสชาติเข้มข้นตามธรรมชาติ</p>
+            </div>
+            <div class="quality-card animate-on-scroll">
+                <div class="quality-icon">🛡️</div>
+                <h3 data-i18n="q3_h">ปลอดภัย ไร้สารเคมี</h3>
+                <p data-i18n="q3_p">ไม่มีน้ำตาลเพิ่ม ไม่มีสารกันบูด ไม่มีสีผสมอาหาร ทุกแก้วบริสุทธิ์จากธรรมชาติล้วน</p>
+            </div>
+            <div class="quality-card animate-on-scroll">
+                <div class="quality-icon">❄️</div>
+                <h3 data-i18n="q4_h">เย็นสดชื่น 3-9°C</h3>
+                <p data-i18n="q4_p">ระบบทำความเย็นภายในตู้ คงอุณหภูมิ 3-9°C ตลอดเวลา พร้อมเสิร์ฟน้ำส้มเย็นฉ่ำ ควรดื่มภายใน 2 ชั่วโมงเพื่อรสชาติดีที่สุด</p>
+            </div>
+            <div class="quality-card animate-on-scroll">
+                <div class="quality-icon">⚙️</div>
+                <h3 data-i18n="q5_h">ระบบอัตโนมัติอัจฉริยะ</h3>
+                <p data-i18n="q5_p">เทคโนโลยีคั้นน้ำส้มอัตโนมัติ แม่นยำ สะอาด ทุกขั้นตอนเป็นระบบปิด ปลอดเชื้อโรค</p>
+            </div>
+            <div class="quality-card animate-on-scroll">
+                <div class="quality-icon">🌿</div>
+                <h3 data-i18n="q6_h">รักษ์สิ่งแวดล้อม</h3>
+                <p data-i18n="q6_p">แก้วบรรจุรีไซเคิลได้ ลดขยะพลาสติก ดีต่อโลก</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- FRESHNESS SECTION -->
+    <section class="section freshness-section" id="freshness">
+        <div class="freshness-content">
+            <div class="freshness-visual animate-on-scroll">
+                <div class="freshness-image-box">
+                    <div class="freshness-image-inner">
+                        <div class="big-orange"></div>
+                        <div class="splash-drops">
+                            <div class="drop"></div><div class="drop"></div>
+                            <div class="drop"></div><div class="drop"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="freshness-info animate-on-scroll">
+                <h2><span data-i18n="fresh_h2a">คั้นสดต่อหน้า</span><br><span class="highlight" data-i18n="fresh_h2b">ไม่มีอะไรซ่อน</span></h2>
+                <p data-i18n="fresh_p">ตู้ O'Fresh ออกแบบให้คุณมองเห็นกระบวนการคั้นน้ำส้มสดทุกขั้นตอนผ่านหน้าต่างใส สัมผัสได้ถึงความสดใหม่ตั้งแต่ผลส้มถูกหั่นจนกลายเป็นน้ำส้มหอมหวานในแก้วของคุณ</p>
+                <div class="freshness-features">
+                    <div class="fresh-feature">
+                        <div class="ff-icon"><i class="fas fa-eye"></i></div>
+                        <div>
+                            <h4 data-i18n="ff1_h">โปร่งใส มองเห็นทุกขั้นตอน</h4>
+                            <p data-i18n="ff1_p">หน้าต่างใสให้คุณดูกระบวนการคั้นสดตั้งแต่ต้นจนจบ</p>
+                        </div>
+                    </div>
+                    <div class="fresh-feature">
+                        <div class="ff-icon"><i class="fas fa-clock"></i></div>
+                        <div>
+                            <h4 data-i18n="ff2_h">สดใหม่ ไม่ค้างคืน</h4>
+                            <p data-i18n="ff2_p">ทุกแก้วคั้นสดทันที ไม่มีน้ำส้มค้างสต๊อก ไม่มีการเก็บข้ามวัน</p>
+                        </div>
+                    </div>
+                    <div class="fresh-feature">
+                        <div class="ff-icon"><i class="fas fa-heartbeat"></i></div>
+                        <div>
+                            <h4 data-i18n="ff3_h">ดีต่อสุขภาพ อุดมวิตามิน</h4>
+                            <p data-i18n="ff3_p">วิตามินซีสูง พร้อมสารต้านอนุมูลอิสระจากส้มสดแท้</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- HOW TO USE -->
+    <section class="section howto-section" id="howto">
+        <div class="section-header animate-on-scroll">
+            <div class="section-tag"><i class="fas fa-hand-pointer"></i> <span data-i18n="howto_tag">ง่ายมาก</span></div>
+            <h2 style="display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;flex-wrap:wrap">
+                <span data-i18n="howto_h2_pre">วิธีใช้งานตู้</span><img src="../OFresh_Logo_transparent.png" alt="O'Fresh Logo" style="height:44px;width:auto;vertical-align:middle;object-fit:contain;margin:0 8px"><span data-i18n="howto_h2_suf"></span>
+            </h2>
+            <p data-i18n="howto_p">แค่ 3 ขั้นตอนง่ายๆ ก็ได้ดื่มน้ำส้มคั้นสดแท้ ไม่ต้องรอนาน ไม่ยุ่งยาก</p>
+        </div>
+        <div class="howto-steps">
+            <div class="step animate-on-scroll">
+                <div class="step-content step-content-left">
+                    <h3 data-i18n="step1_h">กดปุ่ม "Card" จากหน้าจอ</h3>
+                    <p data-i18n="step1_p">เริ่มต้นจาก กดปุ่ม "Card" ที่แสดงบนหน้าจอสัมผัสของตู้ เพื่อเริ่มต้นสั่งน้ำส้มคั้นสดของคุณ</p>
+                </div>
+                <div class="step-number-wrap"><div class="step-number">1</div></div>
+                <div class="step-visual step-visual-right">
+                    <div class="step-icon-box"><img src="../20260117_173203.jpg" alt="Step 1 - กดปุ่ม Card"></div>
+                </div>
+            </div>
+            <div class="step animate-on-scroll">
+                <div class="step-visual step-visual-left">
+                    <div class="step-icon-box"><img src="../20260117_175410.jpg" alt="Step 2 - เลือกวิธีชำระเงิน"></div>
+                </div>
+                <div class="step-number-wrap"><div class="step-number">2</div></div>
+                <div class="step-content step-content-right">
+                    <h3 data-i18n="step2_h">เลือกวิธีชำระเงินจากกล่องดำ</h3>
+                    <p data-i18n="step2_p">เลือกรูปแบบการชำระเงินที่สะดวกจากกล่องดำด้านล่าง รองรับ PromptPay, TrueMoney, WeChat Pay และ VISA/Mastercard ผ่านบัตร (ไม่รองรับ Google Wallet / Apple Pay)</p>
+                </div>
+            </div>
+            <div class="step animate-on-scroll">
+                <div class="step-content step-content-left">
+                    <h3 data-i18n="step3_h">รอรับน้ำส้มคั้นสด ประมาณ 30-45 วินาที</h3>
+                    <p data-i18n="step3_p">รอประมาณ 30-45 วินาที ตู้จะคั้นส้มสดให้ชม มองเห็นทุกขั้นตอน ซีลฝาแก้วด้วยฟิล์มเสร็จ ฝาประตูจะเปิด พร้อมหยิบแก้ว หยิบหลอด พร้อมดื่มน้ำส้มได้เลย!</p>
+                </div>
+                <div class="step-number-wrap"><div class="step-number">3</div></div>
+                <div class="step-visual step-visual-right">
+                    <div class="step-icon-box"><img src="../20260117_173156.jpg" alt="Step 3 - รอรับน้ำส้ม"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BENEFITS -->
+    <section class="section benefits-section" id="benefits">
+        <div class="section-header animate-on-scroll">
+            <div class="section-tag"><i class="fas fa-star"></i> <span data-i18n="benefits_tag">จุดเด่น</span></div>
+            <h2 style="display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;flex-wrap:wrap">
+                <span data-i18n="benefits_h2_pre">ทำไมน้ำส้มคั้นสดจาก</span><img src="../OFresh_Logo_transparent.png" alt="O'Fresh Logo" style="height:44px;width:auto;vertical-align:middle;object-fit:contain;margin:0 8px"><span data-i18n="benefits_h2_suf">ถึงดีกว่า?</span>
+            </h2>
+            <p data-i18n="benefits_p">เพราะเราใส่ใจทุกรายละเอียด ตั้งแต่คัดเลือกส้ม จนถึงแก้วน้ำส้มในมือคุณ</p>
+        </div>
+        <div class="benefits-grid">
+            <div class="benefit-card animate-on-scroll">
+                <div class="benefit-icon"><i class="fas fa-lemon"></i></div>
+                <div>
+                    <h3 data-i18n="b1_h">ส้มสดแท้ ไม่ใช่น้ำหัวเชื้อ</h3>
+                    <p data-i18n="b1_p">ต่างจากน้ำส้มทั่วไปที่ผสมจากหัวเชื้อเข้มข้น O'Fresh คั้นจากผลส้มจริงทุกแก้ว</p>
+                </div>
+            </div>
+            <div class="benefit-card animate-on-scroll">
+                <div class="benefit-icon"><i class="fas fa-shield-alt"></i></div>
+                <div>
+                    <h3 data-i18n="b2_h">ระบบปิดสะอาดปลอดภัย</h3>
+                    <p data-i18n="b2_p">ทุกขั้นตอนการคั้นอยู่ในระบบปิด ไม่สัมผัสมือคน ลดความเสี่ยงจากเชื้อโรคและสิ่งปนเปื้อน</p>
+                </div>
+            </div>
+            <div class="benefit-card animate-on-scroll">
+                <div class="benefit-icon"><i class="fas fa-map-marker-alt"></i></div>
+                <div>
+                    <h3 data-i18n="b3_h">ตั้งอยู่ในจุดที่สะดวก</h3>
+                    <p data-i18n="b3_p">ตู้ O'Fresh ตั้งอยู่ในห้างเซ็นทรัล เฟสติวัล เชียงใหม่ ชั้น 4 โซนศูนย์อาหาร เข้าถึงง่าย พร้อมเสิร์ฟความสดชื่นทุกเวลา</p>
+                </div>
+            </div>
+            <div class="benefit-card animate-on-scroll">
+                <div class="benefit-icon"><i class="fas fa-wallet"></i></div>
+                <div>
+                    <h3 data-i18n="b4_h">ราคาคุ้มค่า จ่ายสะดวก</h3>
+                    <p data-i18n="b4_p">น้ำส้มคั้นสดคุณภาพพรีเมียมในราคาที่เข้าถึงได้ รองรับหลายช่องทางการชำระเงิน ทั้งบัตรเครดิต และ QR Code</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="section" id="faq" style="background:#FFF8F0">
+        <div class="section-header animate-on-scroll">
+            <div class="section-tag"><i class="fas fa-question-circle"></i> <span data-i18n="faq_tag">คำถามที่พบบ่อย</span></div>
+            <h2 data-i18n="faq_h2">มีข้อสงสัยไหม?</h2>
+            <p data-i18n="faq_p">รวมคำถามที่ลูกค้าถามบ่อยเกี่ยวกับ O'Fresh</p>
+        </div>
+        <div style="max-width:800px;margin:0 auto">
+
+            <div class="faq-item animate-on-scroll">
+                <button class="faq-q" onclick="toggleFaq(this)">
+                    <span data-i18n="faq1_q">💰 ราคาแก้วละเท่าไหร่?</span>
+                    <i class="fas fa-chevron-down faq-icon"></i>
+                </button>
+                <div class="faq-a"><p data-i18n="faq1_a">ราคา 69 บาทต่อแก้ว (ปริมาณน้ำส้ม 280 ml) ชำระผ่าน QR Code หรือบัตรเครดิต/เดบิตได้เลย</p></div>
+            </div>
+
+            <div class="faq-item animate-on-scroll">
+                <button class="faq-q" onclick="toggleFaq(this)">
+                    <span data-i18n="faq2_q">📍 ตู้ตั้งอยู่ที่ไหน?</span>
+                    <i class="fas fa-chevron-down faq-icon"></i>
+                </button>
+                <div class="faq-a"><p data-i18n="faq2_a">ตู้ O'Fresh ตั้งอยู่ที่ห้างเซ็นทรัล เฟสติวัล เชียงใหม่ ชั้น 4 โซนศูนย์อาหาร เปิดให้บริการตลอด 24 ชั่วโมง</p></div>
+            </div>
+
+            <div class="faq-item animate-on-scroll">
+                <button class="faq-q" onclick="toggleFaq(this)">
+                    <span data-i18n="faq3_q">💳 ชำระเงินด้วยอะไรได้บ้าง?</span>
+                    <i class="fas fa-chevron-down faq-icon"></i>
+                </button>
+                <div class="faq-a"><p data-i18n="faq3_a">รองรับ QR Code / PromptPay, TrueMoney, WeChat Pay และบัตรเครดิต/เดบิต (VISA, Mastercard) ยังไม่รองรับ Google Wallet และ Apple Pay</p></div>
+            </div>
+
+            <div class="faq-item animate-on-scroll">
+                <button class="faq-q" onclick="toggleFaq(this)">
+                    <span data-i18n="faq4_q">⏱️ ดื่มได้นานแค่ไหน?</span>
+                    <i class="fas fa-chevron-down faq-icon"></i>
+                </button>
+                <div class="faq-a"><p data-i18n="faq4_a">ควรดื่มภายใน 2 ชั่วโมงหลังคั้น เพื่อรสชาติและคุณค่าทางโภชนาการที่ดีที่สุด เพราะเป็นน้ำส้มสดไม่มีสารกันบูด</p></div>
+            </div>
+
+            <div class="faq-item animate-on-scroll">
+                <button class="faq-q" onclick="toggleFaq(this)">
+                    <span data-i18n="faq5_q">🍊 ส้มใช้พันธุ์อะไร มาจากไหน?</span>
+                    <i class="fas fa-chevron-down faq-icon"></i>
+                </button>
+                <div class="faq-a"><p data-i18n="faq5_a">ใช้ส้มแมนดารินจากไต้หวัน คัดเกรดพรีเมียม หวานฉ่ำ อุดมด้วยวิตามินซี ควบคุมอุณหภูมิในตู้ที่ 3-9°C ตลอดเวลา</p></div>
+            </div>
+
+            <div class="faq-item animate-on-scroll">
+                <button class="faq-q" onclick="toggleFaq(this)">
+                    <span data-i18n="faq6_q">🚫 มีน้ำตาลหรือสารเจือปนไหม?</span>
+                    <i class="fas fa-chevron-down faq-icon"></i>
+                </button>
+                <div class="faq-a"><p data-i18n="faq6_a">ไม่มีเลยครับ — ไม่ใส่น้ำตาล ไม่ผสมน้ำแข็ง ไม่มีสารกันบูด ไม่มีสีผสมอาหาร เป็นน้ำส้มคั้นสด 100% ล้วนๆ</p></div>
+            </div>
+
+            <div class="faq-item animate-on-scroll">
+                <button class="faq-q" onclick="toggleFaq(this)">
+                    <span data-i18n="faq7_q">⚙️ ถ้าตู้มีปัญหา ติดต่อใคร?</span>
+                    <i class="fas fa-chevron-down faq-icon"></i>
+                </button>
+                <div class="faq-a"><p data-i18n="faq7_a">ติดต่อได้ที่ โทร 087-986-7000 หรือ LINE @ofresh ทีมงานพร้อมช่วยเหลือทุกวันครับ</p></div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta-section" id="contact">
+        <div class="cta-content animate-on-scroll">
+            <h2 data-i18n="cta_h2">พร้อมลิ้มรสน้ำส้มคั้นสดแท้?</h2>
+            <p data-i18n="cta_p">ตอนนี้ ตู้ตั้งอยู่ที่ห้างเซ็นทรัล เฟสติวัล เชียงใหม่ ชั้น 4 โซนศูนย์อาหาร มาสัมผัสความสดใหม่ในทุกแก้ว</p>
+            <a href="https://www.google.com/maps/search/?api=1&query=CentralFestival+Chiang+Mai&query_place_id=ChIJAw6GHDQl2jAROD6koPXaeQQ" target="_blank" class="btn-white">
+                <i class="fas fa-map-marker-alt"></i>
+                <span data-i18n="cta_btn">นำทางไปยังตู้ O'Fresh</span>
+            </a>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <div class="footer-logo">
+                    <img src="../OFresh_Logo_transparent.png" alt="O'Fresh Logo">
+                </div>
+                <p data-i18n="footer_desc">ตู้น้ำส้มคั้นสดอัตโนมัติ พร้อมดื่ม
+100% Natural · No Sugar Added
+Temperature kept within 3-9°C</p>
+                <div class="footer-socials">
+                    <a href="https://www.facebook.com/profile.php?id=61584601749720" target="_blank" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                    <a href="https://lin.ee/Xp47yqZ" target="_blank" aria-label="Line"><i class="fab fa-line"></i></a>
+                    <a href="#" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+                </div>
+            </div>
+            <div class="footer-col">
+                <h4 data-i18n="footer_menu">เมนู</h4>
+                <ul>
+                    <li><a href="#home" data-i18n="footer_home">หน้าแรก</a></li>
+                    <li><a href="#quality" data-i18n="footer_quality">คุณภาพ</a></li>
+                    <li><a href="#freshness" data-i18n="footer_fresh">ความสดใหม่</a></li>
+                    <li><a href="#howto" data-i18n="footer_howto">วิธีใช้งาน</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4 data-i18n="footer_info">ข้อมูล</h4>
+                <ul>
+                    <li><a href="#" data-i18n="footer_about">เกี่ยวกับเรา</a></li>
+                    <li><a href="#" data-i18n="footer_branch">สาขา</a></li>
+                    <li><a href="#" data-i18n="footer_news">ข่าวสาร</a></li>
+                    <li><a href="#" data-i18n="footer_privacy">นโยบายความเป็นส่วนตัว</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4 data-i18n="footer_contact">ติดต่อ</h4>
+                <ul>
+                    <li><a href="tel:+66879867000"><i class="fas fa-phone"></i> 087-986-7000</a></li>
+                    <li><a href="https://lin.ee/Xp47yqZ" target="_blank"><i class="fab fa-line"></i> @ofresh</a></li>
+                    <li><a href="https://www.facebook.com/profile.php?id=61584601749720" target="_blank"><i class="fab fa-facebook"></i> O'FRESH</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <span data-i18n="footer_copy">&copy; 2026 O'Fresh. All rights reserved. น้ำส้มคั้นสดอัตโนมัติ</span>
+        </div>
+    </footer>
+
+    <script src="i18n.js"></script>
+    <script>
+        // Navbar scroll effect — no arrow functions (use regular function)
+        window.addEventListener('scroll', function() {
+            var navbar = document.getElementById('navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
+        // Mobile nav toggle
+        function toggleNav() {
+            document.getElementById('navLinks').classList.toggle('active');
+        }
+
+        var navLinkEls = document.querySelectorAll('.nav-links a');
+        for (var i = 0; i < navLinkEls.length; i++) {
+            navLinkEls[i].addEventListener('click', function() {
+                document.getElementById('navLinks').classList.remove('active');
+            });
+        }
+
+        // Scroll animations — guard with IntersectionObserver feature check
+        if ('IntersectionObserver' in window) {
+            // Mark body so CSS can apply the hidden-by-default state
+            document.documentElement.classList.add('io-supported');
+
+            var observer = new IntersectionObserver(function(entries) {
+                for (var j = 0; j < entries.length; j++) {
+                    if (entries[j].isIntersecting) {
+                        entries[j].target.classList.add('animated');
+                    }
+                }
+            }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+            var animEls = document.querySelectorAll('.animate-on-scroll');
+            for (var k = 0; k < animEls.length; k++) {
+                observer.observe(animEls[k]);
+            }
+        }
+        // If IntersectionObserver not supported: elements remain visible (opacity:1 by default CSS)
+
+        // Smooth scroll fallback
+        var anchorLinks = document.querySelectorAll('a[href^="#"]');
+        for (var m = 0; m < anchorLinks.length; m++) {
+            anchorLinks[m].addEventListener('click', function(e) {
+                var href = this.getAttribute('href');
+                if (href === '#') return;
+                e.preventDefault();
+                var target = document.querySelector(href);
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        }
+
+        // FAQ toggle
+        function toggleFaq(btn) {
+            var item = btn.parentElement;
+            var isOpen = item.classList.contains('open');
+            var allOpen = document.querySelectorAll('.faq-item.open');
+            for (var n = 0; n < allOpen.length; n++) {
+                allOpen[n].classList.remove('open');
+            }
+            if (!isOpen) item.classList.add('open');
+        }
+
+        // Init language
+        initI18n();
+    </script>
+</body>
+</html>
