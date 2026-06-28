@@ -29,9 +29,35 @@
             -webkit-text-size-adjust: 100%;
         }
 
+        /* ===== LANG SWITCHER ===== */
+        .lang-switcher {
+            display: -webkit-flex;
+            display: flex;
+            -webkit-align-items: center;
+            align-items: center;
+            background: rgba(255,255,255,0.8);
+            border-radius: 50px;
+            padding: 4px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+        .lang-btn {
+            background: none; border: none; cursor: pointer;
+            font-size: 13px; font-weight: 600; padding: 6px 14px;
+            border-radius: 50px; color: #6B7280;
+            font-family: 'Prompt', 'Noto Sans Thai', Arial, sans-serif;
+            -webkit-transition: all 0.2s;
+            transition: all 0.2s;
+        }
+        .lang-btn:hover { color: #FF6B00; }
+        .lang-btn.active {
+            background: #FF6B00; color: white;
+            box-shadow: 0 2px 8px rgba(255,107,0,0.3);
+        }
+
         /* ===== LOGO ===== */
         .logo-wrap {
-            margin-bottom: 32px;
+            margin-bottom: 28px;
             text-align: center;
         }
         .logo-wrap img {
@@ -168,21 +194,55 @@
             text-align: center;
         }
 
+        /* ===== BACK BUTTON ===== */
+        .btn-back {
+            display: -webkit-inline-flex;
+            display: inline-flex;
+            -webkit-align-items: center;
+            align-items: center;
+            text-decoration: none;
+            color: #6B7280;
+            font-size: 14px;
+            font-weight: 600;
+            background: rgba(255,255,255,0.8);
+            border: 1px solid rgba(0,0,0,0.08);
+            border-radius: 50px;
+            padding: 8px 20px;
+            margin-bottom: 16px;
+            -webkit-transition: all 0.2s;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .btn-back:hover { color: #FF6B00; border-color: rgba(255,107,0,0.3); }
+
         @media (max-width: 480px) {
             .card { padding: 36px 28px; }
             .card-title { font-size: 22px; }
+            .lang-btn { padding: 5px 10px; font-size: 12px; }
         }
     </style>
 </head>
 <body>
+
+    <!-- BACK BUTTON -->
+    <a href="index.html" class="btn-back" id="btn-back">&#8592; <span id="txt-back">กลับหน้าแรก</span></a>
+
+    <!-- LANG SWITCHER -->
+    <div class="lang-switcher">
+        <button class="lang-btn active" data-lang="th" onclick="applyLang('th')">TH</button>
+        <button class="lang-btn" data-lang="en" onclick="applyLang('en')">EN</button>
+        <button class="lang-btn" data-lang="zh" onclick="applyLang('zh')">中文</button>
+        <button class="lang-btn" data-lang="ja" onclick="applyLang('ja')">日本語</button>
+        <button class="lang-btn" data-lang="ko" onclick="applyLang('ko')">한국어</button>
+    </div>
 
     <div class="logo-wrap">
         <img src="../OFresh_Logo_transparent.png" alt="O'Fresh Logo">
     </div>
 
     <div class="card">
-        <div class="card-title">สั่งซื้อส้มแมนดาริน</div>
-        <div class="card-subtitle">สแกน QR Code ด้วยมือถือของคุณ<br>เพื่อกรอกข้อมูลสั่งซื้อได้เลย</div>
+        <div class="card-title" id="txt-title">สั่งซื้อส้มแมนดาริน</div>
+        <div class="card-subtitle" id="txt-subtitle">สแกน QR Code ด้วยมือถือของคุณ<br>เพื่อกรอกข้อมูลสั่งซื้อได้เลย</div>
 
         <div class="qr-wrap">
             <div id="qrcode"></div>
@@ -195,29 +255,95 @@
         <div class="steps">
             <div class="step-item">
                 <div class="step-circle">1</div>
-                <div class="step-text">สแกน<br>QR Code</div>
+                <div class="step-text" id="txt-step1">สแกน<br>QR Code</div>
             </div>
             <div class="step-item">
                 <div class="step-circle">2</div>
-                <div class="step-text">กรอก<br>ข้อมูล</div>
+                <div class="step-text" id="txt-step2">กรอก<br>ข้อมูล</div>
             </div>
             <div class="step-item">
                 <div class="step-circle">3</div>
-                <div class="step-text">รอทีมงาน<br>ติดต่อกลับ</div>
+                <div class="step-text" id="txt-step3">รอทีมงาน<br>ติดต่อกลับ</div>
             </div>
         </div>
     </div>
 
-    <div class="footer-note">ส้มแมนดารินไต้หวัน · ฿60/กก. · จัดส่งฟรี อ.เมือง เชียงใหม่</div>
+    <div class="footer-note" id="txt-footer">ส้มแมนดารินไต้หวัน · ฿60/กก. · จัดส่งฟรี อ.เมือง เชียงใหม่</div>
 
     <!-- QR Code library (ES5, Android 9 compatible) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script>
         var ORDER_URL = 'https://ofresh.baanporjai.com/order.html';
 
+        var i18n = {
+            th: {
+                title:    'สั่งซื้อส้มแมนดาริน',
+                subtitle: 'สแกน QR Code ด้วยมือถือของคุณ<br>เพื่อกรอกข้อมูลสั่งซื้อได้เลย',
+                step1:    'สแกน<br>QR Code',
+                step2:    'กรอก<br>ข้อมูล',
+                step3:    'รอทีมงาน<br>ติดต่อกลับ',
+                footer:   'ส้มแมนดารินไต้หวัน · ฿60/กก. · จัดส่งฟรี อ.เมือง เชียงใหม่',
+                back:     'กลับหน้าแรก'
+            },
+            en: {
+                title:    'Order Mandarin Oranges',
+                subtitle: 'Scan the QR Code with your phone<br>to fill in your order details',
+                step1:    'Scan<br>QR Code',
+                step2:    'Fill in<br>Details',
+                step3:    'Wait for<br>Our Team',
+                footer:   'Taiwanese Mandarin Oranges · ฿60/kg · Free delivery in Mueang Chiang Mai',
+                back:     'Back to Home'
+            },
+            zh: {
+                title:    '订购柑橘',
+                subtitle: '用手机扫描 QR Code<br>填写您的订单信息',
+                step1:    '扫描<br>QR Code',
+                step2:    '填写<br>信息',
+                step3:    '等待<br>团队联系',
+                footer:   '台湾柑橘 · ฿60/公斤 · 清迈市区免费配送',
+                back:     '返回首页'
+            },
+            ja: {
+                title:    'みかんを注文する',
+                subtitle: 'スマートフォンで QR Code をスキャンして<br>注文情報を入力してください',
+                step1:    'QR Code<br>をスキャン',
+                step2:    '情報を<br>入力',
+                step3:    'チームから<br>連絡待ち',
+                footer:   '台湾産マンダリン · ฿60/kg · チェンマイ市内送料無料',
+                back:     'ホームへ戻る'
+            },
+            ko: {
+                title:    '귤 주문하기',
+                subtitle: '휴대폰으로 QR Code를 스캔하여<br>주문 정보를 입력하세요',
+                step1:    'QR Code<br>스캔',
+                step2:    '정보<br>입력',
+                step3:    '팀 연락<br>대기',
+                footer:   '대만산 만다린 · ฿60/kg · 치앙마이 시내 무료 배송',
+                back:     '홈으로 돌아가기'
+            }
+        };
+
+        function applyLang(lang) {
+            var t = i18n[lang] || i18n['th'];
+            document.getElementById('txt-title').innerHTML    = t.title;
+            document.getElementById('txt-subtitle').innerHTML = t.subtitle;
+            document.getElementById('txt-step1').innerHTML    = t.step1;
+            document.getElementById('txt-step2').innerHTML    = t.step2;
+            document.getElementById('txt-step3').innerHTML    = t.step3;
+            document.getElementById('txt-footer').innerHTML   = t.footer;
+            document.getElementById('txt-back').innerHTML     = t.back;
+
+            var btns = document.querySelectorAll('.lang-btn');
+            for (var i = 0; i < btns.length; i++) {
+                btns[i].classList.toggle('active', btns[i].getAttribute('data-lang') === lang);
+            }
+
+            localStorage.setItem('ofresh_lang', lang);
+            document.documentElement.lang = lang === 'zh' ? 'zh-CN' : lang;
+        }
+
         function generateQR() {
             if (typeof QRCode === 'undefined') {
-                // Fallback: แสดง URL ถ้า library โหลดไม่ได้
                 var el = document.getElementById('qrcode');
                 el.style.padding = '20px';
                 el.style.fontSize = '12px';
@@ -226,7 +352,6 @@
                 el.textContent = ORDER_URL;
                 return;
             }
-
             new QRCode(document.getElementById('qrcode'), {
                 text: ORDER_URL,
                 width: 240,
@@ -237,11 +362,36 @@
             });
         }
 
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', generateQR);
-        } else {
+        function init() {
             generateQR();
+            var saved = localStorage.getItem('ofresh_lang') || 'th';
+            applyLang(saved);
         }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+
+        // Auto-redirect หลัง 2 นาทีไม่มีการกระทำ
+        var idleTimer = null;
+        var IDLE_MS = 2 * 60 * 1000; // 2 minutes
+
+        function resetIdle() {
+            clearTimeout(idleTimer);
+            idleTimer = setTimeout(function() {
+                window.location.href = 'index.html';
+            }, IDLE_MS);
+        }
+
+        // นับใหม่ทุกครั้งที่มีการสัมผัสหรือคลิก
+        document.addEventListener('touchstart', resetIdle);
+        document.addEventListener('touchmove', resetIdle);
+        document.addEventListener('click', resetIdle);
+        document.addEventListener('mousemove', resetIdle);
+
+        resetIdle(); // เริ่มนับตั้งแต่โหลดหน้า
     </script>
 </body>
 </html>
