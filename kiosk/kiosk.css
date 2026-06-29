@@ -5,6 +5,8 @@
 
 * { margin: 0; padding: 0; -webkit-box-sizing: border-box; box-sizing: border-box; }
 html, body { overflow: hidden; height: 100%; }
+/* ถ้า animation overshoot ให้เห็นสีเดียวกับ footer แทนสีขาว */
+html { background: #1A1A2E; }
 body {
     font-family: 'Prompt', 'Noto Sans Thai', 'Sarabun', Arial, sans-serif;
     color: #2D2D2D;
@@ -25,15 +27,15 @@ body {
 }
 @-webkit-keyframes kiosk-scroll {
     0%     { -webkit-transform: translateY(0); transform: translateY(0); }
-    96.7%  { -webkit-transform: translateY(calc(-100% + 160vh)); transform: translateY(calc(-100% + 160vh)); }
-    98.3%  { -webkit-transform: translateY(calc(-100% + 160vh)); transform: translateY(calc(-100% + 160vh)); }
+    96.7%  { -webkit-transform: translateY(calc(-100% + 100vh)); transform: translateY(calc(-100% + 100vh)); }
+    98.3%  { -webkit-transform: translateY(calc(-100% + 100vh)); transform: translateY(calc(-100% + 100vh)); }
     98.4%  { -webkit-transform: translateY(0); transform: translateY(0); }
     100%   { -webkit-transform: translateY(0); transform: translateY(0); }
 }
 @keyframes kiosk-scroll {
     0%     { -webkit-transform: translateY(0); transform: translateY(0); }
-    96.7%  { -webkit-transform: translateY(calc(-100% + 160vh)); transform: translateY(calc(-100% + 160vh)); }
-    98.3%  { -webkit-transform: translateY(calc(-100% + 160vh)); transform: translateY(calc(-100% + 160vh)); }
+    96.7%  { -webkit-transform: translateY(calc(-100% + 100vh)); transform: translateY(calc(-100% + 100vh)); }
+    98.3%  { -webkit-transform: translateY(calc(-100% + 100vh)); transform: translateY(calc(-100% + 100vh)); }
     98.4%  { -webkit-transform: translateY(0); transform: translateY(0); }
     100%   { -webkit-transform: translateY(0); transform: translateY(0); }
 }
