@@ -1,0 +1,12 @@
+# robots.txt สำหรับ ofresh.baanporjai.com
+# อนุญาตให้ทุก Search Engine เข้า crawl ได้
+
+User-agent: *
+Allow: /
+
+# ไม่ต้องให้ crawl ไฟล์ที่ไม่จำเป็น (เพิ่มได้ถ้ามี)
+# Disallow: /admin/
+# Disallow: /private/
+
+# บอก Google ว่า Sitemap อยู่ที่ไหน
+Sitemap: https://ofresh.baanporjai.com/sitemap.xml
