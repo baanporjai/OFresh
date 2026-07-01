@@ -105,6 +105,13 @@ const translations = {
     footer_privacy: 'นโยบายความเป็นส่วนตัว',
     footer_copy: '© 2026 O\'Fresh. All rights reserved. น้ำส้มคั้นสดอัตโนมัติ',
 
+    // Reviews
+    reviews_tag: 'รีวิวจากลูกค้า',
+    reviews_h2: 'ลูกค้าพูดถึง O\'Fresh ว่ายังไง?',
+    reviews_p: 'อ่านและเขียนรีวิวจริงได้ที่ Google Maps',
+    reviews_write_btn: 'เขียนรีวิวให้เรา',
+    reviews_read_btn: 'อ่านรีวิวทั้งหมด',
+
     // FAQ
     faq_tag: 'คำถามที่พบบ่อย',
     faq_h2: 'มีข้อสงสัยไหม?',
@@ -263,6 +270,13 @@ const translations = {
     footer_news: 'News',
     footer_privacy: 'Privacy Policy',
     footer_copy: '© 2026 O\'Fresh. All rights reserved.',
+
+    // Reviews
+    reviews_tag: 'Customer Reviews',
+    reviews_h2: 'What do customers say about O\'Fresh?',
+    reviews_p: 'Read and write real reviews on Google Maps',
+    reviews_write_btn: 'Write a Review',
+    reviews_read_btn: 'Read All Reviews',
 
     // FAQ
     faq_tag: 'FAQ',
@@ -423,6 +437,13 @@ const translations = {
     footer_privacy: '隐私政策',
     footer_copy: '© 2026 O\'Fresh. 版权所有。',
 
+    // Reviews
+    reviews_tag: '顾客评价',
+    reviews_h2: '顾客怎么评价 O\'Fresh？',
+    reviews_p: '前往 Google 地图查看或撰写真实评价',
+    reviews_write_btn: '给我们写评价',
+    reviews_read_btn: '查看所有评价',
+
     // FAQ
     faq_tag: '常见问题',
     faq_h2: '有疑问吗？',
@@ -582,6 +603,13 @@ const translations = {
     footer_privacy: 'プライバシーポリシー',
     footer_copy: '© 2026 O\'Fresh. All rights reserved.',
 
+    // Reviews
+    reviews_tag: 'お客様の声',
+    reviews_h2: 'O\'Fresh の評判は？',
+    reviews_p: 'Google マップで本物のレビューを読む・書く',
+    reviews_write_btn: 'レビューを書く',
+    reviews_read_btn: 'すべてのレビューを見る',
+
     // FAQ
     faq_tag: 'よくある質問',
     faq_h2: 'ご質問はありますか？',
@@ -739,6 +767,13 @@ const translations = {
     footer_news: '뉴스',
     footer_privacy: '개인정보 처리방침',
     footer_copy: '© 2026 O\'Fresh. All rights reserved.',
+
+    // Reviews
+    reviews_tag: '고객 후기',
+    reviews_h2: '고객들이 O\'Fresh에 대해 뭐라고 말할까요?',
+    reviews_p: '구글 지도에서 실제 리뷰를 읽고 작성해보세요',
+    reviews_write_btn: '리뷰 작성하기',
+    reviews_read_btn: '모든 리뷰 보기',
 
     // FAQ
     faq_tag: '자주 묻는 질문',
