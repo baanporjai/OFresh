@@ -258,13 +258,32 @@ function setLang(lang) {
   if (window._rows) render(window._rows);
 }
 
+// แยกฟิลด์ CSV แบบรองรับ field ที่ครอบด้วย "..." ซึ่งอาจมี comma อยู่ข้างในได้ (เช่น timestamp "2/7/2026, 13:55:17")
+function splitCSVLine(line) {
+  const fields = []; let cur = ''; let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (line[i+1] === '"') { cur += '"'; i++; } else { inQuotes = false; }
+      } else { cur += c; }
+    } else {
+      if (c === '"') inQuotes = true;
+      else if (c === ',') { fields.push(cur); cur = ''; }
+      else cur += c;
+    }
+  }
+  fields.push(cur);
+  return fields;
+}
+
 // columns: timestamp, name, phone, line, qty, total, address, note
 function parseCSV(text) {
   const lines = text.trim().split('\n');
-  const h = lines[0].split(',').map(s => s.trim().toLowerCase().replace(/\r/g,''));
+  const h = splitCSVLine(lines[0]).map(s => s.trim().toLowerCase().replace(/\r/g,''));
   const iTs = h.indexOf('timestamp'), iName = h.indexOf('name'), iQty = h.indexOf('qty'), iTotal = h.indexOf('total');
   return lines.slice(1).map(line => {
-    const v = line.split(','); const g = i => (v[i]||'').trim().replace(/\r/g,'');
+    const v = splitCSVLine(line); const g = i => (v[i]||'').trim().replace(/\r/g,'');
     const dt = new Date(g(iTs));
     const qty = parseFloat(g(iQty))||0;
     const total = parseFloat(g(iTotal))||0;
