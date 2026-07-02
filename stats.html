@@ -75,6 +75,18 @@ body { font-family: 'Prompt', sans-serif; background: var(--off-white); color: v
   box-shadow: 0 0 8px #4ade80; animation: blink 1.8s ease-in-out infinite; }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
 
+.refresh-btn {
+  display: inline-flex; align-items: center; gap: 6px; margin-top: 12px;
+  background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14);
+  border-radius: 30px; padding: 7px 18px; font-size: .78rem; color: rgba(255,255,255,.75);
+  font-family: 'Prompt', sans-serif; cursor: pointer; transition: background .2s;
+  position: relative; z-index: 1;
+}
+.refresh-btn:hover { background: rgba(255,255,255,.16); }
+.refresh-btn:disabled { opacity: .5; cursor: wait; }
+.refresh-btn.spinning #refreshIcon { display: inline-block; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
 /* ── PAGE ── */
 .page { max-width: 1200px; margin: 0 auto; padding: 32px 20px 60px; }
 
@@ -300,6 +312,9 @@ footer a { color: var(--orange); text-decoration: none; }
     <div class="live-dot"></div>
     <span id="lastUpdate">—</span>
   </div>
+  <button id="refreshBtn" onclick="load(true)" class="refresh-btn">
+    <span id="refreshIcon">🔄</span> <span data-th="รีเฟรชข้อมูล" data-en="Refresh">รีเฟรชข้อมูล</span>
+  </button>
 </div>
 
 <div class="page">
@@ -640,15 +655,17 @@ function animateNum(id,target) {
 }
 
 // ── LOAD ──
-async function load() {
+async function load(force) {
+  const btn = document.getElementById('refreshBtn');
+  if (btn) { btn.disabled = true; btn.classList.add('spinning'); }
   try {
     const today=new Date().toDateString();
     const cached=JSON.parse(localStorage.getItem(CACHE_KEY)||'null');
     let rows;
-    if(cached&&cached.date===today){
+    if(!force && cached&&cached.date===today){
       rows=cached.rows.map(r=>({...r,datetime:new Date(r.datetime)}));
     } else {
-      const res=await fetch(SHEET_CSV_URL);
+      const res=await fetch(SHEET_CSV_URL + (SHEET_CSV_URL.includes('?') ? '&' : '?') + 't=' + Date.now());
       const text=await res.text();
       rows=parseCSV(text);
       localStorage.setItem(CACHE_KEY,JSON.stringify({date:today,rows}));
@@ -660,6 +677,7 @@ async function load() {
   } finally {
     const el=document.getElementById('loading');
     el.style.opacity='0'; setTimeout(()=>el.style.display='none',400);
+    if (btn) { btn.disabled = false; btn.classList.remove('spinning'); }
   }
 }
 
