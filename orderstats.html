@@ -120,10 +120,35 @@ body { font-family: 'Prompt', sans-serif; background: var(--off-white); color: v
 .order-row {
   display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center;
   padding: 10px 14px; background: var(--gray); border-radius: 12px; font-size: .82rem;
+  cursor: pointer; transition: background .15s, transform .15s;
 }
+.order-row:hover { background: rgba(255,107,0,.1); transform: translateX(2px); }
 .order-name { font-weight: 600; color: var(--text); }
 .order-date { color: var(--muted); font-size: .74rem; }
 .order-qty { color: var(--orange); font-weight: 700; }
+
+/* ── ORDER DETAIL MODAL ── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.5);
+  display: none; align-items: center; justify-content: center; z-index: 300; padding: 20px;
+}
+.modal-overlay.show { display: flex; }
+.modal-card {
+  background: var(--white); border-radius: 20px; padding: 28px;
+  max-width: 420px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,.25);
+  position: relative;
+}
+.modal-close {
+  position: absolute; top: 16px; right: 16px; width: 32px; height: 32px;
+  border-radius: 50%; border: none; background: var(--gray); cursor: pointer;
+  font-size: 1rem; color: var(--muted); display: flex; align-items: center; justify-content: center;
+}
+.modal-close:hover { background: rgba(255,107,0,.15); color: var(--orange); }
+.modal-title { font-size: 1.1rem; font-weight: 800; color: var(--text); margin-bottom: 18px; padding-right: 30px; }
+.modal-row { display: flex; justify-content: space-between; gap: 14px; padding: 9px 0; border-bottom: 1px solid var(--gray); font-size: .85rem; }
+.modal-row:last-child { border-bottom: none; }
+.modal-row .k { color: var(--muted); flex-shrink: 0; }
+.modal-row .v { color: var(--text); font-weight: 600; text-align: right; word-break: break-word; }
 
 #loading {
   position: fixed; inset: 0;
@@ -238,6 +263,15 @@ footer a { color: var(--orange); text-decoration: none; }
 
 </div>
 
+<!-- ORDER DETAIL MODAL -->
+<div class="modal-overlay" id="orderModal" onclick="if(event.target===this) closeOrderModal()">
+  <div class="modal-card">
+    <button class="modal-close" onclick="closeOrderModal()">✕</button>
+    <div class="modal-title" id="modalTitle">—</div>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
 <footer>
   <p>🍊 O'Fresh · <a href="https://ofresh.baanporjai.com">ofresh.baanporjai.com</a><br>
   <span data-th="ข้อมูล ณ " data-en="Data as of ">ข้อมูล ณ </span><span id="footerDate">—</span></p>
@@ -277,17 +311,32 @@ function splitCSVLine(line) {
   return fields;
 }
 
-// columns: timestamp, name, phone, line, qty, total, address, note
+// Sheet บันทึก timestamp เป็น "D/M/YYYY, H:MM:SS" (วัน/เดือน/ปี) — new Date() ของ JS
+// จะตีความผิดเป็นแบบอเมริกา (เดือน/วัน/ปี) ต้อง parse เองแทน
+function parseTimestamp(s) {
+  const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s*(\d{1,2}):(\d{2}):(\d{2})$/);
+  if (!m) return new Date(s);
+  const [, d, mo, y, h, mi, se] = m.map(Number);
+  return new Date(y, mo - 1, d, h, mi, se);
+}
+
+// columns: timestamp, name, phone, line, qty, total, address, deliveryDate, note
 function parseCSV(text) {
   const lines = text.trim().split('\n');
   const h = splitCSVLine(lines[0]).map(s => s.trim().toLowerCase().replace(/\r/g,''));
-  const iTs = h.indexOf('timestamp'), iName = h.indexOf('name'), iQty = h.indexOf('qty'), iTotal = h.indexOf('total');
+  const iTs = h.indexOf('timestamp'), iName = h.indexOf('name'), iPhone = h.indexOf('phone'),
+        iLine = h.indexOf('line'), iQty = h.indexOf('qty'), iTotal = h.indexOf('total'),
+        iAddress = h.indexOf('address'), iDate = h.indexOf('deliverydate'), iNote = h.indexOf('note');
   return lines.slice(1).map(line => {
     const v = splitCSVLine(line); const g = i => (v[i]||'').trim().replace(/\r/g,'');
-    const dt = new Date(g(iTs));
+    const dt = parseTimestamp(g(iTs));
     const qty = parseFloat(g(iQty))||0;
     const total = parseFloat(g(iTotal))||0;
-    return { datetime: dt, name: g(iName)||'—', qty, total };
+    return {
+      datetime: dt, name: g(iName)||'—', qty, total,
+      phone: g(iPhone), line: g(iLine), address: g(iAddress),
+      deliveryDate: g(iDate), note: g(iNote),
+    };
   }).filter(r => r.datetime && !isNaN(r.datetime) && r.qty > 0);
 }
 
@@ -380,9 +429,10 @@ function render(rows) {
   renderMonthlyChart(rows);
 
   const recent = [...rows].sort((a,b)=>b.datetime-a.datetime).slice(0,8);
+  window._recentOrders = recent;
   const locale = isTh?'th-TH':'en-US';
-  document.getElementById('orderList').innerHTML = recent.map(r=>`
-    <div class="order-row">
+  document.getElementById('orderList').innerHTML = recent.map((r,i)=>`
+    <div class="order-row" onclick="openOrderModal(${i})">
       <div>
         <div class="order-name">${r.name}</div>
         <div class="order-date">${r.datetime.toLocaleString(locale,{dateStyle:'short',timeStyle:'short'})}</div>
@@ -398,6 +448,35 @@ function render(rows) {
   } else {
     document.getElementById('lastUpdate').textContent = isTh?'ยังไม่มีข้อมูล':'No data yet';
   }
+}
+
+function openOrderModal(i) {
+  const r = window._recentOrders[i];
+  if (!r) return;
+  const isTh = currentLang==='th';
+  const locale = isTh?'th-TH':'en-US';
+  document.getElementById('modalTitle').textContent = r.name;
+
+  const rows = [
+    [isTh?'วันที่สั่ง':'Order Date', r.datetime.toLocaleString(locale,{dateStyle:'medium',timeStyle:'short'})],
+    [isTh?'เบอร์โทร':'Phone', r.phone],
+    [isTh?'LINE ID':'LINE ID', r.line],
+    [isTh?'จำนวน':'Quantity', `${r.qty} ${isTh?'กก.':'kg'}`],
+    [isTh?'ยอดรวม':'Total', `฿${r.total.toLocaleString()}`],
+    [isTh?'ที่อยู่':'Address', r.address],
+    [isTh?'วันที่ต้องการของ':'Desired Delivery Date', r.deliveryDate],
+    [isTh?'หมายเหตุ':'Note', r.note],
+  ].filter(([,v]) => v);
+
+  document.getElementById('modalBody').innerHTML = rows.map(([k,v]) =>
+    `<div class="modal-row"><span class="k">${k}</span><span class="v">${v}</span></div>`
+  ).join('');
+
+  document.getElementById('orderModal').classList.add('show');
+}
+
+function closeOrderModal() {
+  document.getElementById('orderModal').classList.remove('show');
 }
 
 function animateNum(id,target) {
