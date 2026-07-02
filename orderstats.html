@@ -158,9 +158,12 @@ footer a { color: var(--orange); text-decoration: none; }
 
 <nav class="navbar">
   <a href="index.html" class="nav-logo"><img src="OFresh_Logo_transparent.png" alt="O'Fresh"></a>
-  <div class="lang-bar">
-    <button class="lang-btn active" onclick="setLang('th')">TH</button>
-    <button class="lang-btn" onclick="setLang('en')">EN</button>
+  <div style="display:flex;align-items:center;gap:14px">
+    <a href="stats.html" style="font-size:.8rem;font-weight:700;color:var(--muted);text-decoration:none" data-th="← ยอดขายตู้" data-en="← Machine Sales">← ยอดขายตู้</a>
+    <div class="lang-bar">
+      <button class="lang-btn active" onclick="setLang('th')">TH</button>
+      <button class="lang-btn" onclick="setLang('en')">EN</button>
+    </div>
   </div>
 </nav>
 
