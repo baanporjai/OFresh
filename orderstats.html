@@ -630,9 +630,11 @@ async function updateOrderStatus(id, selectEl) {
   const newStatus = selectEl.value;
   selectEl.disabled = true;
   try {
+    // ใช้ Content-Type: text/plain แทน application/json เพื่อเลี่ยง CORS preflight
+    // (เบราว์เซอร์จะยิง OPTIONS ก่อนถ้าใช้ application/json แต่ Apps Script ไม่รองรับ preflight)
     await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({ action: 'updateStatus', id, status: newStatus }),
     });
     selectEl.className = `status-select ${newStatus}`;
