@@ -376,6 +376,14 @@
 
             <div class="form-group">
                 <label>
+                    <span data-i18n="order_date_label">วันที่ต้องการของ</span>
+                    <span style="color:var(--text-muted);font-weight:400"> (<span data-i18n="order_date_optional">ถ้ามี</span>)</span>
+                </label>
+                <input type="date" id="deliveryDate">
+            </div>
+
+            <div class="form-group">
+                <label>
                     <span data-i18n="order_note_label">หมายเหตุ</span>
                     <span style="color:var(--text-muted);font-weight:400"> (<span data-i18n="order_note_optional">ถ้ามี</span>)</span>
                 </label>
@@ -436,6 +444,8 @@
     qtyInput.addEventListener('input', updatePrice);
     updatePrice();
 
+    document.getElementById('deliveryDate').min = new Date().toISOString().split('T')[0];
+
     function getLang() {
         return localStorage.getItem('ofresh_lang') || 'th';
     }
@@ -453,6 +463,7 @@
         const line    = document.getElementById('line').value.trim();
         const qty     = Math.min(50, parseInt(document.getElementById('qty').value) || 0);
         const address = document.getElementById('address').value.trim();
+        const deliveryDate = document.getElementById('deliveryDate').value;
         const note    = document.getElementById('note').value.trim();
 
         if (!name || !phone || !qty || !address) {
@@ -471,10 +482,10 @@
             const res = await fetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, phone, line, qty, total, address, note })
+                body: JSON.stringify({ name, phone, line, qty, total, address, deliveryDate, note })
             });
             if (!res.ok) throw new Error('API error');
-            showSuccess({ name, phone, line, qty, total, address, note });
+            showSuccess({ name, phone, line, qty, total, address, deliveryDate, note });
         } catch (err) {
             alert(t('order_err_fail'));
             submitBtn.disabled = false;
@@ -494,6 +505,7 @@
             ${data.line ? `<div class="order-summary-row"><span class="key">${t('order_summary_line')}</span><span class="val">${data.line}</span></div>` : ''}
             <div class="order-summary-row"><span class="key">${t('order_summary_qty')}</span><span class="val">${data.qty} ${qtyUnit}</span></div>
             <div class="order-summary-row"><span class="key">${t('order_summary_address')}</span><span class="val">${data.address}</span></div>
+            ${data.deliveryDate ? `<div class="order-summary-row"><span class="key">${t('order_summary_date')}</span><span class="val">${data.deliveryDate}</span></div>` : ''}
             ${data.note ? `<div class="order-summary-row"><span class="key">${t('order_summary_note')}</span><span class="val">${data.note}</span></div>` : ''}
             <div class="order-summary-row total"><span class="key">${t('order_summary_total')}</span><span class="val">฿${data.total.toLocaleString()}</span></div>
         `;
@@ -504,6 +516,7 @@
     function resetForm() {
         document.getElementById('orderForm').reset();
         document.getElementById('qty').value = 2;
+        document.getElementById('deliveryDate').value = '';
         updatePrice();
         document.getElementById('formCard').style.display = 'block';
         document.getElementById('successCard').classList.remove('show');

@@ -32,9 +32,9 @@ export default {
         return jsonResponse({ success: false, error: 'Invalid JSON' }, 400);
       }
 
-      const { name, phone, line, qty, total, address, note } = data;
+      const { name, phone, line, qty, total, address, deliveryDate, note } = data;
 
-      if (!name || !phone || !line || !qty || !address) {
+      if (!name || !phone || !qty || !address) {
         return jsonResponse({ success: false, error: 'Missing required fields' }, 400);
       }
 
@@ -53,6 +53,7 @@ export default {
         `⚖️ จำนวน: ${qty} กก.`,
         `💰 ยอดรวม: ฿${Number(total).toLocaleString()} (ไม่รวมค่าส่ง)`,
         `📍 ที่อยู่: ${address}`,
+        deliveryDate ? `📅 วันที่ต้องการของ: ${deliveryDate}` : null,
         note ? `📝 หมายเหตุ: ${note}` : null,
         '─────────────────',
         `🕐 ${now}`,
@@ -83,7 +84,7 @@ export default {
             await fetch(env.SHEET_WEBHOOK_URL, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ name, phone, line, qty, total, address, note }),
+              body: JSON.stringify({ name, phone, line, qty, total, address, deliveryDate, note }),
             });
           } catch (sheetErr) {
             console.error('Sheet webhook error:', sheetErr);
