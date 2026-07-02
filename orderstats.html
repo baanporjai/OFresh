@@ -332,6 +332,14 @@ footer a { color: var(--orange); text-decoration: none; }
     <div class="delivery-list" id="tomorrowList"></div>
   </div>
 
+  <div class="chart-card" style="margin-bottom:20px">
+    <div class="chart-header">
+      <div class="chart-title">⏰ <span data-th="รายการค้างยังรอการจัดส่ง" data-en="Overdue Pending Deliveries">รายการค้างยังรอการจัดส่ง</span></div>
+      <div class="chart-badge" id="overdueBadge">—</div>
+    </div>
+    <div class="delivery-list" id="overdueList"></div>
+  </div>
+
   <div class="kpi-grid">
     <div class="kpi orange">
       <div class="kpi-accent"></div>
@@ -576,10 +584,19 @@ function render(rows) {
   const todayStr = today.toISOString().slice(0,10);
   const tomorrowStr = tomorrow.toISOString().slice(0,10);
 
-  window._todayDeliveries = renderDeliveryList(rows, todayStr, 'deliveryList', 'todayBadge',
+  window._todayDeliveries = renderDeliveryList(rows, r => r.deliveryDate === todayStr, 'deliveryList', 'todayBadge',
     isTh?'ไม่มีรายการจัดส่งวันนี้':'No deliveries scheduled today', 'openDeliveryModal', isTh);
-  window._tomorrowDeliveries = renderDeliveryList(rows, tomorrowStr, 'tomorrowList', 'tomorrowBadge',
+  window._tomorrowDeliveries = renderDeliveryList(rows, r => r.deliveryDate === tomorrowStr, 'tomorrowList', 'tomorrowBadge',
     isTh?'ไม่มีรายการรอจัดส่งพรุ่งนี้':'No deliveries scheduled tomorrow', 'openTomorrowModal', isTh);
+
+  // รายการค้าง — deliveryDate ผ่านมาแล้ว แต่สถานะยังไม่ใช่ delivered/cancelled
+  const isOverdue = r => {
+    if (!r.deliveryDate || r.deliveryDate >= todayStr) return false;
+    const cls = getStatusInfo(r.status, isTh).cls;
+    return cls !== 'delivered' && cls !== 'cancelled';
+  };
+  window._overdueDeliveries = renderDeliveryList(rows, isOverdue, 'overdueList', 'overdueBadge',
+    isTh?'ไม่มีรายการค้าง':'No overdue deliveries', 'openOverdueModal', isTh);
 
   if (N) {
     const latest = rows.reduce((a,b)=>a.datetime>b.datetime?a:b);
@@ -601,8 +618,8 @@ function statusOptionsHTML(currentCls, isTh) {
   }).join('');
 }
 
-function renderDeliveryList(rows, dateStr, listElId, badgeElId, emptyMsg, modalFn, isTh) {
-  const deliveries = rows.filter(r => r.deliveryDate === dateStr).sort((a,b)=>a.datetime-b.datetime);
+function renderDeliveryList(rows, filterFn, listElId, badgeElId, emptyMsg, modalFn, isTh) {
+  const deliveries = rows.filter(filterFn).sort((a,b)=>a.datetime-b.datetime);
   document.getElementById(badgeElId).textContent = `${deliveries.length} ${isTh?'ออเดอร์':'orders'}`;
   document.getElementById(listElId).innerHTML = deliveries.map((r,i) => {
     const st = getStatusInfo(r.status, isTh);
@@ -701,6 +718,11 @@ function openDeliveryModal(i) {
 
 function openTomorrowModal(i) {
   const r = window._tomorrowDeliveries[i];
+  if (r) showOrderDetail(r);
+}
+
+function openOverdueModal(i) {
+  const r = window._overdueDeliveries[i];
   if (r) showOrderDetail(r);
 }
 
