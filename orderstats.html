@@ -127,6 +127,29 @@ body { font-family: 'Prompt', sans-serif; background: var(--off-white); color: v
 .order-date { color: var(--muted); font-size: .74rem; }
 .order-qty { color: var(--orange); font-weight: 700; }
 
+/* ── TODAY DELIVERY LIST ── */
+.delivery-list { display: flex; flex-direction: column; gap: 0; }
+.delivery-row {
+  padding: 16px 4px; border-bottom: 1px solid var(--gray);
+  cursor: pointer; transition: background .15s;
+}
+.delivery-row:last-child { border-bottom: none; }
+.delivery-row:hover { background: rgba(255,107,0,.05); }
+.delivery-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.delivery-name { font-weight: 700; color: var(--text); font-size: .95rem; }
+.delivery-total { font-weight: 800; color: var(--text); font-size: .95rem; white-space: nowrap; }
+.delivery-meta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 4px; font-size: .78rem; color: var(--muted); }
+.delivery-meta span { display: flex; align-items: center; gap: 4px; }
+.delivery-note { margin-top: 6px; font-size: .8rem; color: var(--text); }
+.status-badge {
+  display: inline-block; margin-top: 10px; padding: 4px 12px; border-radius: 20px;
+  font-size: .72rem; font-weight: 700;
+}
+.status-badge.pending { background: rgba(245,158,11,.15); color: #b45309; }
+.status-badge.confirmed { background: rgba(59,130,246,.15); color: #1d4ed8; }
+.status-badge.delivered { background: rgba(16,185,129,.15); color: #047857; }
+.status-badge.cancelled { background: rgba(239,68,68,.15); color: #b91c1c; }
+
 /* ── ORDER DETAIL MODAL ── */
 .modal-overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,.5);
@@ -203,6 +226,22 @@ footer a { color: var(--orange); text-decoration: none; }
 </div>
 
 <div class="page">
+
+  <div class="chart-card" style="margin-bottom:20px">
+    <div class="chart-header">
+      <div class="chart-title">🚚 <span data-th="รายการจัดส่งวันนี้" data-en="Today's Deliveries">รายการจัดส่งวันนี้</span></div>
+      <div class="chart-badge" id="todayBadge">—</div>
+    </div>
+    <div class="delivery-list" id="deliveryList"></div>
+  </div>
+
+  <div class="chart-card" style="margin-bottom:20px">
+    <div class="chart-header">
+      <div class="chart-title">📦 <span data-th="รายการรอจัดส่งพรุ่งนี้" data-en="Tomorrow's Pending Deliveries">รายการรอจัดส่งพรุ่งนี้</span></div>
+      <div class="chart-badge" id="tomorrowBadge">—</div>
+    </div>
+    <div class="delivery-list" id="tomorrowList"></div>
+  </div>
 
   <div class="kpi-grid">
     <div class="kpi orange">
@@ -326,7 +365,8 @@ function parseCSV(text) {
   const h = splitCSVLine(lines[0]).map(s => s.trim().toLowerCase().replace(/\r/g,''));
   const iTs = h.indexOf('timestamp'), iName = h.indexOf('name'), iPhone = h.indexOf('phone'),
         iLine = h.indexOf('line'), iQty = h.indexOf('qty'), iTotal = h.indexOf('total'),
-        iAddress = h.indexOf('address'), iDate = h.indexOf('deliverydate'), iNote = h.indexOf('note');
+        iAddress = h.indexOf('address'), iDate = h.indexOf('deliverydate'), iNote = h.indexOf('note'),
+        iStatus = h.indexOf('status');
   return lines.slice(1).map(line => {
     const v = splitCSVLine(line); const g = i => (v[i]||'').trim().replace(/\r/g,'');
     const dt = parseTimestamp(g(iTs));
@@ -335,7 +375,7 @@ function parseCSV(text) {
     return {
       datetime: dt, name: g(iName)||'—', qty, total,
       phone: g(iPhone), line: g(iLine), address: g(iAddress),
-      deliveryDate: g(iDate), note: g(iNote),
+      deliveryDate: g(iDate), note: g(iNote), status: g(iStatus),
     };
   }).filter(r => r.datetime && !isNaN(r.datetime) && r.qty > 0);
 }
@@ -440,6 +480,17 @@ function render(rows) {
       <div class="order-qty">${r.qty} ${isTh?'กก.':'kg'}</div>
     </div>`).join('') || `<p style="color:var(--muted);font-size:.85rem">${isTh?'ยังไม่มีออเดอร์':'No orders yet'}</p>`;
 
+  // รายการจัดส่งวันนี้ / พรุ่งนี้ (จับคู่จากคอลัมน์ deliveryDate)
+  const today = new Date();
+  const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
+  const todayStr = today.toISOString().slice(0,10);
+  const tomorrowStr = tomorrow.toISOString().slice(0,10);
+
+  window._todayDeliveries = renderDeliveryList(rows, todayStr, 'deliveryList', 'todayBadge',
+    isTh?'ไม่มีรายการจัดส่งวันนี้':'No deliveries scheduled today', 'openDeliveryModal', isTh);
+  window._tomorrowDeliveries = renderDeliveryList(rows, tomorrowStr, 'tomorrowList', 'tomorrowBadge',
+    isTh?'ไม่มีรายการรอจัดส่งพรุ่งนี้':'No deliveries scheduled tomorrow', 'openTomorrowModal', isTh);
+
   if (N) {
     const latest = rows.reduce((a,b)=>a.datetime>b.datetime?a:b);
     const fmt = d=>d.toLocaleString(locale,{dateStyle:'medium',timeStyle:'short'});
@@ -450,14 +501,46 @@ function render(rows) {
   }
 }
 
-function openOrderModal(i) {
-  const r = window._recentOrders[i];
-  if (!r) return;
+// render รายการ delivery ตามวันที่ระบุ คืนค่าเป็น array ที่ใช้ index อ้างอิงตอนเปิด modal
+function renderDeliveryList(rows, dateStr, listElId, badgeElId, emptyMsg, modalFn, isTh) {
+  const deliveries = rows.filter(r => r.deliveryDate === dateStr).sort((a,b)=>a.datetime-b.datetime);
+  document.getElementById(badgeElId).textContent = `${deliveries.length} ${isTh?'ออเดอร์':'orders'}`;
+  document.getElementById(listElId).innerHTML = deliveries.map((r,i) => {
+    const st = getStatusInfo(r.status, isTh);
+    return `
+    <div class="delivery-row" onclick="${modalFn}(${i})">
+      <div class="delivery-top">
+        <div class="delivery-name">${r.name}</div>
+        <div class="delivery-total">฿${r.total.toLocaleString()}</div>
+      </div>
+      <div class="delivery-meta">
+        <span>📞 ${r.phone}</span>
+        <span>📍 ${r.address}</span>
+      </div>
+      <div class="delivery-note">🍊 ${r.qty} ${isTh?'กก.':'kg'}${r.note ? ' · ' + r.note : ''}</div>
+      <div class="status-badge ${st.cls}">${st.label}</div>
+    </div>`;
+  }).join('') || `<p style="color:var(--muted);font-size:.85rem;padding:12px 4px">${emptyMsg}</p>`;
+  return deliveries;
+}
+
+// จับคู่ค่า status ดิบจาก Sheet (ไทย/อังกฤษ/ว่าง) กับ class และ label ที่จะแสดง
+function getStatusInfo(raw, isTh) {
+  const s = (raw||'').trim().toLowerCase();
+  if (['confirmed','ยืนยันแล้ว','ยืนยัน'].includes(s)) return { cls:'confirmed', label: isTh?'ยืนยันแล้ว':'Confirmed' };
+  if (['delivered','จัดส่งแล้ว','ส่งแล้ว'].includes(s)) return { cls:'delivered', label: isTh?'จัดส่งแล้ว':'Delivered' };
+  if (['cancelled','canceled','ยกเลิก'].includes(s)) return { cls:'cancelled', label: isTh?'ยกเลิก':'Cancelled' };
+  return { cls:'pending', label: isTh?'รอยืนยัน':'Pending' };
+}
+
+function showOrderDetail(r) {
   const isTh = currentLang==='th';
   const locale = isTh?'th-TH':'en-US';
+  const st = getStatusInfo(r.status, isTh);
   document.getElementById('modalTitle').textContent = r.name;
 
   const rows = [
+    [isTh?'สถานะ':'Status', `<span class="status-badge ${st.cls}">${st.label}</span>`],
     [isTh?'วันที่สั่ง':'Order Date', r.datetime.toLocaleString(locale,{dateStyle:'medium',timeStyle:'short'})],
     [isTh?'เบอร์โทร':'Phone', r.phone],
     [isTh?'LINE ID':'LINE ID', r.line],
@@ -473,6 +556,21 @@ function openOrderModal(i) {
   ).join('');
 
   document.getElementById('orderModal').classList.add('show');
+}
+
+function openOrderModal(i) {
+  const r = window._recentOrders[i];
+  if (r) showOrderDetail(r);
+}
+
+function openDeliveryModal(i) {
+  const r = window._todayDeliveries[i];
+  if (r) showOrderDetail(r);
+}
+
+function openTomorrowModal(i) {
+  const r = window._tomorrowDeliveries[i];
+  if (r) showOrderDetail(r);
 }
 
 function closeOrderModal() {
