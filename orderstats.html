@@ -192,9 +192,70 @@ body { font-family: 'Prompt', sans-serif; background: var(--off-white); color: v
 
 footer { text-align: center; color: var(--muted); font-size: .78rem; padding: 0 20px 40px; }
 footer a { color: var(--orange); text-decoration: none; }
+
+/* ── PIN GATE ── */
+#pinGate {
+  position: fixed; inset: 0; z-index: 500;
+  background: linear-gradient(135deg, var(--dark) 0%, #2D1B00 50%, #1A0E00 100%);
+  display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 18px;
+  padding: 20px;
+}
+#pinGate.hidden { display: none; }
+#pinGate img { height: 52px; width: auto; filter: drop-shadow(0 0 12px rgba(255,107,0,.4)); }
+#pinGate .pin-card {
+  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12);
+  border-radius: 20px; padding: 32px 28px; max-width: 320px; width: 100%;
+  text-align: center; backdrop-filter: blur(8px);
+}
+#pinGate h2 { color: #fff; font-size: 1.1rem; font-weight: 800; margin-bottom: 6px; }
+#pinGate p { color: rgba(255,255,255,.5); font-size: .82rem; margin-bottom: 18px; }
+#pinGate input {
+  width: 100%; padding: 14px; border-radius: 12px; border: 1.5px solid rgba(255,255,255,.15);
+  background: rgba(255,255,255,.08); color: #fff; font-size: 1.3rem; text-align: center;
+  letter-spacing: 6px; font-family: 'Prompt', sans-serif; outline: none; margin-bottom: 12px;
+}
+#pinGate input:focus { border-color: var(--orange); }
+#pinGate button {
+  width: 100%; padding: 13px; border: none; border-radius: 12px; cursor: pointer;
+  background: linear-gradient(135deg, var(--orange), var(--orange-light)); color: #fff;
+  font-family: 'Prompt', sans-serif; font-size: .95rem; font-weight: 700;
+}
+#pinGate .pin-error { color: #f87171; font-size: .78rem; margin-top: 10px; min-height: 16px; }
 </style>
 </head>
 <body>
+
+<!-- PIN GATE -->
+<div id="pinGate">
+  <img src="OFresh_Logo_transparent.png" alt="O'Fresh">
+  <div class="pin-card">
+    <h2>เข้าถึงข้อมูลสถิติ</h2>
+    <p>กรุณาใส่รหัส PIN เพื่อเข้าใช้งาน</p>
+    <input type="password" id="pinInput" inputmode="numeric" maxlength="6" placeholder="••••••" autocomplete="off">
+    <button onclick="checkPin()">เข้าสู่ระบบ</button>
+    <div class="pin-error" id="pinError"></div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const PIN = '718888';
+  const gate = document.getElementById('pinGate');
+  if (sessionStorage.getItem('ofresh_admin_auth') === '1') { gate.classList.add('hidden'); return; }
+  const input = document.getElementById('pinInput');
+  window.checkPin = function() {
+    if (input.value.trim() === PIN) {
+      sessionStorage.setItem('ofresh_admin_auth', '1');
+      gate.classList.add('hidden');
+    } else {
+      document.getElementById('pinError').textContent = 'รหัส PIN ไม่ถูกต้อง';
+      input.value = ''; input.focus();
+    }
+  };
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') checkPin(); });
+  setTimeout(() => input.focus(), 100);
+})();
+</script>
 
 <div id="loading">
   <div class="spin-wrap">
