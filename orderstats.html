@@ -150,6 +150,19 @@ body { font-family: 'Prompt', sans-serif; background: var(--off-white); color: v
 .status-badge.delivered { background: rgba(16,185,129,.15); color: #047857; }
 .status-badge.cancelled { background: rgba(239,68,68,.15); color: #b91c1c; }
 
+.status-select {
+  display: inline-block; margin-top: 10px; padding: 4px 26px 4px 12px; border-radius: 20px;
+  font-size: .72rem; font-weight: 700; border: none; cursor: pointer;
+  font-family: 'Prompt', sans-serif; -webkit-appearance: none; appearance: none;
+  background-repeat: no-repeat; background-position: right 8px center; background-size: 10px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath fill='%23888' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+}
+.status-select:disabled { opacity: .6; cursor: wait; }
+.status-select.pending { background-color: rgba(245,158,11,.15); color: #b45309; }
+.status-select.confirmed { background-color: rgba(59,130,246,.15); color: #1d4ed8; }
+.status-select.delivered { background-color: rgba(16,185,129,.15); color: #047857; }
+.status-select.cancelled { background-color: rgba(239,68,68,.15); color: #b91c1c; }
+
 /* ── ORDER DETAIL MODAL ── */
 .modal-overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,.5);
@@ -380,6 +393,7 @@ footer a { color: var(--orange); text-decoration: none; }
 <script>
 // TODO: แทนที่ด้วยลิงก์ CSV ที่ Publish to web จาก Google Sheet คำสั่งซื้อ
 const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRIfD51FD8M4qitJwv8m6QampyckbZMfkohDQSotlaBcCglVzVLksfDu8CgIXSlvJNiIPqf5rKMGQWA/pub?output=csv';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxF3n2Q8t84KVeaspCUyRpDLDPuHkDWWNFn_MS4OydVBfttb6oZH8NIO5Vpt-A3HIM/exec';
 const CACHE_KEY = 'ofresh_orders_v1';
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 ชั่วโมง
 
@@ -424,7 +438,7 @@ function parseTimestamp(s) {
 function parseCSV(text) {
   const lines = text.trim().split('\n');
   const h = splitCSVLine(lines[0]).map(s => s.trim().toLowerCase().replace(/\r/g,''));
-  const iTs = h.indexOf('timestamp'), iName = h.indexOf('name'), iPhone = h.indexOf('phone'),
+  const iTs = h.indexOf('timestamp'), iId = h.indexOf('id'), iName = h.indexOf('name'), iPhone = h.indexOf('phone'),
         iLine = h.indexOf('line'), iQty = h.indexOf('qty'), iTotal = h.indexOf('total'),
         iAddress = h.indexOf('address'), iDate = h.indexOf('deliverydate'), iNote = h.indexOf('note'),
         iStatus = h.indexOf('status');
@@ -434,7 +448,7 @@ function parseCSV(text) {
     const qty = parseFloat(g(iQty))||0;
     const total = parseFloat(g(iTotal))||0;
     return {
-      datetime: dt, name: g(iName)||'—', qty, total,
+      datetime: dt, id: g(iId), name: g(iName)||'—', qty, total,
       phone: g(iPhone), line: g(iLine), address: g(iAddress),
       deliveryDate: g(iDate), note: g(iNote), status: g(iStatus),
     };
@@ -563,6 +577,15 @@ function render(rows) {
 }
 
 // render รายการ delivery ตามวันที่ระบุ คืนค่าเป็น array ที่ใช้ index อ้างอิงตอนเปิด modal
+const STATUS_CODES = ['pending', 'confirmed', 'delivered', 'cancelled'];
+
+function statusOptionsHTML(currentCls, isTh) {
+  return STATUS_CODES.map(code => {
+    const info = getStatusInfo(code, isTh);
+    return `<option value="${code}" ${code===currentCls?'selected':''}>${info.label}</option>`;
+  }).join('');
+}
+
 function renderDeliveryList(rows, dateStr, listElId, badgeElId, emptyMsg, modalFn, isTh) {
   const deliveries = rows.filter(r => r.deliveryDate === dateStr).sort((a,b)=>a.datetime-b.datetime);
   document.getElementById(badgeElId).textContent = `${deliveries.length} ${isTh?'ออเดอร์':'orders'}`;
@@ -579,10 +602,40 @@ function renderDeliveryList(rows, dateStr, listElId, badgeElId, emptyMsg, modalF
         <span>📍 ${r.address}</span>
       </div>
       <div class="delivery-note">🍊 ${r.qty} ${isTh?'กก.':'kg'}${r.note ? ' · ' + r.note : ''}</div>
-      <div class="status-badge ${st.cls}">${st.label}</div>
+      <select class="status-select ${st.cls}" onclick="event.stopPropagation()" onchange="updateOrderStatus('${r.id}', this)">
+        ${statusOptionsHTML(st.cls, isTh)}
+      </select>
     </div>`;
   }).join('') || `<p style="color:var(--muted);font-size:.85rem;padding:12px 4px">${emptyMsg}</p>`;
   return deliveries;
+}
+
+async function updateOrderStatus(id, selectEl) {
+  const isTh = currentLang==='th';
+  const newStatus = selectEl.value;
+  selectEl.disabled = true;
+  try {
+    await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'updateStatus', id, status: newStatus }),
+    });
+    selectEl.className = `status-select ${newStatus}`;
+    const row = window._rows.find(r => r.id === id);
+    if (row) row.status = newStatus;
+    // อัปเดต cache ในเครื่องด้วย จะได้ไม่ต้องรอ fetch ใหม่แล้วเห็นสถานะเก่า
+    const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
+    if (cached) {
+      const cr = cached.rows.find(r => r.id === id);
+      if (cr) cr.status = newStatus;
+      localStorage.setItem(CACHE_KEY, JSON.stringify(cached));
+    }
+  } catch (e) {
+    alert(isTh ? 'อัปเดตสถานะไม่สำเร็จ ลองใหม่อีกครั้ง' : 'Failed to update status, please try again');
+    console.error(e);
+  } finally {
+    selectEl.disabled = false;
+  }
 }
 
 // จับคู่ค่า status ดิบจาก Sheet (ไทย/อังกฤษ/ว่าง) กับ class และ label ที่จะแสดง
@@ -601,7 +654,7 @@ function showOrderDetail(r) {
   document.getElementById('modalTitle').textContent = r.name;
 
   const rows = [
-    [isTh?'สถานะ':'Status', `<span class="status-badge ${st.cls}">${st.label}</span>`],
+    [isTh?'สถานะ':'Status', `<select class="status-select ${st.cls}" onchange="updateOrderStatus('${r.id}', this)">${statusOptionsHTML(st.cls, isTh)}</select>`],
     [isTh?'วันที่สั่ง':'Order Date', r.datetime.toLocaleString(locale,{dateStyle:'medium',timeStyle:'short'})],
     [isTh?'เบอร์โทร':'Phone', r.phone],
     [isTh?'LINE ID':'LINE ID', r.line],

@@ -478,11 +478,13 @@
         submitBtn.disabled = true;
         submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t('order_sending')}`;
 
+        const id = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+
         try {
             const res = await fetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, phone, line, qty, total, address, deliveryDate, note })
+                body: JSON.stringify({ id, name, phone, line, qty, total, address, deliveryDate, note })
             });
             if (!res.ok) throw new Error('API error');
             showSuccess({ name, phone, line, qty, total, address, deliveryDate, note });
