@@ -18,14 +18,15 @@ OFresh/
 │   ├── index*.html, order*.html, kiosk.css, order.css, i18n.js
 │   └── AUDIT_REPORT.md      บันทึกการแก้ปัญหาความเข้ากันได้กับ Android 9 / WebView เก่า
 │
-├── order-api-worker.js      Cloudflare Worker: รับออเดอร์จากฟอร์ม → แจ้งเตือนผ่าน LINE
-├── order-api-deploy/        โค้ด deploy ของ Worker ฝั่ง Cloudflare Pages Functions
+├── order-api-worker.js      Cloudflare Worker (deploy จริง): รับออเดอร์จากฟอร์ม → แจ้งเตือนผ่าน LINE
 ├── order-sheet-script.gs    Google Apps Script: บันทึกออเดอร์ลง Google Sheet
 │
 ├── LINE OA Chatbot/line-bot-ai/   แชทบอท LINE OA (Next.js + Gemini AI) — repo แยกต่างหาก มี .git ของตัวเอง
 │
 ├── Design/                  ไฟล์งานออกแบบต้นฉบับ (โลโก้, รูปโปรโมท, วิดีโอ) — เฉพาะรูปเล็กที่เว็บใช้จริงถูก track ใน git
 ├── Facebook Post/           รูปภาพสำหรับโพสต์ Facebook
+├── business-data/           ข้อมูลยอดขาย, คู่มือเครื่อง, ไฟล์ที่ไม่เกี่ยวกับโค้ดเว็บ (ไม่ track ใน git)
+├── _archive/                โค้ดเก่าที่ไม่ได้ใช้งานแล้วแต่ยังไม่แน่ใจ 100% ว่าลบได้ (ดู NOTE.md ในแต่ละโฟลเดอร์ย่อย)
 │
 ├── inspect_xlsx.py, push_to_gsheet.py, update_nayax.py, remove_bg.py   สคริปต์ Python ช่วยประมวลผลข้อมูลยอดขาย/รูปภาพ
 │
