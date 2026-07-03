@@ -369,7 +369,7 @@ function parseCSV(text) {
 function groupByCustomer(rows) {
   const map = new Map();
   rows.forEach(r => {
-    const key = r.phone || ('name:' + r.name);
+    const key = r.name;
     if (!map.has(key)) map.set(key, []);
     map.get(key).push(r);
   });
