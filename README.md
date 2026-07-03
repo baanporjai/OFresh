@@ -10,6 +10,7 @@ OFresh/
 ├── index.html              เว็บหน้าหลัก (landing page)
 ├── order.html               ฟอร์มสั่งซื้อส้มแบบส่ง (bulk order)
 ├── stats.html / orderstats.html / OFresh_Dashboard.html   แดชบอร์ดยอดขาย (ข้อมูลจาก Nayax)
+├── customers.html           ประวัติลูกค้า จัดกลุ่มออเดอร์ตามเบอร์โทร (ต้องผ่าน PIN เหมือน stats.html)
 ├── presentation.html        หน้านำเสนอสำหรับนักลงทุน/พาร์ทเนอร์
 ├── ofresh_banner_1.html     หน้าแบนเนอร์โฆษณา
 ├── i18n.js                  ข้อความแปลภาษาของเว็บหลัก

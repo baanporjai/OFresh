@@ -342,6 +342,7 @@ footer a { color: var(--orange); text-decoration: none; }
 <nav class="navbar">
   <a href="index.html" class="nav-logo"><img src="OFresh_Logo_transparent.png" alt="O'Fresh"></a>
   <div style="display:flex;align-items:center;gap:14px">
+    <a href="customers.html" style="font-size:.8rem;font-weight:700;color:var(--muted);text-decoration:none" data-th="ประวัติลูกค้า →" data-en="Customer History →">ประวัติลูกค้า →</a>
     <a href="stats.html" style="font-size:.8rem;font-weight:700;color:var(--muted);text-decoration:none" data-th="← ยอดขายตู้" data-en="← Machine Sales">← ยอดขายตู้</a>
     <div class="lang-bar">
       <button class="lang-btn active" onclick="setLang('th')">TH</button>
@@ -518,6 +519,12 @@ function parseTimestamp(s) {
 }
 
 // columns: timestamp, name, phone, line, qty, total, address, deliveryDate, note
+// Google Sheet เก็บเบอร์โทรเป็นตัวเลข ทำให้เลข 0 นำหน้าหายไป (เช่น 812345678 ที่จริงคือ 0812345678)
+function formatPhone(raw) {
+  const s = (raw||'').trim();
+  return s && /^[1-9]\d{8}$/.test(s) ? '0' + s : s;
+}
+
 function parseCSV(text) {
   const lines = text.trim().split('\n');
   const h = splitCSVLine(lines[0]).map(s => s.trim().toLowerCase().replace(/\r/g,''));
@@ -532,7 +539,7 @@ function parseCSV(text) {
     const total = parseFloat(g(iTotal))||0;
     return {
       datetime: dt, id: g(iId), name: g(iName)||'—', qty, total,
-      phone: g(iPhone), line: g(iLine), address: g(iAddress),
+      phone: formatPhone(g(iPhone)), line: g(iLine), address: g(iAddress),
       deliveryDate: g(iDate), note: g(iNote), status: g(iStatus),
     };
   }).filter(r => r.datetime && !isNaN(r.datetime) && r.qty > 0);
