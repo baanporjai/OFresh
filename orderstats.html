@@ -85,6 +85,15 @@ body { font-family: 'Prompt', sans-serif; background: var(--off-white); color: v
 
 .page { max-width: 1200px; margin: 0 auto; padding: 32px 20px 60px; }
 
+.search-bar { margin-bottom: 20px; }
+.search-bar input {
+  width: 100%; padding: 13px 18px; border-radius: 14px;
+  border: 1.5px solid var(--border); font-family: 'Prompt', sans-serif;
+  font-size: .9rem; color: var(--text); background: var(--white);
+  box-shadow: var(--shadow); outline: none; transition: border-color .2s;
+}
+.search-bar input:focus { border-color: var(--orange); }
+
 .section-title {
   font-size: 1rem; font-weight: 700; color: var(--text);
   display: flex; align-items: center; gap: 8px; margin-bottom: 16px;
@@ -159,6 +168,7 @@ body { font-family: 'Prompt', sans-serif; background: var(--off-white); color: v
 }
 .status-badge.pending { background: rgba(245,158,11,.15); color: #b45309; }
 .status-badge.confirmed { background: rgba(59,130,246,.15); color: #1d4ed8; }
+.status-badge.packed { background: rgba(139,92,246,.15); color: #6d28d9; }
 .status-badge.delivered { background: rgba(16,185,129,.15); color: #047857; }
 .status-badge.cancelled { background: rgba(239,68,68,.15); color: #b91c1c; }
 
@@ -172,6 +182,7 @@ body { font-family: 'Prompt', sans-serif; background: var(--off-white); color: v
 .status-select:disabled { opacity: .6; cursor: wait; }
 .status-select.pending { background-color: rgba(245,158,11,.15); color: #b45309; }
 .status-select.confirmed { background-color: rgba(59,130,246,.15); color: #1d4ed8; }
+.status-select.packed { background-color: rgba(139,92,246,.15); color: #6d28d9; }
 .status-select.delivered { background-color: rgba(16,185,129,.15); color: #047857; }
 .status-select.cancelled { background-color: rgba(239,68,68,.15); color: #b91c1c; }
 
@@ -246,6 +257,21 @@ footer a { color: var(--orange); text-decoration: none; }
   font-family: 'Prompt', sans-serif; font-size: .95rem; font-weight: 700;
 }
 #pinGate .pin-error { color: #f87171; font-size: .78rem; margin-top: 10px; min-height: 16px; }
+
+/* ── PRINT (ใบจัดของ) ── */
+@media print {
+  .no-print, .navbar, .hero, #loading, #pinGate,
+  .kpi-grid, .charts-1col, .charts-2col, footer { display: none !important; }
+  body { background: #fff; }
+  .page { max-width: 100%; padding: 0; margin: 0; }
+  .chart-card {
+    box-shadow: none; border: 1px solid #ddd; border-radius: 0;
+    padding: 12px 0; margin-bottom: 16px !important;
+    break-inside: avoid;
+  }
+  .delivery-row { break-inside: avoid; padding: 10px 4px; }
+  .status-select { -webkit-appearance: menulist; appearance: menulist; background-image: none; }
+}
 </style>
 </head>
 <body>
@@ -330,9 +356,18 @@ footer a { color: var(--orange); text-decoration: none; }
   <button id="refreshBtn" onclick="load(true)" class="refresh-btn">
     <span id="refreshIcon">🔄</span> <span data-th="รีเฟรชข้อมูล" data-en="Refresh">รีเฟรชข้อมูล</span>
   </button>
+  <button id="printBtn" onclick="window.print()" class="refresh-btn no-print">
+    <span>🖨️</span> <span data-th="พิมพ์ใบจัดของ" data-en="Print Packing List">พิมพ์ใบจัดของ</span>
+  </button>
 </div>
 
 <div class="page">
+
+  <div class="search-bar no-print">
+    <input type="text" id="searchInput" oninput="onSearchInput(this.value)"
+      placeholder="ค้นหาชื่อลูกค้า หรือเบอร์โทร..."
+      data-th-placeholder="ค้นหาชื่อลูกค้า หรือเบอร์โทร..." data-en-placeholder="Search name or phone...">
+  </div>
 
   <div class="chart-card" style="margin-bottom:20px">
     <div class="chart-header">
@@ -442,6 +477,7 @@ function setLang(lang) {
   currentLang = lang;
   document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent === lang.toUpperCase()));
   document.querySelectorAll('[data-th]').forEach(el => el.textContent = el.getAttribute(`data-${lang}`));
+  document.querySelectorAll('[data-th-placeholder]').forEach(el => el.placeholder = el.getAttribute(`data-${lang}-placeholder`));
   document.documentElement.lang = lang;
   if (window._rows) render(window._rows);
 }
@@ -566,6 +602,16 @@ function renderMonthlyChart(rows) {
   });
 }
 
+let searchQuery = '';
+function onSearchInput(val) {
+  searchQuery = val.trim().toLowerCase();
+  if (window._rows) render(window._rows);
+}
+function matchesSearch(r) {
+  if (!searchQuery) return true;
+  return (r.name||'').toLowerCase().includes(searchQuery) || (r.phone||'').includes(searchQuery);
+}
+
 function render(rows) {
   window._rows = rows;
   const N = rows.length;
@@ -601,16 +647,16 @@ function render(rows) {
   const todayStr = today.toISOString().slice(0,10);
   const tomorrowStr = tomorrow.toISOString().slice(0,10);
 
-  window._todayDeliveries = renderDeliveryList(rows, r => r.deliveryDate === todayStr, 'deliveryList', 'todayBadge',
+  window._todayDeliveries = renderDeliveryList(rows, r => r.deliveryDate === todayStr && matchesSearch(r), 'deliveryList', 'todayBadge',
     isTh?'ไม่มีรายการจัดส่งวันนี้':'No deliveries scheduled today', 'openDeliveryModal', isTh);
-  window._tomorrowDeliveries = renderDeliveryList(rows, r => r.deliveryDate === tomorrowStr, 'tomorrowList', 'tomorrowBadge',
+  window._tomorrowDeliveries = renderDeliveryList(rows, r => r.deliveryDate === tomorrowStr && matchesSearch(r), 'tomorrowList', 'tomorrowBadge',
     isTh?'ไม่มีรายการรอจัดส่งพรุ่งนี้':'No deliveries scheduled tomorrow', 'openTomorrowModal', isTh);
 
   // รายการค้าง — deliveryDate ผ่านมาแล้ว แต่สถานะยังไม่ใช่ delivered/cancelled
   const isOverdue = r => {
     if (!r.deliveryDate || r.deliveryDate >= todayStr) return false;
     const cls = getStatusInfo(r.status, isTh).cls;
-    return cls !== 'delivered' && cls !== 'cancelled';
+    return cls !== 'delivered' && cls !== 'cancelled' && matchesSearch(r);
   };
   window._overdueDeliveries = renderDeliveryList(rows, isOverdue, 'overdueList', 'overdueBadge',
     isTh?'ไม่มีรายการค้าง':'No overdue deliveries', 'openOverdueModal', isTh);
@@ -626,7 +672,7 @@ function render(rows) {
 }
 
 // render รายการ delivery ตามวันที่ระบุ คืนค่าเป็น array ที่ใช้ index อ้างอิงตอนเปิด modal
-const STATUS_CODES = ['pending', 'confirmed', 'delivered', 'cancelled'];
+const STATUS_CODES = ['pending', 'confirmed', 'packed', 'delivered', 'cancelled'];
 
 function statusOptionsHTML(currentCls, isTh) {
   return STATUS_CODES.map(code => {
@@ -637,7 +683,10 @@ function statusOptionsHTML(currentCls, isTh) {
 
 function renderDeliveryList(rows, filterFn, listElId, badgeElId, emptyMsg, modalFn, isTh) {
   const deliveries = rows.filter(filterFn).sort((a,b)=>a.datetime-b.datetime);
-  document.getElementById(badgeElId).textContent = `${deliveries.length} ${isTh?'ออเดอร์':'orders'}`;
+  const totalKg = deliveries.reduce((s,r)=>s+r.qty,0);
+  document.getElementById(badgeElId).textContent = deliveries.length
+    ? `${deliveries.length} ${isTh?'ออเดอร์':'orders'} · ${totalKg.toLocaleString(undefined,{maximumFractionDigits:1})} ${isTh?'กก.':'kg'}`
+    : `0 ${isTh?'ออเดอร์':'orders'}`;
   document.getElementById(listElId).innerHTML = deliveries.map((r,i) => {
     const st = getStatusInfo(r.status, isTh);
     return `
@@ -693,6 +742,7 @@ async function updateOrderStatus(id, selectEl) {
 function getStatusInfo(raw, isTh) {
   const s = (raw||'').trim().toLowerCase();
   if (['confirmed','ยืนยันแล้ว','ยืนยัน'].includes(s)) return { cls:'confirmed', label: isTh?'ยืนยันแล้ว':'Confirmed' };
+  if (['packed','แพ็คแล้ว','แพคแล้ว'].includes(s)) return { cls:'packed', label: isTh?'แพ็คแล้ว':'Packed' };
   if (['delivered','จัดส่งแล้ว','ส่งแล้ว'].includes(s)) return { cls:'delivered', label: isTh?'จัดส่งแล้ว':'Delivered' };
   if (['cancelled','canceled','ยกเลิก'].includes(s)) return { cls:'cancelled', label: isTh?'ยกเลิก':'Cancelled' };
   return { cls:'pending', label: isTh?'รอยืนยัน':'Pending' };
