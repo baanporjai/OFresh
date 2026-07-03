@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>订购橙子 — O'Fresh</title>
+    <link rel="icon" type="image/png" href="../favicon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800;900&family=Noto+Sans+Thai:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="order.css">
+</head>
+<body>
+    <a href="index-zh.html" class="btn-back">&#8592; 返回首页</a>
+
+    <div class="lang-switcher">
+        <a href="order.html" class="lang-btn">TH</a>
+        <a href="order-en.html" class="lang-btn">EN</a>
+        <a href="order-zh.html" class="lang-btn active">中文</a>
+        <a href="order-ja.html" class="lang-btn">日本語</a>
+        <a href="order-ko.html" class="lang-btn">한국어</a>
+    </div>
+
+    <div class="logo-wrap">
+        <img src="../OFresh_Logo_transparent.png" alt="O'Fresh Logo">
+    </div>
+
+    <div class="card">
+        <div class="card-title">订购柑橘</div>
+        <div class="card-subtitle">用手机扫描 QR Code<br>填写您的订单信息</div>
+
+        <div class="qr-wrap">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=240x240&color=1A1A2E&data=https://ofresh.baanporjai.com/order.html"
+                 alt="QR Code — O'Fresh 订购" width="240" height="240">
+        </div>
+
+        <div class="url-label">ofresh.baanporjai.com/order.html</div>
+        <div class="divider"></div>
+
+        <div class="steps">
+            <div class="step-item">
+                <div class="step-circle">1</div>
+                <div class="step-text">扫描<br>QR Code</div>
+            </div>
+            <div class="step-item">
+                <div class="step-circle">2</div>
+                <div class="step-text">填写<br>信息</div>
+            </div>
+            <div class="step-item">
+                <div class="step-circle">3</div>
+                <div class="step-text">等待<br>团队联系</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-note">台湾柑橘 · ฿60/公斤 · 清迈市区免费配送</div>
+</body>
+</html>

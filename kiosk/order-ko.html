@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>오렌지 주문 — O'Fresh</title>
+    <link rel="icon" type="image/png" href="../favicon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800;900&family=Noto+Sans+Thai:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="order.css">
+</head>
+<body>
+    <a href="index-ko.html" class="btn-back">&#8592; 홈으로 돌아가기</a>
+
+    <div class="lang-switcher">
+        <a href="order.html" class="lang-btn">TH</a>
+        <a href="order-en.html" class="lang-btn">EN</a>
+        <a href="order-zh.html" class="lang-btn">中文</a>
+        <a href="order-ja.html" class="lang-btn">日本語</a>
+        <a href="order-ko.html" class="lang-btn active">한국어</a>
+    </div>
+
+    <div class="logo-wrap">
+        <img src="../OFresh_Logo_transparent.png" alt="O'Fresh Logo">
+    </div>
+
+    <div class="card">
+        <div class="card-title">귤 주문하기</div>
+        <div class="card-subtitle">휴대폰으로 QR Code를 스캔하여<br>주문 정보를 입력하세요</div>
+
+        <div class="qr-wrap">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=240x240&color=1A1A2E&data=https://ofresh.baanporjai.com/order.html"
+                 alt="QR Code — O'Fresh 주문" width="240" height="240">
+        </div>
+
+        <div class="url-label">ofresh.baanporjai.com/order.html</div>
+        <div class="divider"></div>
+
+        <div class="steps">
+            <div class="step-item">
+                <div class="step-circle">1</div>
+                <div class="step-text">QR Code<br>스캔</div>
+            </div>
+            <div class="step-item">
+                <div class="step-circle">2</div>
+                <div class="step-text">정보<br>입력</div>
+            </div>
+            <div class="step-item">
+                <div class="step-circle">3</div>
+                <div class="step-text">팀 연락<br>대기</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-note">대만산 만다린 · ฿60/kg · 치앙마이 시내 무료 배송</div>
+</body>
+</html>

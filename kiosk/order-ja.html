@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>オレンジを注文 — O'Fresh</title>
+    <link rel="icon" type="image/png" href="../favicon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800;900&family=Noto+Sans+Thai:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="order.css">
+</head>
+<body>
+    <a href="index-ja.html" class="btn-back">&#8592; ホームへ戻る</a>
+
+    <div class="lang-switcher">
+        <a href="order.html" class="lang-btn">TH</a>
+        <a href="order-en.html" class="lang-btn">EN</a>
+        <a href="order-zh.html" class="lang-btn">中文</a>
+        <a href="order-ja.html" class="lang-btn active">日本語</a>
+        <a href="order-ko.html" class="lang-btn">한국어</a>
+    </div>
+
+    <div class="logo-wrap">
+        <img src="../OFresh_Logo_transparent.png" alt="O'Fresh Logo">
+    </div>
+
+    <div class="card">
+        <div class="card-title">みかんを注文する</div>
+        <div class="card-subtitle">スマートフォンで QR Code をスキャンして<br>注文情報を入力してください</div>
+
+        <div class="qr-wrap">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=240x240&color=1A1A2E&data=https://ofresh.baanporjai.com/order.html"
+                 alt="QR Code — O'Fresh 注文" width="240" height="240">
+        </div>
+
+        <div class="url-label">ofresh.baanporjai.com/order.html</div>
+        <div class="divider"></div>
+
+        <div class="steps">
+            <div class="step-item">
+                <div class="step-circle">1</div>
+                <div class="step-text">QR Code<br>をスキャン</div>
+            </div>
+            <div class="step-item">
+                <div class="step-circle">2</div>
+                <div class="step-text">情報を<br>入力</div>
+            </div>
+            <div class="step-item">
+                <div class="step-circle">3</div>
+                <div class="step-text">チームから<br>連絡待ち</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-note">台湾産マンダリン · ฿60/kg · チェンマイ市内送料無料</div>
+</body>
+</html>

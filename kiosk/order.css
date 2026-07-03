@@ -1,0 +1,59 @@
+/* O'Fresh Kiosk — Order Page Shared CSS */
+
+* { margin: 0; padding: 0; -webkit-box-sizing: border-box; box-sizing: border-box; }
+body {
+    font-family: 'Prompt', 'Noto Sans Thai', 'Sarabun', Arial, sans-serif;
+    background: -webkit-linear-gradient(315deg, #FFF5EB 0%, #FFF0E0 50%, #FFECD2 100%);
+    background: linear-gradient(135deg, #FFF5EB 0%, #FFF0E0 50%, #FFECD2 100%);
+    min-height: 100vh;
+    display: -webkit-flex; display: flex;
+    -webkit-flex-direction: column; flex-direction: column;
+    -webkit-align-items: center; align-items: center;
+    -webkit-justify-content: center; justify-content: center;
+    padding: 40px 20px;
+    -webkit-text-size-adjust: 100%;
+}
+
+/* ===== LANG SWITCHER ===== */
+.lang-switcher { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; background: rgba(255,255,255,0.8); border-radius: 50px; padding: 4px; margin-bottom: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+.lang-btn { display: -webkit-inline-flex; display: inline-flex; text-decoration: none; background: none; border: none; cursor: pointer; font-size: 13px; font-weight: 600; padding: 6px 14px; border-radius: 50px; color: #6B7280; font-family: 'Prompt','Noto Sans Thai',Arial,sans-serif; -webkit-transition: all 0.2s; transition: all 0.2s; }
+.lang-btn:hover { color: #FF6B00; }
+.lang-btn.active { background: #FF6B00; color: white; box-shadow: 0 2px 8px rgba(255,107,0,0.3); }
+
+/* ===== LOGO ===== */
+.logo-wrap { margin-bottom: 28px; text-align: center; }
+.logo-wrap img { height: 64px; width: auto; object-fit: contain; }
+
+/* ===== CARD ===== */
+.card { background: white; border-radius: 32px; padding: 48px 56px; box-shadow: 0 20px 60px rgba(255,107,0,0.15); text-align: center; max-width: 520px; width: 100%; }
+.card-title { font-size: 28px; font-weight: 800; color: #1A1A2E; margin-bottom: 8px; }
+.card-subtitle { font-size: 16px; color: #6B7280; font-weight: 300; margin-bottom: 36px; line-height: 1.6; }
+
+/* ===== QR CODE ===== */
+.qr-wrap { display: -webkit-inline-flex; display: inline-flex; -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center; padding: 20px; background: white; border: 3px solid #FF6B00; border-radius: 24px; margin-bottom: 32px; box-shadow: 0 8px 32px rgba(255,107,0,0.12); }
+.qr-wrap img { display: block; border-radius: 8px; }
+
+/* ===== URL LABEL ===== */
+.url-label { display: -webkit-inline-flex; display: inline-flex; -webkit-align-items: center; align-items: center; background: rgba(255,107,0,0.08); border: 1px solid rgba(255,107,0,0.2); border-radius: 50px; padding: 10px 24px; font-size: 15px; font-weight: 600; color: #FF6B00; margin-bottom: 36px; letter-spacing: 0.3px; }
+
+/* ===== DIVIDER ===== */
+.divider { height: 1px; background: rgba(0,0,0,0.06); margin-bottom: 28px; }
+
+/* ===== STEPS ===== */
+.steps { display: -webkit-flex; display: flex; -webkit-justify-content: center; justify-content: center; -webkit-flex-wrap: wrap; flex-wrap: wrap; }
+.step-item { display: -webkit-flex; display: flex; -webkit-flex-direction: column; flex-direction: column; -webkit-align-items: center; align-items: center; -webkit-flex: 1 1 120px; flex: 1 1 120px; padding: 0 12px; margin-bottom: 8px; }
+.step-circle { width: 44px; height: 44px; border-radius: 50%; background: -webkit-linear-gradient(315deg, #FF6B00, #E55A00); background: linear-gradient(135deg, #FF6B00, #E55A00); color: white; font-size: 18px; font-weight: 800; display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center; margin-bottom: 10px; box-shadow: 0 4px 12px rgba(255,107,0,0.3); }
+.step-text { font-size: 13px; color: #2D2D2D; font-weight: 500; line-height: 1.5; text-align: center; }
+
+/* ===== FOOTER ===== */
+.footer-note { margin-top: 32px; font-size: 13px; color: #6B7280; font-weight: 300; text-align: center; }
+
+/* ===== BACK BUTTON ===== */
+.btn-back { display: -webkit-inline-flex; display: inline-flex; -webkit-align-items: center; align-items: center; text-decoration: none; color: #6B7280; font-size: 14px; font-weight: 600; background: rgba(255,255,255,0.8); border: 1px solid rgba(0,0,0,0.08); border-radius: 50px; padding: 8px 20px; margin-bottom: 16px; -webkit-transition: all 0.2s; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.btn-back:hover { color: #FF6B00; border-color: rgba(255,107,0,0.3); }
+
+@media (max-width: 480px) {
+    .card { padding: 36px 28px; }
+    .card-title { font-size: 22px; }
+    .lang-btn { padding: 5px 10px; font-size: 12px; }
+}

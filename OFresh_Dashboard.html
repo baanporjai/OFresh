@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OFresh Dashboard – Nayax Sales Analysis</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --green:#2ecc71;--green-dark:#27ae60;--green-light:#a8e6cf;
+    --bg:#f0faf4;--card:#ffffff;--text:#1a2e1a;--text-muted:#5a7a5a;
+    --accent:#f39c12;--accent2:#3498db;--red:#e74c3c;--purple:#9b59b6;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Segoe UI',Tahoma,sans-serif;background:var(--bg);color:var(--text);}
+
+  header{background:linear-gradient(135deg,#1a6b3a 0%,#27ae60 60%,#2ecc71 100%);color:white;
+    padding:28px 32px 22px;display:flex;align-items:center;gap:18px;
+    box-shadow:0 4px 20px rgba(39,174,96,.3);}
+  header .logo{font-size:2.4rem;}
+  header h1{font-size:1.7rem;font-weight:700;letter-spacing:.5px;}
+  header p{font-size:.85rem;opacity:.85;margin-top:2px;}
+
+  /* NAV TABS */
+  .nav-tabs{display:flex;gap:6px;padding:18px 24px 0;max-width:1400px;margin:0 auto;}
+  .tab-btn{padding:10px 22px;border-radius:12px 12px 0 0;border:none;font-size:.88rem;font-weight:600;
+    cursor:pointer;background:#d4eede;color:var(--text-muted);transition:all .2s;}
+  .tab-btn.active{background:white;color:var(--green-dark);box-shadow:0 -2px 8px rgba(0,0,0,.07);}
+
+  .tab-content{display:none;} .tab-content.active{display:block;}
+
+  .container{max-width:1400px;margin:0 auto;padding:24px;}
+
+  /* KPI */
+  .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(195px,1fr));gap:16px;margin-bottom:24px;}
+  .kpi{background:var(--card);border-radius:16px;padding:20px 22px 16px;
+    box-shadow:0 2px 12px rgba(0,0,0,.07);border-top:4px solid var(--green);}
+  .kpi.accent{border-top-color:var(--accent);} .kpi.accent2{border-top-color:var(--accent2);}
+  .kpi.red{border-top-color:var(--red);} .kpi.purple{border-top-color:var(--purple);}
+  .kpi-icon{font-size:1.8rem;margin-bottom:6px;}
+  .kpi-label{font-size:.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.8px;font-weight:600;}
+  .kpi-value{font-size:1.9rem;font-weight:800;color:var(--text);line-height:1.1;margin-top:4px;}
+  .kpi-sub{font-size:.78rem;color:var(--text-muted);margin-top:3px;}
+
+  /* CHARTS */
+  .charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:22px;}
+  .charts-grid.full{grid-template-columns:1fr;}
+  .charts-grid.three{grid-template-columns:1fr 1fr 1fr;}
+  .chart-card{background:var(--card);border-radius:16px;padding:22px;box-shadow:0 2px 12px rgba(0,0,0,.07);}
+  .chart-card h3{font-size:.95rem;font-weight:700;color:var(--text);margin-bottom:14px;}
+
+  /* MACHINE CARDS */
+  .machine-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:22px;}
+  .machine-card{background:var(--card);border-radius:16px;padding:22px;
+    box-shadow:0 2px 12px rgba(0,0,0,.07);border-left:5px solid var(--green);}
+  .machine-card.second{border-left-color:var(--accent2);}
+  .machine-card h3{font-size:.95rem;font-weight:700;margin-bottom:12px;}
+  .machine-stat{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #f0f0f0;font-size:.85rem;}
+  .machine-stat:last-child{border-bottom:none;}
+  .machine-stat span:last-child{font-weight:700;color:var(--green-dark);}
+
+  /* PAY METHOD CARDS */
+  .pay-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:22px;}
+  .pay-card{background:var(--card);border-radius:14px;padding:18px 20px;
+    box-shadow:0 2px 10px rgba(0,0,0,.07);display:flex;align-items:center;gap:14px;}
+  .pay-icon{font-size:2.2rem;flex-shrink:0;}
+  .pay-info .pay-name{font-size:.78rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.6px;}
+  .pay-info .pay-val{font-size:1.5rem;font-weight:800;}
+  .pay-info .pay-pct{font-size:.8rem;color:var(--text-muted);margin-top:1px;}
+  .pay-bar-wrap{background:#f0f0f0;border-radius:6px;height:6px;margin-top:6px;}
+  .pay-bar{height:6px;border-radius:6px;transition:width .6s ease;}
+
+  /* TABLE */
+  .table-card{background:var(--card);border-radius:16px;padding:22px;
+    box-shadow:0 2px 12px rgba(0,0,0,.07);margin-bottom:22px;}
+  .table-card h3{font-size:.95rem;font-weight:700;margin-bottom:14px;}
+  .filter-bar{display:flex;gap:12px;align-items:center;margin-bottom:14px;flex-wrap:wrap;}
+  .filter-bar label{font-size:.82rem;font-weight:600;color:var(--text-muted);}
+  select{padding:7px 12px;border-radius:10px;border:1.5px solid #d0e8d4;
+    font-size:.82rem;background:white;color:var(--text);cursor:pointer;outline:none;}
+  select:focus{border-color:var(--green);}
+  .table-wrap{overflow-x:auto;max-height:400px;overflow-y:auto;}
+  table{width:100%;border-collapse:collapse;font-size:.83rem;}
+  thead tr{background:#f8fdf9;position:sticky;top:0;z-index:1;}
+  th{padding:9px 13px;text-align:left;font-weight:700;color:var(--text-muted);
+    font-size:.75rem;text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid #e8f5e9;}
+  td{padding:8px 13px;border-bottom:1px solid #f5f5f5;}
+  tr:hover td{background:#f8fdf9;}
+  .badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:.73rem;font-weight:600;}
+  .badge-high{background:#d4edda;color:#155724;}
+  .badge-mid{background:#fff3cd;color:#856404;}
+  .badge-low{background:#f8d7da;color:#721c24;}
+
+  footer{text-align:center;padding:22px;font-size:.76rem;color:var(--text-muted);}
+  @media(max-width:900px){.charts-grid,.charts-grid.three{grid-template-columns:1fr;}
+    header h1{font-size:1.2rem;}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🥤</div>
+  <div>
+    <h1>OFresh – Sales Dashboard</h1>
+    <p>Nayax Vending Machine Analytics · ข้อมูลตั้งแต่ 19 ม.ค. – 21 มิ.ย. 2026</p>
+  </div>
+</header>
+
+<!-- TABS -->
+<div class="nav-tabs">
+  <button class="tab-btn active" onclick="switchTab('overview',this)">📊 ภาพรวม</button>
+  <button class="tab-btn" onclick="switchTab('payment',this)">💳 การชำระเงิน</button>
+  <button class="tab-btn" onclick="switchTab('daily',this)">📅 รายวัน</button>
+  <button class="tab-btn" onclick="switchTab('machine',this)">🏧 แยกเครื่อง</button>
+</div>
+
+<!-- ========== TAB: OVERVIEW ========== -->
+<div class="tab-content active" id="tab-overview">
+<div class="container">
+  <div class="kpi-grid">
+    <div class="kpi"><div class="kpi-icon">☕</div><div class="kpi-label">จำนวนแก้วรวม</div>
+      <div class="kpi-value" id="kpiCups">–</div><div class="kpi-sub">แก้ว (รวมทุกเครื่อง)</div></div>
+    <div class="kpi accent"><div class="kpi-icon">💰</div><div class="kpi-label">ยอดขายรวม</div>
+      <div class="kpi-value" id="kpiRevenue">–</div><div class="kpi-sub">บาท</div></div>
+    <div class="kpi accent2"><div class="kpi-icon">📅</div><div class="kpi-label">เฉลี่ยแก้ว/วัน</div>
+      <div class="kpi-value" id="kpiAvgCups">–</div><div class="kpi-sub">แก้วต่อวัน</div></div>
+    <div class="kpi red"><div class="kpi-icon">📈</div><div class="kpi-label">ยอดขายเฉลี่ย/วัน</div>
+      <div class="kpi-value" id="kpiAvgRev">–</div><div class="kpi-sub">บาทต่อวัน</div></div>
+    <div class="kpi purple"><div class="kpi-icon">🏧</div><div class="kpi-label">จำนวนวันที่มียอด</div>
+      <div class="kpi-value" id="kpiDays">–</div><div class="kpi-sub">วัน</div></div>
+    <div class="kpi"><div class="kpi-icon">🗓️</div><div class="kpi-label">ช่วงข้อมูล</div>
+      <div class="kpi-value" style="font-size:.95rem">19 ม.ค.–21 มิ.ย.</div>
+      <div class="kpi-sub">ระยะเวลา ~154 วัน</div></div>
+  </div>
+
+  <div class="charts-grid full">
+    <div class="chart-card"><h3>📊 ยอดขายรายวัน (แก้ว)</h3>
+      <div style="height:260px"><canvas id="chartDaily"></canvas></div></div>
+  </div>
+  <div class="charts-grid">
+    <div class="chart-card"><h3>📆 ยอดขายรายเดือน (แก้ว)</h3>
+      <div style="height:240px"><canvas id="chartMonthly"></canvas></div></div>
+    <div class="chart-card"><h3>💵 รายได้รายเดือน (บาท)</h3>
+      <div style="height:240px"><canvas id="chartMonthlyRev"></canvas></div></div>
+  </div>
+  <div class="charts-grid">
+    <div class="chart-card"><h3>📉 Trend เฉลี่ย 7 วัน</h3>
+      <div style="height:240px"><canvas id="chartTrend"></canvas></div></div>
+    <div class="chart-card"><h3>🏪 สัดส่วนแต่ละเครื่อง</h3>
+      <div style="height:240px"><canvas id="chartMachinePie"></canvas></div></div>
+  </div>
+</div>
+</div>
+
+<!-- ========== TAB: PAYMENT ========== -->
+<div class="tab-content" id="tab-payment">
+<div class="container">
+  <div class="kpi-grid" id="payKpiGrid"></div>
+
+  <!-- Pay method summary cards -->
+  <div class="pay-grid" id="payCards"></div>
+
+  <div class="charts-grid">
+    <div class="chart-card"><h3>💳 สัดส่วนการชำระเงิน (ครั้ง)</h3>
+      <div style="height:280px"><canvas id="chartPayPie"></canvas></div></div>
+    <div class="chart-card"><h3>💵 รายได้แยกตามวิธีชำระ</h3>
+      <div style="height:280px"><canvas id="chartPayRev"></canvas></div></div>
+  </div>
+
+  <div class="charts-grid full">
+    <div class="chart-card"><h3>📆 วิธีชำระรายเดือน (รายการ)</h3>
+      <div style="height:280px"><canvas id="chartPayMonthly"></canvas></div></div>
+  </div>
+
+  <div class="charts-grid">
+    <div class="chart-card"><h3>🏧 วิธีชำระแยกเครื่อง (CentralFest)</h3>
+      <div style="height:260px"><canvas id="chartPayMachA"></canvas></div></div>
+    <div class="chart-card"><h3>🏧 วิธีชำระแยกเครื่อง (Taephae)</h3>
+      <div style="height:260px"><canvas id="chartPayMachB"></canvas></div></div>
+  </div>
+</div>
+</div>
+
+<!-- ========== TAB: DAILY ========== -->
+<div class="tab-content" id="tab-daily">
+<div class="container">
+  <div class="table-card">
+    <h3>📋 ตารางยอดขายรายวัน</h3>
+    <div class="filter-bar">
+      <label>เครื่อง:</label>
+      <select id="filterMachine">
+        <option value="all">ทั้งหมด</option>
+        <option value="OFresh_CentralFest">OFresh CentralFest</option>
+        <option value="OFresh_Taephae">OFresh Taephae</option>
+      </select>
+      <label>เดือน:</label>
+      <select id="filterMonth">
+        <option value="all">ทั้งหมด</option>
+        <option value="2026-01">ม.ค. 2026</option>
+        <option value="2026-02">ก.พ. 2026</option>
+        <option value="2026-03">มี.ค. 2026</option>
+        <option value="2026-04">เม.ย. 2026</option>
+        <option value="2026-05">พ.ค. 2026</option>
+        <option value="2026-06">มิ.ย. 2026</option>
+      </select>
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>วันที่</th><th>แก้ว</th><th>รายได้ (฿)</th><th>ราคาเฉลี่ย/แก้ว</th><th>ระดับ</th></tr></thead>
+      <tbody id="tableBody"></tbody>
+    </table></div>
+  </div>
+</div>
+</div>
+
+<!-- ========== TAB: MACHINE ========== -->
+<div class="tab-content" id="tab-machine">
+<div class="container">
+  <div class="machine-grid" id="machineGrid"></div>
+  <div class="charts-grid full">
+    <div class="chart-card"><h3>📊 เปรียบเทียบยอดขายรายเดือน แยกเครื่อง</h3>
+      <div style="height:280px"><canvas id="chartMachMonthly"></canvas></div></div>
+  </div>
+</div>
+</div>
+
+<footer>OFresh Dashboard v2 · 2,282 transactions · Generated from Nayax data</footer>
+
+<script>
+const RAW = {"daily": [{"date": "2026-01-19", "cups": 4, "revenue": 300.0, "transactions": 4}, {"date": "2026-01-20", "cups": 15, "revenue": 1041.0, "transactions": 15}, {"date": "2026-01-21", "cups": 10, "revenue": 690.0, "transactions": 10}, {"date": "2026-01-22", "cups": 10, "revenue": 690.0, "transactions": 10}, {"date": "2026-01-23", "cups": 10, "revenue": 690.0, "transactions": 10}, {"date": "2026-01-24", "cups": 11, "revenue": 759.0, "transactions": 11}, {"date": "2026-01-25", "cups": 19, "revenue": 1311.0, "transactions": 19}, {"date": "2026-01-26", "cups": 16, "revenue": 1094.0, "transactions": 16}, {"date": "2026-01-27", "cups": 6, "revenue": 414.0, "transactions": 6}, {"date": "2026-01-28", "cups": 20, "revenue": 1380.0, "transactions": 20}, {"date": "2026-01-29", "cups": 14, "revenue": 966.0, "transactions": 14}, {"date": "2026-01-30", "cups": 13, "revenue": 838.0, "transactions": 13}, {"date": "2026-01-31", "cups": 18, "revenue": 1242.0, "transactions": 18}, {"date": "2026-02-01", "cups": 21, "revenue": 1449.0, "transactions": 21}, {"date": "2026-02-02", "cups": 14, "revenue": 966.0, "transactions": 14}, {"date": "2026-02-03", "cups": 7, "revenue": 483.0, "transactions": 7}, {"date": "2026-02-04", "cups": 11, "revenue": 759.0, "transactions": 11}, {"date": "2026-02-05", "cups": 12, "revenue": 828.0, "transactions": 12}, {"date": "2026-02-06", "cups": 7, "revenue": 483.0, "transactions": 7}, {"date": "2026-02-07", "cups": 16, "revenue": 1104.0, "transactions": 16}, {"date": "2026-02-08", "cups": 11, "revenue": 759.0, "transactions": 11}, {"date": "2026-02-09", "cups": 8, "revenue": 552.0, "transactions": 8}, {"date": "2026-02-10", "cups": 17, "revenue": 1173.0, "transactions": 17}, {"date": "2026-02-11", "cups": 10, "revenue": 690.0, "transactions": 10}, {"date": "2026-02-12", "cups": 15, "revenue": 1035.0, "transactions": 15}, {"date": "2026-02-13", "cups": 12, "revenue": 828.0, "transactions": 12}, {"date": "2026-02-14", "cups": 26, "revenue": 1794.0, "transactions": 26}, {"date": "2026-02-15", "cups": 22, "revenue": 1518.0, "transactions": 22}, {"date": "2026-02-16", "cups": 9, "revenue": 621.0, "transactions": 9}, {"date": "2026-02-17", "cups": 9, "revenue": 621.0, "transactions": 9}, {"date": "2026-02-18", "cups": 14, "revenue": 966.0, "transactions": 14}, {"date": "2026-02-19", "cups": 6, "revenue": 414.0, "transactions": 6}, {"date": "2026-02-20", "cups": 19, "revenue": 1311.0, "transactions": 19}, {"date": "2026-02-21", "cups": 16, "revenue": 1104.0, "transactions": 16}, {"date": "2026-02-22", "cups": 20, "revenue": 1380.0, "transactions": 20}, {"date": "2026-02-23", "cups": 7, "revenue": 483.0, "transactions": 7}, {"date": "2026-02-24", "cups": 7, "revenue": 483.0, "transactions": 7}, {"date": "2026-02-25", "cups": 13, "revenue": 897.0, "transactions": 13}, {"date": "2026-02-26", "cups": 7, "revenue": 483.0, "transactions": 7}, {"date": "2026-02-27", "cups": 15, "revenue": 1035.0, "transactions": 15}, {"date": "2026-02-28", "cups": 19, "revenue": 1311.0, "transactions": 19}, {"date": "2026-03-01", "cups": 18, "revenue": 1242.0, "transactions": 18}, {"date": "2026-03-02", "cups": 10, "revenue": 690.0, "transactions": 10}, {"date": "2026-03-03", "cups": 11, "revenue": 759.0, "transactions": 11}, {"date": "2026-03-04", "cups": 11, "revenue": 759.0, "transactions": 11}, {"date": "2026-03-05", "cups": 8, "revenue": 552.0, "transactions": 8}, {"date": "2026-03-06", "cups": 6, "revenue": 414.0, "transactions": 6}, {"date": "2026-03-07", "cups": 24, "revenue": 1656.0, "transactions": 24}, {"date": "2026-03-08", "cups": 18, "revenue": 1242.0, "transactions": 18}, {"date": "2026-03-09", "cups": 12, "revenue": 828.0, "transactions": 12}, {"date": "2026-03-10", "cups": 14, "revenue": 966.0, "transactions": 14}, {"date": "2026-03-12", "cups": 11, "revenue": 759.0, "transactions": 11}, {"date": "2026-03-13", "cups": 11, "revenue": 759.0, "transactions": 11}, {"date": "2026-03-14", "cups": 15, "revenue": 1035.0, "transactions": 15}, {"date": "2026-03-15", "cups": 14, "revenue": 966.0, "transactions": 14}, {"date": "2026-03-16", "cups": 14, "revenue": 966.0, "transactions": 14}, {"date": "2026-03-17", "cups": 11, "revenue": 779.0, "transactions": 11}, {"date": "2026-03-18", "cups": 18, "revenue": 1278.0, "transactions": 18}, {"date": "2026-03-19", "cups": 17, "revenue": 1191.0, "transactions": 17}, {"date": "2026-03-20", "cups": 13, "revenue": 909.0, "transactions": 13}, {"date": "2026-03-21", "cups": 24, "revenue": 1704.0, "transactions": 24}, {"date": "2026-03-22", "cups": 29, "revenue": 2031.0, "transactions": 29}, {"date": "2026-03-23", "cups": 7, "revenue": 489.0, "transactions": 7}, {"date": "2026-03-24", "cups": 15, "revenue": 1053.0, "transactions": 15}, {"date": "2026-03-25", "cups": 14, "revenue": 966.0, "transactions": 14}, {"date": "2026-03-26", "cups": 14, "revenue": 972.0, "transactions": 14}, {"date": "2026-03-27", "cups": 19, "revenue": 1335.0, "transactions": 19}, {"date": "2026-03-28", "cups": 24, "revenue": 1662.0, "transactions": 24}, {"date": "2026-03-29", "cups": 8, "revenue": 558.0, "transactions": 8}, {"date": "2026-03-30", "cups": 5, "revenue": 375.0, "transactions": 5}, {"date": "2026-03-31", "cups": 10, "revenue": 714.0, "transactions": 10}, {"date": "2026-04-01", "cups": 16, "revenue": 1104.0, "transactions": 16}, {"date": "2026-04-02", "cups": 10, "revenue": 702.0, "transactions": 10}, {"date": "2026-04-03", "cups": 19, "revenue": 1323.0, "transactions": 19}, {"date": "2026-04-04", "cups": 18, "revenue": 1248.0, "transactions": 18}, {"date": "2026-04-05", "cups": 25, "revenue": 1737.0, "transactions": 25}, {"date": "2026-04-06", "cups": 16, "revenue": 1110.0, "transactions": 16}, {"date": "2026-04-07", "cups": 12, "revenue": 828.0, "transactions": 12}, {"date": "2026-04-08", "cups": 5, "revenue": 351.0, "transactions": 5}, {"date": "2026-04-09", "cups": 9, "revenue": 621.0, "transactions": 9}, {"date": "2026-04-10", "cups": 14, "revenue": 966.0, "transactions": 14}, {"date": "2026-04-11", "cups": 23, "revenue": 1605.0, "transactions": 23}, {"date": "2026-04-12", "cups": 12, "revenue": 828.0, "transactions": 12}, {"date": "2026-04-13", "cups": 17, "revenue": 1185.0, "transactions": 17}, {"date": "2026-04-14", "cups": 20, "revenue": 1380.0, "transactions": 20}, {"date": "2026-04-15", "cups": 25, "revenue": 1725.0, "transactions": 25}, {"date": "2026-04-16", "cups": 20, "revenue": 1380.0, "transactions": 20}, {"date": "2026-04-17", "cups": 12, "revenue": 828.0, "transactions": 12}, {"date": "2026-04-18", "cups": 16, "revenue": 1104.0, "transactions": 16}, {"date": "2026-04-19", "cups": 38, "revenue": 2622.0, "transactions": 38}, {"date": "2026-04-20", "cups": 4, "revenue": 276.0, "transactions": 4}, {"date": "2026-04-21", "cups": 10, "revenue": 690.0, "transactions": 10}, {"date": "2026-04-22", "cups": 15, "revenue": 1035.0, "transactions": 15}, {"date": "2026-04-23", "cups": 11, "revenue": 759.0, "transactions": 11}, {"date": "2026-04-24", "cups": 9, "revenue": 621.0, "transactions": 9}, {"date": "2026-04-25", "cups": 35, "revenue": 2415.0, "transactions": 35}, {"date": "2026-04-26", "cups": 30, "revenue": 2070.0, "transactions": 30}, {"date": "2026-04-27", "cups": 8, "revenue": 552.0, "transactions": 8}, {"date": "2026-04-28", "cups": 13, "revenue": 897.0, "transactions": 13}, {"date": "2026-04-29", "cups": 10, "revenue": 690.0, "transactions": 10}, {"date": "2026-04-30", "cups": 17, "revenue": 1173.0, "transactions": 17}, {"date": "2026-05-01", "cups": 18, "revenue": 1242.0, "transactions": 18}, {"date": "2026-05-02", "cups": 6, "revenue": 414.0, "transactions": 6}, {"date": "2026-05-03", "cups": 23, "revenue": 1587.0, "transactions": 23}, {"date": "2026-05-04", "cups": 11, "revenue": 759.0, "transactions": 11}, {"date": "2026-05-05", "cups": 12, "revenue": 828.0, "transactions": 12}, {"date": "2026-05-06", "cups": 13, "revenue": 897.0, "transactions": 13}, {"date": "2026-05-07", "cups": 11, "revenue": 759.0, "transactions": 11}, {"date": "2026-05-08", "cups": 11, "revenue": 759.0, "transactions": 11}, {"date": "2026-05-09", "cups": 11, "revenue": 759.0, "transactions": 11}, {"date": "2026-05-10", "cups": 20, "revenue": 1380.0, "transactions": 20}, {"date": "2026-05-11", "cups": 13, "revenue": 897.0, "transactions": 13}, {"date": "2026-05-12", "cups": 12, "revenue": 828.0, "transactions": 12}, {"date": "2026-05-13", "cups": 9, "revenue": 621.0, "transactions": 9}, {"date": "2026-05-14", "cups": 14, "revenue": 966.0, "transactions": 14}, {"date": "2026-05-15", "cups": 17, "revenue": 1173.0, "transactions": 17}, {"date": "2026-05-16", "cups": 17, "revenue": 1173.0, "transactions": 17}, {"date": "2026-05-17", "cups": 30, "revenue": 2070.0, "transactions": 30}, {"date": "2026-05-18", "cups": 13, "revenue": 897.0, "transactions": 13}, {"date": "2026-05-19", "cups": 6, "revenue": 414.0, "transactions": 6}, {"date": "2026-05-20", "cups": 12, "revenue": 828.0, "transactions": 12}, {"date": "2026-05-21", "cups": 10, "revenue": 690.0, "transactions": 10}, {"date": "2026-05-22", "cups": 9, "revenue": 621.0, "transactions": 9}, {"date": "2026-05-23", "cups": 9, "revenue": 621.0, "transactions": 9}, {"date": "2026-05-24", "cups": 25, "revenue": 1725.0, "transactions": 25}, {"date": "2026-05-25", "cups": 18, "revenue": 1242.0, "transactions": 18}, {"date": "2026-05-26", "cups": 9, "revenue": 621.0, "transactions": 9}, {"date": "2026-05-27", "cups": 8, "revenue": 552.0, "transactions": 8}, {"date": "2026-05-28", "cups": 28, "revenue": 1932.0, "transactions": 28}, {"date": "2026-05-29", "cups": 17, "revenue": 1173.0, "transactions": 17}, {"date": "2026-05-30", "cups": 34, "revenue": 2346.0, "transactions": 34}, {"date": "2026-05-31", "cups": 23, "revenue": 1587.0, "transactions": 23}, {"date": "2026-06-01", "cups": 31, "revenue": 2139.0, "transactions": 31}, {"date": "2026-06-02", "cups": 16, "revenue": 1104.0, "transactions": 16}, {"date": "2026-06-03", "cups": 30, "revenue": 2070.0, "transactions": 30}, {"date": "2026-06-04", "cups": 21, "revenue": 1449.0, "transactions": 21}, {"date": "2026-06-05", "cups": 16, "revenue": 1104.0, "transactions": 16}, {"date": "2026-06-06", "cups": 23, "revenue": 1587.0, "transactions": 23}, {"date": "2026-06-07", "cups": 25, "revenue": 1725.0, "transactions": 25}, {"date": "2026-06-08", "cups": 13, "revenue": 897.0, "transactions": 13}, {"date": "2026-06-09", "cups": 16, "revenue": 1104.0, "transactions": 16}, {"date": "2026-06-10", "cups": 10, "revenue": 690.0, "transactions": 10}, {"date": "2026-06-11", "cups": 9, "revenue": 621.0, "transactions": 9}, {"date": "2026-06-12", "cups": 8, "revenue": 552.0, "transactions": 8}, {"date": "2026-06-13", "cups": 20, "revenue": 1380.0, "transactions": 20}, {"date": "2026-06-14", "cups": 27, "revenue": 1863.0, "transactions": 27}, {"date": "2026-06-15", "cups": 15, "revenue": 1035.0, "transactions": 15}, {"date": "2026-06-16", "cups": 12, "revenue": 828.0, "transactions": 12}, {"date": "2026-06-17", "cups": 9, "revenue": 621.0, "transactions": 9}, {"date": "2026-06-18", "cups": 10, "revenue": 690.0, "transactions": 10}, {"date": "2026-06-19", "cups": 11, "revenue": 759.0, "transactions": 11}, {"date": "2026-06-20", "cups": 16, "revenue": 1104.0, "transactions": 16}, {"date": "2026-06-21", "cups": 25, "revenue": 1725.0, "transactions": 25}], "daily_machine": [{"date": "2026-01-19", "machine_name": "OFresh_CentralFest", "cups": 4, "revenue": 300.0, "transactions": 4}, {"date": "2026-01-20", "machine_name": "OFresh_CentralFest", "cups": 15, "revenue": 1041.0, "transactions": 15}, {"date": "2026-01-21", "machine_name": "OFresh_CentralFest", "cups": 10, "revenue": 690.0, "transactions": 10}, {"date": "2026-01-22", "machine_name": "OFresh_CentralFest", "cups": 10, "revenue": 690.0, "transactions": 10}, {"date": "2026-01-23", "machine_name": "OFresh_CentralFest", "cups": 10, "revenue": 690.0, "transactions": 10}, {"date": "2026-01-24", "machine_name": "OFresh_CentralFest", "cups": 11, "revenue": 759.0, "transactions": 11}, {"date": "2026-01-25", "machine_name": "OFresh_CentralFest", "cups": 19, "revenue": 1311.0, "transactions": 19}, {"date": "2026-01-26", "machine_name": "OFresh_CentralFest", "cups": 16, "revenue": 1094.0, "transactions": 16}, {"date": "2026-01-27", "machine_name": "OFresh_CentralFest", "cups": 6, "revenue": 414.0, "transactions": 6}, {"date": "2026-01-28", "machine_name": "OFresh_CentralFest", "cups": 20, "revenue": 1380.0, "transactions": 20}, {"date": "2026-01-29", "machine_name": "OFresh_CentralFest", "cups": 14, "revenue": 966.0, "transactions": 14}, {"date": "2026-01-30", "machine_name": "OFresh_CentralFest", "cups": 13, "revenue": 838.0, "transactions": 13}, {"date": "2026-01-31", "machine_name": "OFresh_CentralFest", "cups": 18, "revenue": 1242.0, "transactions": 18}, {"date": "2026-02-01", "machine_name": "OFresh_CentralFest", "cups": 21, "revenue": 1449.0, "transactions": 21}, {"date": "2026-02-02", "machine_name": "OFresh_CentralFest", "cups": 14, "revenue": 966.0, "transactions": 14}, {"date": "2026-02-03", "machine_name": "OFresh_CentralFest", "cups": 7, "revenue": 483.0, "transactions": 7}, {"date": "2026-02-04", "machine_name": "OFresh_CentralFest", "cups": 11, "revenue": 759.0, "transactions": 11}, {"date": "2026-02-05", "machine_name": "OFresh_CentralFest", "cups": 12, "revenue": 828.0, "transactions": 12}, {"date": "2026-02-06", "machine_name": "OFresh_CentralFest", "cups": 7, "revenue": 483.0, "transactions": 7}, {"date": "2026-02-07", "machine_name": "OFresh_CentralFest", "cups": 16, "revenue": 1104.0, "transactions": 16}, {"date": "2026-02-08", "machine_name": "OFresh_CentralFest", "cups": 11, "revenue": 759.0, "transactions": 11}, {"date": "2026-02-09", "machine_name": "OFresh_CentralFest", "cups": 8, "revenue": 552.0, "transactions": 8}, {"date": "2026-02-10", "machine_name": "OFresh_CentralFest", "cups": 17, "revenue": 1173.0, "transactions": 17}, {"date": "2026-02-11", "machine_name": "OFresh_CentralFest", "cups": 10, "revenue": 690.0, "transactions": 10}, {"date": "2026-02-12", "machine_name": "OFresh_CentralFest", "cups": 15, "revenue": 1035.0, "transactions": 15}, {"date": "2026-02-13", "machine_name": "OFresh_CentralFest", "cups": 12, "revenue": 828.0, "transactions": 12}, {"date": "2026-02-14", "machine_name": "OFresh_CentralFest", "cups": 26, "revenue": 1794.0, "transactions": 26}, {"date": "2026-02-15", "machine_name": "OFresh_CentralFest", "cups": 22, "revenue": 1518.0, "transactions": 22}, {"date": "2026-02-16", "machine_name": "OFresh_CentralFest", "cups": 9, "revenue": 621.0, "transactions": 9}, {"date": "2026-02-17", "machine_name": "OFresh_CentralFest", "cups": 9, "revenue": 621.0, "transactions": 9}, {"date": "2026-02-18", "machine_name": "OFresh_CentralFest", "cups": 14, "revenue": 966.0, "transactions": 14}, {"date": "2026-02-19", "machine_name": "OFresh_CentralFest", "cups": 6, "revenue": 414.0, "transactions": 6}, {"date": "2026-02-20", "machine_name": "OFresh_CentralFest", "cups": 19, "revenue": 1311.0, "transactions": 19}, {"date": "2026-02-21", "machine_name": "OFresh_CentralFest", "cups": 16, "revenue": 1104.0, "transactions": 16}, {"date": "2026-02-22", "machine_name": "OFresh_CentralFest", "cups": 20, "revenue": 1380.0, "transactions": 20}, {"date": "2026-02-23", "machine_name": "OFresh_CentralFest", "cups": 7, "revenue": 483.0, "transactions": 7}, {"date": "2026-02-24", "machine_name": "OFresh_CentralFest", "cups": 7, "revenue": 483.0, "transactions": 7}, {"date": "2026-02-25", "machine_name": "OFresh_CentralFest", "cups": 13, "revenue": 897.0, "transactions": 13}, {"date": "2026-02-26", "machine_name": "OFresh_CentralFest", "cups": 7, "revenue": 483.0, "transactions": 7}, {"date": "2026-02-27", "machine_name": "OFresh_CentralFest", "cups": 15, "revenue": 1035.0, "transactions": 15}, {"date": "2026-02-28", "machine_name": "OFresh_CentralFest", "cups": 19, "revenue": 1311.0, "transactions": 19}, {"date": "2026-03-01", "machine_name": "OFresh_CentralFest", "cups": 18, "revenue": 1242.0, "transactions": 18}, {"date": "2026-03-02", "machine_name": "OFresh_CentralFest", "cups": 10, "revenue": 690.0, "transactions": 10}, {"date": "2026-03-03", "machine_name": "OFresh_CentralFest", "cups": 11, "revenue": 759.0, "transactions": 11}, {"date": "2026-03-04", "machine_name": "OFresh_CentralFest", "cups": 11, "revenue": 759.0, "transactions": 11}, {"date": "2026-03-05", "machine_name": "OFresh_CentralFest", "cups": 8, "revenue": 552.0, "transactions": 8}, {"date": "2026-03-06", "machine_name": "OFresh_CentralFest", "cups": 6, "revenue": 414.0, "transactions": 6}, {"date": "2026-03-07", "machine_name": "OFresh_CentralFest", "cups": 24, "revenue": 1656.0, "transactions": 24}, {"date": "2026-03-08", "machine_name": "OFresh_CentralFest", "cups": 18, "revenue": 1242.0, "transactions": 18}, {"date": "2026-03-09", "machine_name": "OFresh_CentralFest", "cups": 12, "revenue": 828.0, "transactions": 12}, {"date": "2026-03-10", "machine_name": "OFresh_CentralFest", "cups": 14, "revenue": 966.0, "transactions": 14}, {"date": "2026-03-12", "machine_name": "OFresh_CentralFest", "cups": 11, "revenue": 759.0, "transactions": 11}, {"date": "2026-03-13", "machine_name": "OFresh_CentralFest", "cups": 11, "revenue": 759.0, "transactions": 11}, {"date": "2026-03-14", "machine_name": "OFresh_CentralFest", "cups": 15, "revenue": 1035.0, "transactions": 15}, {"date": "2026-03-15", "machine_name": "OFresh_CentralFest", "cups": 14, "revenue": 966.0, "transactions": 14}, {"date": "2026-03-16", "machine_name": "OFresh_CentralFest", "cups": 14, "revenue": 966.0, "transactions": 14}, {"date": "2026-03-17", "machine_name": "OFresh_CentralFest", "cups": 9, "revenue": 621.0, "transactions": 9}, {"date": "2026-03-17", "machine_name": "OFresh_Taephae", "cups": 2, "revenue": 158.0, "transactions": 2}, {"date": "2026-03-18", "machine_name": "OFresh_CentralFest", "cups": 12, "revenue": 828.0, "transactions": 12}, {"date": "2026-03-18", "machine_name": "OFresh_Taephae", "cups": 6, "revenue": 450.0, "transactions": 6}, {"date": "2026-03-19", "machine_name": "OFresh_CentralFest", "cups": 14, "revenue": 966.0, "transactions": 14}, {"date": "2026-03-19", "machine_name": "OFresh_Taephae", "cups": 3, "revenue": 225.0, "transactions": 3}, {"date": "2026-03-20", "machine_name": "OFresh_CentralFest", "cups": 11, "revenue": 759.0, "transactions": 11}, {"date": "2026-03-20", "machine_name": "OFresh_Taephae", "cups": 2, "revenue": 150.0, "transactions": 2}, {"date": "2026-03-21", "machine_name": "OFresh_CentralFest", "cups": 16, "revenue": 1104.0, "transactions": 16}, {"date": "2026-03-21", "machine_name": "OFresh_Taephae", "cups": 8, "revenue": 600.0, "transactions": 8}, {"date": "2026-03-22", "machine_name": "OFresh_CentralFest", "cups": 22, "revenue": 1506.0, "transactions": 22}, {"date": "2026-03-22", "machine_name": "OFresh_Taephae", "cups": 7, "revenue": 525.0, "transactions": 7}, {"date": "2026-03-23", "machine_name": "OFresh_CentralFest", "cups": 6, "revenue": 414.0, "transactions": 6}, {"date": "2026-03-23", "machine_name": "OFresh_Taephae", "cups": 1, "revenue": 75.0, "transactions": 1}, {"date": "2026-03-24", "machine_name": "OFresh_CentralFest", "cups": 12, "revenue": 828.0, "transactions": 12}, {"date": "2026-03-24", "machine_name": "OFresh_Taephae", "cups": 3, "revenue": 225.0, "transactions": 3}, {"date": "2026-03-25", "machine_name": "OFresh_CentralFest", "cups": 14, "revenue": 966.0, "transactions": 14}, {"date": "2026-03-26", "machine_name": "OFresh_CentralFest", "cups": 13, "revenue": 897.0, "transactions": 13}, {"date": "2026-03-26", "machine_name": "OFresh_Taephae", "cups": 1, "revenue": 75.0, "transactions": 1}, {"date": "2026-03-27", "machine_name": "OFresh_CentralFest", "cups": 15, "revenue": 1035.0, "transactions": 15}, {"date": "2026-03-27", "machine_name": "OFresh_Taephae", "cups": 4, "revenue": 300.0, "transactions": 4}, {"date": "2026-03-28", "machine_name": "OFresh_CentralFest", "cups": 23, "revenue": 1587.0, "transactions": 23}, {"date": "2026-03-28", "machine_name": "OFresh_Taephae", "cups": 1, "revenue": 75.0, "transactions": 1}, {"date": "2026-03-29", "machine_name": "OFresh_CentralFest", "cups": 7, "revenue": 483.0, "transactions": 7}, {"date": "2026-03-29", "machine_name": "OFresh_Taephae", "cups": 1, "revenue": 75.0, "transactions": 1}, {"date": "2026-03-30", "machine_name": "OFresh_Taephae", "cups": 5, "revenue": 375.0, "transactions": 5}, {"date": "2026-03-31", "machine_name": "OFresh_CentralFest", "cups": 6, "revenue": 414.0, "transactions": 6}, {"date": "2026-03-31", "machine_name": "OFresh_Taephae", "cups": 4, "revenue": 300.0, "transactions": 4}, {"date": "2026-04-01", "machine_name": "OFresh_CentralFest", "cups": 16, "revenue": 1104.0, "transactions": 16}, {"date": "2026-04-02", "machine_name": "OFresh_CentralFest", "cups": 8, "revenue": 552.0, "transactions": 8}, {"date": "2026-04-02", "machine_name": "OFresh_Taephae", "cups": 2, "revenue": 150.0, "transactions": 2}, {"date": "2026-04-03", "machine_name": "OFresh_CentralFest", "cups": 17, "revenue": 1173.0, "transactions": 17}, {"date": "2026-04-03", "machine_name": "OFresh_Taephae", "cups": 2, "revenue": 150.0, "transactions": 2}, {"date": "2026-04-04", "machine_name": "OFresh_CentralFest", "cups": 17, "revenue": 1173.0, "transactions": 17}, {"date": "2026-04-04", "machine_name": "OFresh_Taephae", "cups": 1, "revenue": 75.0, "transactions": 1}, {"date": "2026-04-05", "machine_name": "OFresh_CentralFest", "cups": 23, "revenue": 1587.0, "transactions": 23}, {"date": "2026-04-05", "machine_name": "OFresh_Taephae", "cups": 2, "revenue": 150.0, "transactions": 2}, {"date": "2026-04-06", "machine_name": "OFresh_CentralFest", "cups": 15, "revenue": 1035.0, "transactions": 15}, {"date": "2026-04-06", "machine_name": "OFresh_Taephae", "cups": 1, "revenue": 75.0, "transactions": 1}, {"date": "2026-04-07", "machine_name": "OFresh_CentralFest", "cups": 12, "revenue": 828.0, "transactions": 12}, {"date": "2026-04-08", "machine_name": "OFresh_CentralFest", "cups": 4, "revenue": 276.0, "transactions": 4}, {"date": "2026-04-08", "machine_name": "OFresh_Taephae", "cups": 1, "revenue": 75.0, "transactions": 1}, {"date": "2026-04-09", "machine_name": "OFresh_CentralFest", "cups": 9, "revenue": 621.0, "transactions": 9}, {"date": "2026-04-10", "machine_name": "OFresh_CentralFest", "cups": 14, "revenue": 966.0, "transactions": 14}, {"date": "2026-04-11", "machine_name": "OFresh_CentralFest", "cups": 20, "revenue": 1380.0, "transactions": 20}, {"date": "2026-04-11", "machine_name": "OFresh_Taephae", "cups": 3, "revenue": 225.0, "transactions": 3}, {"date": "2026-04-12", "machine_name": "OFresh_CentralFest", "cups": 12, "revenue": 828.0, "transactions": 12}, {"date": "2026-04-13", "machine_name": "OFresh_CentralFest", "cups": 15, "revenue": 1035.0, "transactions": 15}, {"date": "2026-04-13", "machine_name": "OFresh_Taephae", "cups": 2, "revenue": 150.0, "transactions": 2}, {"date": "2026-04-14", "machine_name": "OFresh_CentralFest", "cups": 20, "revenue": 1380.0, "transactions": 20}, {"date": "2026-04-15", "machine_name": "OFresh_CentralFest", "cups": 25, "revenue": 1725.0, "transactions": 25}, {"date": "2026-04-16", "machine_name": "OFresh_CentralFest", "cups": 20, "revenue": 1380.0, "transactions": 20}, {"date": "2026-04-17", "machine_name": "OFresh_CentralFest", "cups": 12, "revenue": 828.0, "transactions": 12}, {"date": "2026-04-18", "machine_name": "OFresh_CentralFest", "cups": 16, "revenue": 1104.0, "transactions": 16}, {"date": "2026-04-19", "machine_name": "OFresh_CentralFest", "cups": 38, "revenue": 2622.0, "transactions": 38}, {"date": "2026-04-20", "machine_name": "OFresh_CentralFest", "cups": 4, "revenue": 276.0, "transactions": 4}, {"date": "2026-04-21", "machine_name": "OFresh_CentralFest", "cups": 10, "revenue": 690.0, "transactions": 10}, {"date": "2026-04-22", "machine_name": "OFresh_CentralFest", "cups": 15, "revenue": 1035.0, "transactions": 15}, {"date": "2026-04-23", "machine_name": "OFresh_CentralFest", "cups": 11, "revenue": 759.0, "transactions": 11}, {"date": "2026-04-24", "machine_name": "OFresh_CentralFest", "cups": 9, "revenue": 621.0, "transactions": 9}, {"date": "2026-04-25", "machine_name": "OFresh_CentralFest", "cups": 35, "revenue": 2415.0, "transactions": 35}, {"date": "2026-04-26", "machine_name": "OFresh_CentralFest", "cups": 30, "revenue": 2070.0, "transactions": 30}, {"date": "2026-04-27", "machine_name": "OFresh_CentralFest", "cups": 8, "revenue": 552.0, "transactions": 8}, {"date": "2026-04-28", "machine_name": "OFresh_CentralFest", "cups": 13, "revenue": 897.0, "transactions": 13}, {"date": "2026-04-29", "machine_name": "OFresh_CentralFest", "cups": 10, "revenue": 690.0, "transactions": 10}, {"date": "2026-04-30", "machine_name": "OFresh_CentralFest", "cups": 17, "revenue": 1173.0, "transactions": 17}, {"date": "2026-05-01", "machine_name": "OFresh_CentralFest", "cups": 18, "revenue": 1242.0, "transactions": 18}, {"date": "2026-05-02", "machine_name": "OFresh_CentralFest", "cups": 6, "revenue": 414.0, "transactions": 6}, {"date": "2026-05-03", "machine_name": "OFresh_CentralFest", "cups": 23, "revenue": 1587.0, "transactions": 23}, {"date": "2026-05-04", "machine_name": "OFresh_CentralFest", "cups": 11, "revenue": 759.0, "transactions": 11}, {"date": "2026-05-05", "machine_name": "OFresh_CentralFest", "cups": 12, "revenue": 828.0, "transactions": 12}, {"date": "2026-05-06", "machine_name": "OFresh_CentralFest", "cups": 13, "revenue": 897.0, "transactions": 13}, {"date": "2026-05-07", "machine_name": "OFresh_CentralFest", "cups": 11, "revenue": 759.0, "transactions": 11}, {"date": "2026-05-08", "machine_name": "OFresh_CentralFest", "cups": 11, "revenue": 759.0, "transactions": 11}, {"date": "2026-05-09", "machine_name": "OFresh_CentralFest", "cups": 11, "revenue": 759.0, "transactions": 11}, {"date": "2026-05-10", "machine_name": "OFresh_CentralFest", "cups": 20, "revenue": 1380.0, "transactions": 20}, {"date": "2026-05-11", "machine_name": "OFresh_CentralFest", "cups": 13, "revenue": 897.0, "transactions": 13}, {"date": "2026-05-12", "machine_name": "OFresh_CentralFest", "cups": 12, "revenue": 828.0, "transactions": 12}, {"date": "2026-05-13", "machine_name": "OFresh_CentralFest", "cups": 9, "revenue": 621.0, "transactions": 9}, {"date": "2026-05-14", "machine_name": "OFresh_CentralFest", "cups": 14, "revenue": 966.0, "transactions": 14}, {"date": "2026-05-15", "machine_name": "OFresh_CentralFest", "cups": 17, "revenue": 1173.0, "transactions": 17}, {"date": "2026-05-16", "machine_name": "OFresh_CentralFest", "cups": 17, "revenue": 1173.0, "transactions": 17}, {"date": "2026-05-17", "machine_name": "OFresh_CentralFest", "cups": 30, "revenue": 2070.0, "transactions": 30}, {"date": "2026-05-18", "machine_name": "OFresh_CentralFest", "cups": 13, "revenue": 897.0, "transactions": 13}, {"date": "2026-05-19", "machine_name": "OFresh_CentralFest", "cups": 6, "revenue": 414.0, "transactions": 6}, {"date": "2026-05-20", "machine_name": "OFresh_CentralFest", "cups": 12, "revenue": 828.0, "transactions": 12}, {"date": "2026-05-21", "machine_name": "OFresh_CentralFest", "cups": 10, "revenue": 690.0, "transactions": 10}, {"date": "2026-05-22", "machine_name": "OFresh_CentralFest", "cups": 9, "revenue": 621.0, "transactions": 9}, {"date": "2026-05-23", "machine_name": "OFresh_CentralFest", "cups": 9, "revenue": 621.0, "transactions": 9}, {"date": "2026-05-24", "machine_name": "OFresh_CentralFest", "cups": 25, "revenue": 1725.0, "transactions": 25}, {"date": "2026-05-25", "machine_name": "OFresh_CentralFest", "cups": 18, "revenue": 1242.0, "transactions": 18}, {"date": "2026-05-26", "machine_name": "OFresh_CentralFest", "cups": 9, "revenue": 621.0, "transactions": 9}, {"date": "2026-05-27", "machine_name": "OFresh_CentralFest", "cups": 8, "revenue": 552.0, "transactions": 8}, {"date": "2026-05-28", "machine_name": "OFresh_CentralFest", "cups": 28, "revenue": 1932.0, "transactions": 28}, {"date": "2026-05-29", "machine_name": "OFresh_CentralFest", "cups": 17, "revenue": 1173.0, "transactions": 17}, {"date": "2026-05-30", "machine_name": "OFresh_CentralFest", "cups": 34, "revenue": 2346.0, "transactions": 34}, {"date": "2026-05-31", "machine_name": "OFresh_CentralFest", "cups": 23, "revenue": 1587.0, "transactions": 23}, {"date": "2026-06-01", "machine_name": "OFresh_CentralFest", "cups": 31, "revenue": 2139.0, "transactions": 31}, {"date": "2026-06-02", "machine_name": "OFresh_CentralFest", "cups": 16, "revenue": 1104.0, "transactions": 16}, {"date": "2026-06-03", "machine_name": "OFresh_CentralFest", "cups": 30, "revenue": 2070.0, "transactions": 30}, {"date": "2026-06-04", "machine_name": "OFresh_CentralFest", "cups": 21, "revenue": 1449.0, "transactions": 21}, {"date": "2026-06-05", "machine_name": "OFresh_CentralFest", "cups": 16, "revenue": 1104.0, "transactions": 16}, {"date": "2026-06-06", "machine_name": "OFresh_CentralFest", "cups": 23, "revenue": 1587.0, "transactions": 23}, {"date": "2026-06-07", "machine_name": "OFresh_CentralFest", "cups": 25, "revenue": 1725.0, "transactions": 25}, {"date": "2026-06-08", "machine_name": "OFresh_CentralFest", "cups": 13, "revenue": 897.0, "transactions": 13}, {"date": "2026-06-09", "machine_name": "OFresh_CentralFest", "cups": 16, "revenue": 1104.0, "transactions": 16}, {"date": "2026-06-10", "machine_name": "OFresh_CentralFest", "cups": 10, "revenue": 690.0, "transactions": 10}, {"date": "2026-06-11", "machine_name": "OFresh_CentralFest", "cups": 9, "revenue": 621.0, "transactions": 9}, {"date": "2026-06-12", "machine_name": "OFresh_CentralFest", "cups": 8, "revenue": 552.0, "transactions": 8}, {"date": "2026-06-13", "machine_name": "OFresh_CentralFest", "cups": 20, "revenue": 1380.0, "transactions": 20}, {"date": "2026-06-14", "machine_name": "OFresh_CentralFest", "cups": 27, "revenue": 1863.0, "transactions": 27}, {"date": "2026-06-15", "machine_name": "OFresh_CentralFest", "cups": 15, "revenue": 1035.0, "transactions": 15}, {"date": "2026-06-16", "machine_name": "OFresh_CentralFest", "cups": 12, "revenue": 828.0, "transactions": 12}, {"date": "2026-06-17", "machine_name": "OFresh_CentralFest", "cups": 9, "revenue": 621.0, "transactions": 9}, {"date": "2026-06-18", "machine_name": "OFresh_CentralFest", "cups": 10, "revenue": 690.0, "transactions": 10}, {"date": "2026-06-19", "machine_name": "OFresh_CentralFest", "cups": 11, "revenue": 759.0, "transactions": 11}, {"date": "2026-06-20", "machine_name": "OFresh_CentralFest", "cups": 16, "revenue": 1104.0, "transactions": 16}, {"date": "2026-06-21", "machine_name": "OFresh_CentralFest", "cups": 25, "revenue": 1725.0, "transactions": 25}], "monthly": [{"month": "2026-01", "cups": 166, "revenue": 11415.0, "transactions": 166}, {"month": "2026-02", "cups": 370, "revenue": 25530.0, "transactions": 370}, {"month": "2026-03", "cups": 425, "revenue": 29609.0, "transactions": 425}, {"month": "2026-04", "cups": 489, "revenue": 33825.0, "transactions": 489}, {"month": "2026-05", "cups": 469, "revenue": 32361.0, "transactions": 469}, {"month": "2026-06", "cups": 363, "revenue": 25047.0, "transactions": 363}], "machine_summary": [{"machine_name": "OFresh_CentralFest", "cups": 2220, "revenue": 153129.0, "transactions": 2220}, {"machine_name": "OFresh_Taephae", "cups": 62, "revenue": 4658.0, "transactions": 62}], "pay_overall": [{"payment": "Mobile Phone", "cups": 2020, "revenue": 139592.0, "transactions": 2020}, {"payment": "Contactless Reader", "cups": 171, "revenue": 11856.0, "transactions": 171}, {"payment": "Contact Reader", "cups": 70, "revenue": 4890.0, "transactions": 70}, {"payment": "Magnetic Card Reader", "cups": 21, "revenue": 1449.0, "transactions": 21}], "pay_monthly": [{"month": "2026-01", "payment": "Contactless Reader", "transactions": 1}, {"month": "2026-01", "payment": "Mobile Phone", "transactions": 165}, {"month": "2026-02", "payment": "Contact Reader", "transactions": 9}, {"month": "2026-02", "payment": "Contactless Reader", "transactions": 11}, {"month": "2026-02", "payment": "Mobile Phone", "transactions": 350}, {"month": "2026-03", "payment": "Contact Reader", "transactions": 12}, {"month": "2026-03", "payment": "Contactless Reader", "transactions": 39}, {"month": "2026-03", "payment": "Magnetic Card Reader", "transactions": 2}, {"month": "2026-03", "payment": "Mobile Phone", "transactions": 372}, {"month": "2026-04", "payment": "Contact Reader", "transactions": 17}, {"month": "2026-04", "payment": "Contactless Reader", "transactions": 59}, {"month": "2026-04", "payment": "Magnetic Card Reader", "transactions": 1}, {"month": "2026-04", "payment": "Mobile Phone", "transactions": 412}, {"month": "2026-05", "payment": "Contact Reader", "transactions": 25}, {"month": "2026-05", "payment": "Contactless Reader", "transactions": 28}, {"month": "2026-05", "payment": "Magnetic Card Reader", "transactions": 15}, {"month": "2026-05", "payment": "Mobile Phone", "transactions": 401}, {"month": "2026-06", "payment": "Contact Reader", "transactions": 7}, {"month": "2026-06", "payment": "Contactless Reader", "transactions": 33}, {"month": "2026-06", "payment": "Magnetic Card Reader", "transactions": 3}, {"month": "2026-06", "payment": "Mobile Phone", "transactions": 320}], "pay_machine": [{"machine_name": "OFresh_CentralFest", "payment": "Contact Reader", "transactions": 60, "revenue": 4140.0}, {"machine_name": "OFresh_CentralFest", "payment": "Contactless Reader", "transactions": 153, "revenue": 10506.0}, {"machine_name": "OFresh_CentralFest", "payment": "Magnetic Card Reader", "transactions": 21, "revenue": 1449.0}, {"machine_name": "OFresh_CentralFest", "payment": "Mobile Phone", "transactions": 1986, "revenue": 137034.0}, {"machine_name": "OFresh_Taephae", "payment": "Contact Reader", "transactions": 10, "revenue": 750.0}, {"machine_name": "OFresh_Taephae", "payment": "Contactless Reader", "transactions": 18, "revenue": 1350.0}, {"machine_name": "OFresh_Taephae", "payment": "Mobile Phone", "transactions": 34, "revenue": 2558.0}], "summary": {"total_cups": 2282, "total_revenue": 157787.0, "total_transactions": 2282, "total_days": 153, "avg_cups_per_day": 14.92, "avg_revenue_per_day": 1031.29, "date_start": "2026-01-19", "date_end": "2026-06-21", "machines": ["OFresh_CentralFest", "OFresh_Taephae"], "payment_methods": ["Mobile Phone", "Contactless Reader", "Contact Reader", "Magnetic Card Reader"]}};
+const s = RAW.summary;
+
+// ---- TABS ----
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ---- KPI ----
+document.getElementById('kpiCups').textContent = s.total_cups.toLocaleString();
+document.getElementById('kpiRevenue').textContent = '฿'+s.total_revenue.toLocaleString('th-TH',{minimumFractionDigits:0});
+document.getElementById('kpiAvgCups').textContent = s.avg_cups_per_day.toFixed(1);
+document.getElementById('kpiAvgRev').textContent = '฿'+s.avg_revenue_per_day.toLocaleString('th-TH',{minimumFractionDigits:0});
+document.getElementById('kpiDays').textContent = s.total_days;
+
+// ---- COLORS ----
+const C = {
+  green:'#27ae60', greenL:'#a8e6cf', accent:'#f39c12', blue:'#3498db',
+  red:'#e74c3c', purple:'#9b59b6', teal:'#1abc9c',
+  payColors: {
+    'Mobile Phone':'#27ae60',
+    'Contactless Reader':'#3498db',
+    'Contact Reader':'#f39c12',
+    'Magnetic Card Reader':'#9b59b6',
+    'Unknown':'#95a5a6'
+  },
+  payIcons: {
+    'Mobile Phone':'📱',
+    'Contactless Reader':'📡',
+    'Contact Reader':'💳',
+    'Magnetic Card Reader':'🔲',
+    'Unknown':'❓'
+  }
+};
+
+const monthNames = {'2026-01':'ม.ค.','2026-02':'ก.พ.','2026-03':'มี.ค.',
+  '2026-04':'เม.ย.','2026-05':'พ.ค.','2026-06':'มิ.ย.'};
+
+// ============================================================
+// TAB: OVERVIEW
+// ============================================================
+const daily = RAW.daily;
+const dailyLabels = daily.map(d => d.date.slice(5));
+const dailyCups = daily.map(d => d.cups);
+
+// Daily bar
+new Chart(document.getElementById('chartDaily'), {
+  type:'bar',
+  data:{ labels:dailyLabels,
+    datasets:[{ label:'แก้ว/วัน', data:dailyCups,
+      backgroundColor: dailyCups.map(v => v>=20?C.green:v>=10?'#68c384':C.greenL),
+      borderRadius:3 }] },
+  options:{ responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:ctx=>` ${ctx.raw} แก้ว` } } },
+    scales:{ x:{ grid:{display:false}, ticks:{maxTicksLimit:25,font:{size:9}} },
+      y:{ beginAtZero:true, title:{display:true,text:'แก้ว'} } } } });
+
+// Monthly cups
+const monthly = RAW.monthly;
+new Chart(document.getElementById('chartMonthly'), {
+  type:'bar',
+  data:{ labels:monthly.map(m=>monthNames[m.month]||m.month),
+    datasets:[{ label:'แก้ว', data:monthly.map(m=>m.cups),
+      backgroundColor:C.green, borderRadius:8 }] },
+  options:{ responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:false} },
+    scales:{ y:{ beginAtZero:true } } } });
+
+// Monthly revenue
+new Chart(document.getElementById('chartMonthlyRev'), {
+  type:'line',
+  data:{ labels:monthly.map(m=>monthNames[m.month]||m.month),
+    datasets:[{ label:'รายได้ (฿)', data:monthly.map(m=>m.revenue),
+      borderColor:C.accent, backgroundColor:'rgba(243,156,18,.12)',
+      borderWidth:3, fill:true, tension:0.4, pointRadius:6, pointBackgroundColor:C.accent }] },
+  options:{ responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:false} },
+    scales:{ y:{ beginAtZero:true, ticks:{ callback:v=>'฿'+v.toLocaleString() } } } } });
+
+// Trend 7-day MA
+function movAvg(arr,n){ return arr.map((_,i)=>i<n-1?null:arr.slice(i-n+1,i+1).reduce((a,b)=>a+b,0)/n); }
+new Chart(document.getElementById('chartTrend'), {
+  type:'line',
+  data:{ labels:dailyLabels,
+    datasets:[
+      { label:'แก้ว/วัน', data:dailyCups, borderColor:C.greenL, borderWidth:1.5, pointRadius:0, fill:false, tension:.3 },
+      { label:'เฉลี่ย 7 วัน', data:movAvg(dailyCups,7), borderColor:C.green, borderWidth:2.5, pointRadius:0, fill:false, tension:.4 }
+    ] },
+  options:{ responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{position:'bottom'} },
+    scales:{ x:{ grid:{display:false}, ticks:{maxTicksLimit:10,font:{size:9}} },
+      y:{ beginAtZero:true } } } });
+
+// Machine pie
+new Chart(document.getElementById('chartMachinePie'), {
+  type:'doughnut',
+  data:{ labels: RAW.machine_summary.map(m=>m.machine_name.replace('OFresh_','')),
+    datasets:[{ data: RAW.machine_summary.map(m=>m.cups),
+      backgroundColor:[C.green,C.blue], borderWidth:3 }] },
+  options:{ responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{position:'bottom'},
+      tooltip:{ callbacks:{ label:ctx=>` ${ctx.raw.toLocaleString()} แก้ว (${((ctx.raw/s.total_cups)*100).toFixed(1)}%)` } } } } });
+
+// ============================================================
+// TAB: PAYMENT
+// ============================================================
+const payMethods = RAW.s ? RAW.s.payment_methods : s.payment_methods;
+const payData = RAW.pay_overall;
+const totalTx = payData.reduce((a,b)=>a+b.transactions,0);
+const totalRev = payData.reduce((a,b)=>a+b.revenue,0);
+
+// Payment KPI
+const payKpiEl = document.getElementById('payKpiGrid');
+payKpiEl.innerHTML = `
+  <div class="kpi purple"><div class="kpi-icon">💳</div>
+    <div class="kpi-label">ช่องทางชำระ</div>
+    <div class="kpi-value">${payData.length}</div>
+    <div class="kpi-sub">รูปแบบ</div></div>
+  <div class="kpi"><div class="kpi-icon">📱</div>
+    <div class="kpi-label">Mobile Phone</div>
+    <div class="kpi-value">${payData.find(p=>p.payment==='Mobile Phone')?.transactions.toLocaleString()||0}</div>
+    <div class="kpi-sub">รายการ (${((payData.find(p=>p.payment==='Mobile Phone')?.transactions||0)/totalTx*100).toFixed(1)}%)</div></div>
+  <div class="kpi accent2"><div class="kpi-icon">📡</div>
+    <div class="kpi-label">Contactless</div>
+    <div class="kpi-value">${payData.find(p=>p.payment==='Contactless Reader')?.transactions.toLocaleString()||0}</div>
+    <div class="kpi-sub">รายการ</div></div>
+  <div class="kpi accent"><div class="kpi-icon">💳</div>
+    <div class="kpi-label">Contact Card</div>
+    <div class="kpi-value">${payData.find(p=>p.payment==='Contact Reader')?.transactions.toLocaleString()||0}</div>
+    <div class="kpi-sub">รายการ</div></div>
+  <div class="kpi red"><div class="kpi-icon">🔲</div>
+    <div class="kpi-label">Magnetic Card</div>
+    <div class="kpi-value">${payData.find(p=>p.payment==='Magnetic Card Reader')?.transactions.toLocaleString()||0}</div>
+    <div class="kpi-sub">รายการ</div></div>
+`;
+
+// Pay cards (progress bar)
+const payCardsEl = document.getElementById('payCards');
+const barColors = { 'Mobile Phone':C.green, 'Contactless Reader':C.blue,
+  'Contact Reader':C.accent, 'Magnetic Card Reader':C.purple };
+payData.forEach(p => {
+  const pct = (p.transactions/totalTx*100).toFixed(1);
+  const icon = C.payIcons[p.payment]||'💳';
+  const col = barColors[p.payment]||'#95a5a6';
+  payCardsEl.innerHTML += `
+    <div class="pay-card">
+      <div class="pay-icon">${icon}</div>
+      <div class="pay-info" style="flex:1">
+        <div class="pay-name">${p.payment}</div>
+        <div class="pay-val" style="color:${col}">${p.transactions.toLocaleString()}</div>
+        <div class="pay-pct">฿${p.revenue.toLocaleString()} · ${pct}%</div>
+        <div class="pay-bar-wrap"><div class="pay-bar" style="width:${pct}%;background:${col}"></div></div>
+      </div>
+    </div>`;
+});
+
+// Pay pie
+new Chart(document.getElementById('chartPayPie'), {
+  type:'doughnut',
+  data:{ labels: payData.map(p=>p.payment),
+    datasets:[{ data: payData.map(p=>p.transactions),
+      backgroundColor: payData.map(p=>barColors[p.payment]||'#95a5a6'),
+      borderWidth:3 }] },
+  options:{ responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{position:'bottom',labels:{font:{size:11}}},
+      tooltip:{ callbacks:{ label:ctx=>` ${ctx.raw.toLocaleString()} รายการ (${(ctx.raw/totalTx*100).toFixed(1)}%)` } } } } });
+
+// Pay revenue bar
+new Chart(document.getElementById('chartPayRev'), {
+  type:'bar',
+  data:{ labels: payData.map(p=>p.payment.replace(' Reader','')),
+    datasets:[{ label:'รายได้ (฿)', data: payData.map(p=>p.revenue),
+      backgroundColor: payData.map(p=>barColors[p.payment]||'#95a5a6'),
+      borderRadius:8 }] },
+  options:{ responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:false},
+      tooltip:{ callbacks:{ label:ctx=>' ฿'+ctx.raw.toLocaleString() } } },
+    scales:{ y:{ beginAtZero:true, ticks:{ callback:v=>'฿'+v.toLocaleString() } } } } });
+
+// Pay monthly stacked
+const months = [...new Set(RAW.pay_monthly.map(r=>r.month))].sort();
+const methods = [...new Set(RAW.pay_monthly.map(r=>r.payment))];
+const stackDatasets = methods.map(method => ({
+  label: method,
+  data: months.map(mo => {
+    const row = RAW.pay_monthly.find(r=>r.month===mo && r.payment===method);
+    return row ? row.transactions : 0;
+  }),
+  backgroundColor: barColors[method]||'#95a5a6',
+  borderRadius:4
+}));
+new Chart(document.getElementById('chartPayMonthly'), {
+  type:'bar',
+  data:{ labels: months.map(m=>monthNames[m]||m), datasets: stackDatasets },
+  options:{ responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{position:'bottom'} },
+    scales:{ x:{ stacked:true }, y:{ stacked:true, beginAtZero:true } } } });
+
+// Pay per machine A & B
+function machPayChart(canvasId, machineName) {
+  const rows = RAW.pay_machine.filter(r=>r.machine_name===machineName);
+  new Chart(document.getElementById(canvasId), {
+    type:'bar',
+    data:{ labels: rows.map(r=>r.payment.replace(' Reader','')),
+      datasets:[{ label:'รายการ', data: rows.map(r=>r.transactions),
+        backgroundColor: rows.map(r=>barColors[r.payment]||'#95a5a6'), borderRadius:8 }] },
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false} },
+      scales:{ y:{ beginAtZero:true } } } });
+}
+machPayChart('chartPayMachA','OFresh_CentralFest');
+machPayChart('chartPayMachB','OFresh_Taephae');
+
+// ============================================================
+// TAB: MACHINE
+// ============================================================
+const machGrid = document.getElementById('machineGrid');
+RAW.machine_summary.forEach((m,i) => {
+  const avgPerDay = (m.cups/s.total_days).toFixed(1);
+  const share = (m.cups/s.total_cups*100).toFixed(1);
+  machGrid.innerHTML += `
+    <div class="machine-card ${i>0?'second':''}">
+      <h3>🏧 ${m.machine_name.replace('OFresh_','OFresh ')}</h3>
+      <div class="machine-stat"><span>จำนวนแก้วรวม</span><span>${m.cups.toLocaleString()} แก้ว</span></div>
+      <div class="machine-stat"><span>รายได้รวม</span><span>฿${m.revenue.toLocaleString()}</span></div>
+      <div class="machine-stat"><span>เฉลี่ยแก้ว/วัน</span><span>${avgPerDay} แก้ว</span></div>
+      <div class="machine-stat"><span>สัดส่วน</span><span>${share}%</span></div>
+    </div>`;
+});
+
+// Machine monthly compare
+const machNames = RAW.machine_summary.map(m=>m.machine_name);
+const machMonthDatasets = machNames.map((name,i) => ({
+  label: name.replace('OFresh_',''),
+  data: months.map(mo => {
+    const row = RAW.daily_machine.filter(r=>r.machine_name===name && r.date.startsWith(mo));
+    return row.reduce((a,b)=>a+b.cups,0);
+  }),
+  backgroundColor: i===0?C.green:C.blue,
+  borderRadius:6
+}));
+new Chart(document.getElementById('chartMachMonthly'), {
+  type:'bar',
+  data:{ labels: months.map(m=>monthNames[m]||m), datasets: machMonthDatasets },
+  options:{ responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{position:'bottom'} },
+    scales:{ y:{ beginAtZero:true } } } });
+
+// ============================================================
+// TAB: DAILY TABLE
+// ============================================================
+function renderTable() {
+  const fm = document.getElementById('filterMachine').value;
+  const fmo = document.getElementById('filterMonth').value;
+  let rows = [];
+  if (fm==='all') {
+    rows = RAW.daily.map(d=>({date:d.date,cups:d.cups,revenue:d.revenue}));
+  } else {
+    const byDate={};
+    RAW.daily_machine.forEach(r=>{ if(r.machine_name===fm) byDate[r.date]={date:r.date,cups:r.cups,revenue:r.revenue}; });
+    rows = Object.values(byDate);
+  }
+  if (fmo!=='all') rows = rows.filter(r=>r.date.startsWith(fmo));
+  rows.sort((a,b)=>b.date.localeCompare(a.date));
+  const avg = rows.length ? rows.reduce((s,r)=>s+r.cups,0)/rows.length : 0;
+  document.getElementById('tableBody').innerHTML = rows.map(r => {
+    const ap = r.cups>0?(r.revenue/r.cups).toFixed(0):0;
+    const badge = r.cups>=avg*1.3?'<span class="badge badge-high">สูง</span>':
+                  r.cups>=avg*.7?'<span class="badge badge-mid">ปกติ</span>':
+                  '<span class="badge badge-low">ต่ำ</span>';
+    return `<tr><td>${r.date}</td><td><strong>${r.cups}</strong> แก้ว</td>
+      <td>฿${r.revenue.toLocaleString()}</td><td>฿${ap}/แก้ว</td><td>${badge}</td></tr>`;
+  }).join('');
+}
+document.getElementById('filterMachine').addEventListener('change', renderTable);
+document.getElementById('filterMonth').addEventListener('change', renderTable);
+renderTable();
+</script>
+</body>
+</html>

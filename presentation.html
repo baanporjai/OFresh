@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>O'Fresh — ตู้คั้นน้ำส้มอัตโนมัติ | Presentation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700;800&family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --orange:   #F97316;
+      --orange2:  #FB923C;
+      --amber:    #F59E0B;
+      --green:    #16A34A;
+      --green2:   #22C55E;
+      --white:    #FFFFFF;
+      --dark:     #1A1A1A;
+      --slide-w:  1280px;
+      --slide-h:  720px;
+    }
+
+    html, body {
+      width: 100%; height: 100%;
+      background: #111;
+      font-family: 'Sarabun', 'Outfit', sans-serif;
+      overflow: hidden;
+    }
+
+    /* ──────── STAGE ──────── */
+    #stage {
+      position: fixed; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    #viewport {
+      width: var(--slide-w);
+      height: var(--slide-h);
+      position: relative;
+      overflow: hidden;
+      border-radius: 4px;
+      box-shadow: 0 30px 80px rgba(0,0,0,.7);
+    }
+
+    /* ──────── SLIDES ──────── */
+    .slide {
+      position: absolute; inset: 0;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .05s;
+    }
+    .slide.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    /* ENTER animations triggered by .play class */
+    .slide.play .fade-up    { animation: fadeUp .7s ease both; }
+    .slide.play .fade-in    { animation: fadeIn .7s ease both; }
+    .slide.play .slide-left { animation: slideLeft .7s ease both; }
+    .slide.play .slide-right{ animation: slideRight .7s ease both; }
+    .slide.play .zoom-in    { animation: zoomIn .6s ease both; }
+    .slide.play .pop        { animation: pop .5s cubic-bezier(.34,1.56,.64,1) both; }
+    .slide.play .stagger-1  { animation-delay: .1s; }
+    .slide.play .stagger-2  { animation-delay: .25s; }
+    .slide.play .stagger-3  { animation-delay: .4s; }
+    .slide.play .stagger-4  { animation-delay: .55s; }
+    .slide.play .stagger-5  { animation-delay: .7s; }
+    .slide.play .stagger-6  { animation-delay: .85s; }
+
+    @keyframes fadeUp   { from { opacity:0; transform:translateY(40px) }  to { opacity:1; transform:none } }
+    @keyframes fadeIn   { from { opacity:0 }                              to { opacity:1 } }
+    @keyframes slideLeft{ from { opacity:0; transform:translateX(-60px) } to { opacity:1; transform:none } }
+    @keyframes slideRight{from { opacity:0; transform:translateX(60px) }  to { opacity:1; transform:none } }
+    @keyframes zoomIn   { from { opacity:0; transform:scale(.7) }         to { opacity:1; transform:scale(1) } }
+    @keyframes pop      { from { opacity:0; transform:scale(.5) }         to { opacity:1; transform:scale(1) } }
+
+    /* ══════════════════════════════════════
+       SLIDE 1 — TITLE / HERO
+    ══════════════════════════════════════ */
+    #s1 {
+      background: linear-gradient(135deg, #0f2008 0%, #1a3a0a 40%, #0a1a05 100%);
+      display: flex; align-items: center;
+    }
+    #s1 .bg-citrus {
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse 60% 80% at 75% 50%, rgba(249,115,22,.18) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 40% at 20% 20%, rgba(250,200,0,.08) 0%, transparent 60%);
+    }
+    #s1 .hero-img {
+      position: absolute; right: -20px; top: 0; bottom: 0;
+      width: 620px;
+      object-fit: cover; object-position: left center;
+      opacity: .55;
+      mask-image: linear-gradient(to left, rgba(0,0,0,.7) 40%, transparent 100%);
+      -webkit-mask-image: linear-gradient(to left, rgba(0,0,0,.7) 40%, transparent 100%);
+    }
+    #s1 .content {
+      position: relative; z-index: 2;
+      padding: 0 80px;
+    }
+    #s1 .tag {
+      display: inline-block;
+      background: var(--orange);
+      color: #fff;
+      font-family: 'Outfit', sans-serif;
+      font-size: 13px; font-weight: 700;
+      letter-spacing: 3px; text-transform: uppercase;
+      padding: 6px 18px; border-radius: 30px;
+      margin-bottom: 28px;
+    }
+    #s1 h1 {
+      font-size: 72px; font-weight: 800;
+      line-height: 1.1; color: #fff;
+      margin-bottom: 20px;
+    }
+    #s1 h1 span { color: var(--orange); }
+    #s1 .sub {
+      font-size: 22px; color: rgba(255,255,255,.7);
+      max-width: 520px; line-height: 1.6;
+      margin-bottom: 40px;
+    }
+    #s1 .badge-row {
+      display: flex; gap: 16px; flex-wrap: wrap;
+    }
+    #s1 .badge {
+      background: rgba(255,255,255,.1);
+      border: 1px solid rgba(255,255,255,.2);
+      backdrop-filter: blur(10px);
+      color: #fff; padding: 10px 20px; border-radius: 40px;
+      font-size: 15px; font-weight: 600;
+      display: flex; align-items: center; gap: 8px;
+    }
+    #s1 .badge .ico { font-size: 20px; }
+    #s1 .logo-mark {
+      position: absolute; top: 40px; right: 60px;
+      width: 160px; opacity: .9;
+      filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.95)) drop-shadow(0 0 4px rgba(255, 255, 255, 0.9));
+    }
+
+    /* ══════════════════════════════════════
+       SLIDE 2 — 100% NATURAL
+    ══════════════════════════════════════ */
+    #s2 {
+      background: linear-gradient(160deg, #fff8ed 0%, #fff3d6 100%);
+    }
+    #s2 .left {
+      position: absolute; left: 0; top: 0; bottom: 0; width: 50%;
+      display: flex; flex-direction: column; justify-content: center;
+      padding: 60px 60px 60px 80px;
+    }
+    #s2 .right {
+      position: absolute; right: 0; top: 0; bottom: 0; width: 52%;
+      overflow: hidden;
+    }
+    #s2 .right img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      transform: scale(1.05);
+    }
+    #s2 .right::before {
+      content: '';
+      position: absolute; inset: 0; z-index: 1;
+      background: linear-gradient(to right, #fff8ed 0%, transparent 30%);
+    }
+    #s2 .slide-number { font-size: 100px; font-weight: 900; color: rgba(249,115,22,.08); line-height: 1; margin-bottom: 0; font-family: 'Outfit', sans-serif; }
+    #s2 .chip {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--green); color: #fff;
+      padding: 6px 16px; border-radius: 30px; font-size: 13px; font-weight: 700;
+      letter-spacing: 2px; text-transform: uppercase; margin-bottom: 16px;
+    }
+    #s2 h2 { font-size: 52px; font-weight: 800; color: var(--dark); line-height: 1.1; margin-bottom: 24px; }
+    #s2 h2 span { color: var(--orange); }
+    #s2 .desc { font-size: 18px; color: #555; line-height: 1.7; margin-bottom: 36px; }
+    #s2 .facts { display: flex; flex-direction: column; gap: 14px; }
+    #s2 .fact {
+      display: flex; align-items: center; gap: 16px;
+      background: rgba(255,255,255,.8); border: 1px solid rgba(249,115,22,.2);
+      padding: 14px 20px; border-radius: 14px;
+      box-shadow: 0 4px 12px rgba(249,115,22,.08);
+    }
+    #s2 .fact .ico-wrap {
+      width: 44px; height: 44px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--orange), var(--amber));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; flex-shrink: 0;
+    }
+    #s2 .fact strong { display: block; font-size: 16px; font-weight: 700; color: var(--dark); }
+    #s2 .fact span { font-size: 13px; color: #888; }
+
+    /* ══════════════════════════════════════
+       SLIDE 3 — TEMPERATURE
+    ══════════════════════════════════════ */
+    #s3 {
+      background: linear-gradient(160deg, #e0f2fe 0%, #bae6fd 100%);
+      display: flex; align-items: center; justify-content: center;
+    }
+    #s3 .content { display: flex; width: 100%; align-items: center; padding: 60px 80px; gap: 60px; }
+    #s3 .thermo-wrap {
+      flex-shrink: 0; position: relative;
+      display: flex; align-items: center; justify-content: center;
+    }
+    #s3 .thermo-ring {
+      width: 260px; height: 260px; border-radius: 50%;
+      background: conic-gradient(from -90deg, #2563eb 0%, #0ea5e9 30%, #38bdf8 60%, transparent 60%);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 60px rgba(14,165,233,.4);
+    }
+    #s3 .thermo-inner {
+      width: 200px; height: 200px; border-radius: 50%;
+      background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      box-shadow: inset 0 2px 20px rgba(0,0,0,.08);
+    }
+    #s3 .thermo-deg { font-size: 52px; font-weight: 900; color: #0ea5e9; font-family: 'Outfit', sans-serif; }
+    #s3 .thermo-label { font-size: 14px; color: #64748b; font-weight: 600; }
+    #s3 .ice { font-size: 48px; position: absolute; }
+    #s3 .ice-1 { top: -10px; right: -10px; }
+    #s3 .ice-2 { bottom: 0px; left: -20px; font-size: 32px; }
+    #s3 .info { flex: 1; }
+    #s3 .chip {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: #0ea5e9; color: #fff;
+      padding: 6px 16px; border-radius: 30px; font-size: 13px; font-weight: 700;
+      letter-spacing: 2px; text-transform: uppercase; margin-bottom: 16px;
+    }
+    #s3 h2 { font-size: 52px; font-weight: 800; color: #0c4a6e; line-height: 1.1; margin-bottom: 20px; }
+    #s3 h2 span { color: #0ea5e9; }
+    #s3 .desc { font-size: 18px; color: #334155; line-height: 1.7; margin-bottom: 36px; }
+    #s3 .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    #s3 .card {
+      background: rgba(255,255,255,.7); backdrop-filter: blur(10px);
+      border: 1px solid rgba(14,165,233,.2);
+      border-radius: 16px; padding: 20px;
+      box-shadow: 0 4px 16px rgba(14,165,233,.1);
+    }
+    #s3 .card .ico { font-size: 28px; margin-bottom: 8px; }
+    #s3 .card strong { display: block; font-size: 16px; font-weight: 700; color: #0c4a6e; margin-bottom: 4px; }
+    #s3 .card p { font-size: 13px; color: #64748b; }
+
+    /* ══════════════════════════════════════
+       SLIDE 4 — CASHLESS PAYMENT
+    ══════════════════════════════════════ */
+    #s4 {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+    }
+    #s4 .glow {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: .3;
+    }
+    #s4 .glow-1 { width: 400px; height: 400px; background: #f97316; top: -100px; right: 100px; }
+    #s4 .glow-2 { width: 300px; height: 300px; background: #8b5cf6; bottom: -80px; left: 200px; }
+    #s4 .content { position: relative; z-index: 2; padding: 60px 80px; display: flex; align-items: center; gap: 80px; height: 100%; }
+    #s4 .info { flex: 1; }
+    #s4 .chip {
+      display: inline-flex; gap: 8px; align-items: center;
+      background: linear-gradient(90deg, #f97316, #fb923c);
+      color: #fff; padding: 6px 16px; border-radius: 30px;
+      font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    #s4 h2 { font-size: 52px; font-weight: 800; color: #fff; line-height: 1.1; margin-bottom: 20px; }
+    #s4 h2 span { color: var(--orange); }
+    #s4 .desc { font-size: 18px; color: rgba(255,255,255,.6); line-height: 1.7; margin-bottom: 36px; }
+    #s4 .methods { display: flex; flex-direction: column; gap: 12px; }
+    #s4 .method {
+      display: flex; align-items: center; gap: 16px;
+      background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
+      border-radius: 14px; padding: 14px 20px;
+    }
+    #s4 .method .m-ico { font-size: 28px; }
+    #s4 .method strong { color: #fff; font-size: 16px; font-weight: 700; display: block; }
+    #s4 .method span { color: rgba(255,255,255,.5); font-size: 13px; }
+    #s4 .phone-wrap { flex-shrink: 0; width: 280px; }
+    #s4 .phone {
+      background: linear-gradient(160deg, #1e293b, #0f172a);
+      border: 2px solid rgba(255,255,255,.15);
+      border-radius: 36px; padding: 24px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.05);
+    }
+    #s4 .phone-screen {
+      background: linear-gradient(160deg, #fff3d6, #fff8ed);
+      border-radius: 24px; padding: 24px;
+      text-align: center;
+    }
+    #s4 .qr-placeholder {
+      width: 130px; height: 130px; margin: 0 auto 12px;
+      background: #fff;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,.1);
+      overflow: hidden;
+    }
+    #s4 .qr-grid {
+      display: grid; grid-template-columns: repeat(7,1fr); gap: 3px;
+      padding: 8px;
+    }
+    #s4 .qr-cell { border-radius: 1px; }
+    #s4 .phone-screen p { font-size: 14px; color: #555; font-weight: 600; }
+    #s4 .phone-screen .price { font-size: 28px; font-weight: 800; color: var(--orange); }
+
+    /* ══════════════════════════════════════
+       SLIDE 5 — B2B / LOCATIONS
+    ══════════════════════════════════════ */
+    #s5 {
+      background: linear-gradient(160deg, #1a0a00 0%, #2d1200 60%, #1a0800 100%);
+    }
+    #s5 .mesh {
+      position: absolute; inset: 0; opacity: .06;
+      background-image: repeating-linear-gradient(0deg, #f97316 0px, transparent 1px, transparent 40px),
+                        repeating-linear-gradient(90deg, #f97316 0px, transparent 1px, transparent 40px);
+    }
+    #s5 .glow { position: absolute; border-radius: 50%; filter: blur(100px); }
+    #s5 .g1 { width: 500px; height: 300px; background: rgba(249,115,22,.2); top: -50px; left: -100px; }
+    #s5 .g2 { width: 400px; height: 400px; background: rgba(251,146,60,.1); bottom: -100px; right: 100px; }
+    #s5 .content { position: relative; z-index: 2; padding: 60px 80px; height: 100%; display: flex; flex-direction: column; justify-content: center; }
+    #s5 .top { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 40px; }
+    #s5 .chip {
+      display: inline-flex; gap: 8px; align-items: center;
+      background: rgba(249,115,22,.3); border: 1px solid rgba(249,115,22,.5);
+      color: var(--orange2); padding: 6px 16px; border-radius: 30px;
+      font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    #s5 h2 { font-size: 52px; font-weight: 800; color: #fff; line-height: 1.1; }
+    #s5 h2 span { color: var(--orange); }
+    #s5 .stat-row { display: flex; gap: 24px; }
+    #s5 .stat { text-align: center; }
+    #s5 .stat .num { font-size: 42px; font-weight: 900; color: var(--orange); font-family: 'Outfit', sans-serif; line-height: 1; }
+    #s5 .stat .lbl { font-size: 13px; color: rgba(255,255,255,.5); margin-top: 4px; }
+    #s5 .locations { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; }
+    #s5 .loc {
+      background: rgba(255,255,255,.05); border: 1px solid rgba(249,115,22,.2);
+      border-radius: 20px; padding: 28px 24px;
+      transition: background .3s;
+    }
+    #s5 .loc:hover { background: rgba(249,115,22,.1); }
+    #s5 .loc .ico { font-size: 44px; margin-bottom: 14px; }
+    #s5 .loc h3 { font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 8px; }
+    #s5 .loc p { font-size: 14px; color: rgba(255,255,255,.5); line-height: 1.6; }
+
+    /* ══════════════════════════════════════
+       SLIDE 6 — BRAND & PACKAGING
+    ══════════════════════════════════════ */
+    #s6 {
+      background: linear-gradient(160deg, #fff 0%, #fff8ed 100%);
+      display: flex; align-items: center;
+    }
+    #s6 .left { position: absolute; left: 0; top: 0; bottom: 0; width: 55%; padding: 60px 40px 60px 80px; display: flex; flex-direction: column; justify-content: center; }
+    #s6 .chip {
+      display: inline-flex; gap: 8px; align-items: center;
+      background: rgba(249,115,22,.15); border: 1px solid rgba(249,115,22,.3);
+      color: var(--orange); padding: 6px 16px; border-radius: 30px;
+      font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    #s6 h2 { font-size: 52px; font-weight: 800; color: var(--dark); line-height: 1.1; margin-bottom: 20px; }
+    #s6 h2 span { color: var(--orange); }
+    #s6 .desc { font-size: 18px; color: #555; line-height: 1.7; margin-bottom: 32px; }
+    #s6 .features { display: flex; flex-direction: column; gap: 14px; }
+    #s6 .feat {
+      display: flex; gap: 16px; align-items: center;
+      background: rgba(255,255,255,.8); border: 1px solid rgba(249,115,22,.15);
+      border-radius: 14px; padding: 14px 18px;
+      box-shadow: 0 2px 8px rgba(249,115,22,.06);
+    }
+    #s6 .feat .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--orange); flex-shrink: 0; }
+    #s6 .feat span { font-size: 15px; color: #444; font-weight: 500; }
+    #s6 .right { position: absolute; right: 0; top: 0; bottom: 0; width: 48%; overflow: hidden; }
+    #s6 .img-stack { position: relative; width: 100%; height: 100%; }
+    #s6 .img-stack img { position: absolute; object-fit: contain; }
+    #s6 .cup-big { width: 220px; right: 50px; top: 50%; transform: translateY(-50%); z-index: 2; filter: drop-shadow(0 20px 40px rgba(0,0,0,.15)); }
+    #s6 .machine-thumb { width: 260px; right: 230px; top: 50%; transform: translateY(-50%); z-index: 1; filter: drop-shadow(0 25px 50px rgba(0,0,0,.2)); opacity: 1; }
+
+    /* ══════════════════════════════════════
+       SLIDE 7 — CTA / END
+    ══════════════════════════════════════ */
+    #s7 {
+      background: linear-gradient(135deg, #0f2008 0%, #1a3a0a 50%, #0a1a05 100%);
+      display: flex; align-items: center; justify-content: center; text-align: center;
+    }
+    #s7 .circles {
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(circle 400px at 50% 50%, rgba(249,115,22,.15) 0%, transparent 70%);
+    }
+    #s7 .ring {
+      position: absolute; border-radius: 50%;
+      border: 1px solid rgba(249,115,22,.15);
+      top: 50%; left: 50%; transform: translate(-50%,-50%);
+    }
+    #s7 .r1 { width: 300px; height: 300px; }
+    #s7 .r2 { width: 500px; height: 500px; }
+    #s7 .r3 { width: 700px; height: 700px; border-color: rgba(249,115,22,.07); }
+    #s7 .content { position: relative; z-index: 2; }
+    #s7 .logo-big { 
+      width: 220px; margin: 0 auto 28px; display: block; 
+      filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.95)) drop-shadow(0 0 4px rgba(255, 255, 255, 0.9));
+    }
+    #s7 h2 { font-size: 58px; font-weight: 800; color: #fff; line-height: 1.15; margin-bottom: 16px; }
+    #s7 h2 span { color: var(--orange); }
+    #s7 .sub { font-size: 20px; color: rgba(255,255,255,.6); margin-bottom: 48px; line-height: 1.6; }
+    #s7 .cta-box {
+      display: inline-flex; gap: 40px;
+      background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.15);
+      backdrop-filter: blur(20px); border-radius: 20px; padding: 28px 48px;
+    }
+    #s7 .cta-item { text-align: center; }
+    #s7 .cta-item .ico { font-size: 36px; margin-bottom: 8px; }
+    #s7 .cta-item strong { display: block; color: #fff; font-size: 16px; font-weight: 700; }
+    #s7 .cta-item span { color: rgba(255,255,255,.5); font-size: 13px; }
+    #s7 .tagline { margin-top: 36px; font-size: 15px; color: rgba(255,255,255,.3); letter-spacing: 2px; text-transform: uppercase; }
+
+    /* ──────── CONTROLS ──────── */
+    #controls {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      display: flex; align-items: center; gap: 16px;
+      background: rgba(0,0,0,.6); backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 50px; padding: 10px 20px;
+      z-index: 100;
+    }
+    #controls button {
+      background: none; border: none; cursor: pointer;
+      color: #fff; font-size: 18px; width: 36px; height: 36px;
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      transition: background .2s;
+    }
+    #controls button:hover { background: rgba(255,255,255,.15); }
+    #controls button.primary {
+      background: var(--orange); width: 44px; height: 44px; font-size: 20px;
+    }
+    #controls button.primary:hover { background: #ea6a0a; }
+    #controls .dots { display: flex; gap: 6px; }
+    #controls .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: rgba(255,255,255,.3); cursor: pointer;
+      transition: background .2s, transform .2s;
+    }
+    #controls .dot.active { background: var(--orange); transform: scale(1.3); }
+    #controls .slide-num { color: rgba(255,255,255,.5); font-size: 13px; width: 48px; text-align: center; font-family: 'Outfit', sans-serif; }
+
+    /* ──────── FULLSCREEN HINT ──────── */
+    #hint {
+      position: fixed; top: 20px; right: 20px; z-index: 100;
+      background: rgba(0,0,0,.5); backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 10px; padding: 10px 16px;
+      color: rgba(255,255,255,.6); font-size: 13px;
+      display: flex; align-items: center; gap: 8px;
+    }
+
+    /* ──────── PROGRESS BAR ──────── */
+    #progress {
+      position: fixed; top: 0; left: 0; height: 3px;
+      background: linear-gradient(90deg, var(--orange), var(--amber));
+      transition: width .4s ease;
+      z-index: 200;
+    }
+
+    /* ──────── SLIDE TRANSITION ──────── */
+    .slide-out-left  { animation: slideOutLeft  .4s ease forwards; }
+    .slide-out-right { animation: slideOutRight .4s ease forwards; }
+    .slide-in-left   { animation: slideInLeft   .4s ease forwards; }
+    .slide-in-right  { animation: slideInRight  .4s ease forwards; }
+
+    @keyframes slideOutLeft  { to { opacity:0; transform:translateX(-80px) } }
+    @keyframes slideOutRight { to { opacity:0; transform:translateX(80px) } }
+    @keyframes slideInLeft   { from { opacity:0; transform:translateX(80px) }  to { opacity:1; transform:none } }
+    @keyframes slideInRight  { from { opacity:0; transform:translateX(-80px) } to { opacity:1; transform:none } }
+
+    /* Responsive scale */
+    @media (max-width: 1300px) {
+      #viewport { transform: scale(0.85); transform-origin: center center; }
+    }
+    @media (max-width: 1100px) {
+      #viewport { transform: scale(0.7); }
+    }
+    @media (max-width: 900px) {
+      #viewport { transform: scale(0.55); }
+    }
+
+    /* Floating animation */
+    @keyframes floatY {
+      0%, 100% { transform: translateY(0px); }
+      50%       { transform: translateY(-12px); }
+    }
+    .float { animation: floatY 4s ease-in-out infinite; }
+    .float-2 { animation: floatY 5s ease-in-out infinite 1s; }
+
+    /* Pulse ring */
+    @keyframes pulseRing {
+      0%   { transform: translate(-50%,-50%) scale(1); opacity: .4; }
+      100% { transform: translate(-50%,-50%) scale(1.4); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="progress"></div>
+
+<div id="stage">
+  <div id="viewport">
+
+    <!-- ═══════ SLIDE 1 — HERO ═══════ -->
+    <div class="slide active" id="s1">
+      <div class="bg-citrus"></div>
+      <img class="hero-img fade-in" src="AW Animation O'FRESH_1.png" alt="O'Fresh Background" />
+      <div class="content">
+        <div class="tag fade-up">🍊 นวัตกรรมใหม่แห่งวงการเครื่องดื่ม</div>
+        <h1 class="fade-up stagger-1">ตู้คั้น<span>น้ำส้ม</span><br/>อัตโนมัติ</h1>
+        <p class="sub fade-up stagger-2">สด ใหม่ ทุกแก้ว — ทุกที่ ทุกเวลา<br/>Serve freshly squeezed juice everywhere, every time</p>
+        <div class="badge-row">
+          <div class="badge fade-up stagger-3"><span class="ico">🌿</span> 100% Natural</div>
+          <div class="badge fade-up stagger-4"><span class="ico">🧊</span> 3–6°C</div>
+          <div class="badge fade-up stagger-5"><span class="ico">💳</span> Cashless</div>
+        </div>
+      </div>
+      <img class="logo-mark fade-in stagger-2" src="OFresh_Logo.png" alt="O'Fresh Logo" />
+    </div>
+
+    <!-- ═══════ SLIDE 2 — 100% NATURAL ═══════ -->
+    <div class="slide" id="s2">
+      <div class="left">
+        <div class="slide-number fade-in">01</div>
+        <div class="chip fade-up">🌿 คุณภาพระดับพรีเมียม</div>
+        <h2 class="fade-up stagger-1">100% <span>ธรรมชาติ</span><br/>ไม่มีน้ำตาลเพิ่ม</h2>
+        <p class="desc fade-up stagger-2">น้ำส้มคั้นสดจากส้มแมนดาริน ไต้หวัน คุณภาพดี คั้นเสร็จพร้อมดื่มทันที ไม่ผ่านกระบวนการแปรรูป ไม่เติมน้ำตาล ไม่ใส่สารกันเสีย</p>
+        <div class="facts">
+          <div class="fact fade-up stagger-3">
+            <div class="ico-wrap">🍊</div>
+            <div><strong>คั้นสดทันที</strong><span>Freshly squeezed on demand — ไม่มีการเก็บน้ำส้มล่วงหน้า</span></div>
+          </div>
+          <div class="fact fade-up stagger-4">
+            <div class="ico-wrap">🚫</div>
+            <div><strong>ไม่มีน้ำตาลเพิ่ม</strong><span>No added sugar — ความหวานธรรมชาติจากผลไม้</span></div>
+          </div>
+          <div class="fact fade-up stagger-5">
+            <div class="ico-wrap">✅</div>
+            <div><strong>ไม่มีสารกันเสีย</strong><span>No preservatives — สะอาด ปลอดภัย 100%</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="right">
+        <img src="AW Animation O'FRESH_1.png" alt="Orange" />
+      </div>
+    </div>
+
+    <!-- ═══════ SLIDE 3 — TEMPERATURE ═══════ -->
+    <div class="slide" id="s3">
+      <div class="content">
+        <div class="thermo-wrap zoom-in">
+          <div class="thermo-ring float">
+            <div class="thermo-inner">
+              <div class="thermo-deg">3–6°</div>
+              <div class="thermo-label">อุณหภูมิเหมาะสม</div>
+            </div>
+          </div>
+          <span class="ice ice-1">🧊</span>
+          <span class="ice ice-2">❄️</span>
+        </div>
+        <div class="info">
+          <div class="slide-number fade-in" style="font-size:80px;font-weight:900;color:rgba(14,165,233,.1);font-family:'Outfit',sans-serif;line-height:1">02</div>
+          <div class="chip fade-up">❄️ ระบบควบคุมอุณหภูมิ</div>
+          <h2 class="fade-up stagger-1">ควบคุมความเย็น<br/><span>3–6 องศาเซลเซียส</span></h2>
+          <p class="desc fade-up stagger-2">ระบบทำความเย็นอัจฉริยะรักษาอุณหภูมิน้ำส้มอย่างสม่ำเสมอ เพื่อรักษาความสดและรสชาติที่ดีที่สุด</p>
+          <div class="cards">
+            <div class="card fade-up stagger-3">
+              <div class="ico">⏱️</div>
+              <strong>ดื่มภายใน 2 ชั่วโมง</strong>
+              <p>Best consumed within 2 hours for freshest taste</p>
+            </div>
+            <div class="card fade-up stagger-4">
+              <div class="ico">🌡️</div>
+              <strong>ระบบเซ็นเซอร์</strong>
+              <p>ตรวจวัดอุณหภูมิอัตโนมัติตลอด 24 ชั่วโมง</p>
+            </div>
+            <div class="card fade-up stagger-5">
+              <div class="ico">🔄</div>
+              <strong>ระบบ First-In-First-Out</strong>
+              <p>ส้มหมุนเวียนตามลำดับเพื่อความสดใหม่</p>
+            </div>
+            <div class="card fade-up stagger-6">
+              <div class="ico">🛡️</div>
+              <strong>ระบบแจ้งเตือน</strong>
+              <p>แจ้งเตือนเมื่ออุณหภูมิเกินเกณฑ์กำหนด</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════ SLIDE 4 — CASHLESS ═══════ -->
+    <div class="slide" id="s4">
+      <div class="glow glow-1"></div>
+      <div class="glow glow-2"></div>
+      <div class="content">
+        <div class="info">
+          <div class="chip fade-up">💳 ระบบการชำระเงิน</div>
+          <h2 class="fade-up stagger-1">ชำระเงิน<span>อัตโนมัติ</span><br/>ไร้เงินสด</h2>
+          <p class="desc fade-up stagger-2">รองรับทุกรูปแบบการชำระเงิน สะดวก รวดเร็ว ปลอดภัย ไม่ต้องพนักงานดูแล</p>
+          <div class="methods">
+            <div class="method fade-up stagger-3">
+              <div class="m-ico">📱</div>
+              <div><strong>QR Code / PromptPay</strong><span>สแกนจ่ายผ่าน Mobile Banking ทุกธนาคาร</span></div>
+            </div>
+            <div class="method fade-up stagger-4">
+              <div class="m-ico">💳</div>
+              <div><strong>บัตรเครดิต / เดบิต</strong><span>Visa, Mastercard, JCB รองรับ Contactless</span></div>
+            </div>
+            <div class="method fade-up stagger-5">
+              <div class="m-ico">📊</div>
+              <div><strong>รายงานยอดขายออนไลน์</strong><span>ติดตามข้อมูลการขายแบบ Real-time ผ่านแอป</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="phone-wrap slide-right stagger-2">
+          <div class="phone float-2">
+            <div class="phone-screen">
+              <div class="qr-placeholder">
+                <!-- SVG QR pattern -->
+                <svg width="110" height="110" viewBox="0 0 110 110" fill="none">
+                  <rect x="5" y="5" width="30" height="30" rx="4" fill="#f97316"/>
+                  <rect x="10" y="10" width="20" height="20" rx="2" fill="white"/>
+                  <rect x="14" y="14" width="12" height="12" rx="1" fill="#f97316"/>
+                  <rect x="75" y="5" width="30" height="30" rx="4" fill="#f97316"/>
+                  <rect x="80" y="10" width="20" height="20" rx="2" fill="white"/>
+                  <rect x="84" y="14" width="12" height="12" rx="1" fill="#f97316"/>
+                  <rect x="5" y="75" width="30" height="30" rx="4" fill="#f97316"/>
+                  <rect x="10" y="80" width="20" height="20" rx="2" fill="white"/>
+                  <rect x="14" y="84" width="12" height="12" rx="1" fill="#f97316"/>
+                  <rect x="40" y="5"  width="6" height="6"  rx="1" fill="#1a1a1a"/>
+                  <rect x="50" y="5"  width="6" height="6"  rx="1" fill="#1a1a1a"/>
+                  <rect x="60" y="5"  width="6" height="6"  rx="1" fill="#1a1a1a"/>
+                  <rect x="40" y="14" width="6" height="6"  rx="1" fill="#1a1a1a"/>
+                  <rect x="60" y="14" width="6" height="6"  rx="1" fill="#1a1a1a"/>
+                  <rect x="40" y="23" width="6" height="6"  rx="1" fill="#1a1a1a"/>
+                  <rect x="50" y="23" width="6" height="6"  rx="1" fill="#1a1a1a"/>
+                  <rect x="5"  y="40" width="6" height="6"  rx="1" fill="#1a1a1a"/>
+                  <rect x="14" y="40" width="6" height="6"  rx="1" fill="#1a1a1a"/>
+                  <rect x="23" y="40" width="6" height="6"  rx="1" fill="#1a1a1a"/>
+                  <rect x="5"  y="50" width="6" height="6"  rx="1" fill="#1a1a1a"/>
+                  <rect x="23" y="50" width="6" height="6"  rx="1" fill="#1a1a1a"/>
+                  <rect x="5"  y="60" width="6" height="6"  rx="1" fill="#1a1a1a"/>
+                  <rect x="14" y="60" width="6" height="6"  rx="1" fill="#1a1a1a"/>
+                  <rect x="40" y="40" width="30" height="30" rx="3" fill="#f97316" opacity=".15"/>
+                  <rect x="46" y="46" width="18" height="18" rx="2" fill="#f97316"/>
+                  <rect x="75" y="40" width="6" height="6"  rx="1" fill="#1a1a1a"/>
+                  <rect x="84" y="40" width="6" height="6"  rx="1" fill="#1a1a1a"/>
+                  <rect x="93" y="40" width="6" height="6"  rx="1" fill="#1a1a1a"/>
+                  <rect x="102" y="40" width="6" height="6" rx="1" fill="#1a1a1a"/>
+                  <rect x="75" y="50" width="6" height="6"  rx="1" fill="#1a1a1a"/>
+                  <rect x="93" y="50" width="6" height="6"  rx="1" fill="#1a1a1a"/>
+                  <rect x="75" y="60" width="6" height="6"  rx="1" fill="#1a1a1a"/>
+                  <rect x="84" y="60" width="6" height="6"  rx="1" fill="#1a1a1a"/>
+                  <rect x="102" y="60" width="6" height="6" rx="1" fill="#1a1a1a"/>
+                  <rect x="40" y="75" width="6" height="6"  rx="1" fill="#1a1a1a"/>
+                  <rect x="50" y="75" width="6" height="6"  rx="1" fill="#1a1a1a"/>
+                  <rect x="60" y="75" width="6" height="6"  rx="1" fill="#1a1a1a"/>
+                  <rect x="40" y="84" width="6" height="6"  rx="1" fill="#1a1a1a"/>
+                  <rect x="60" y="84" width="6" height="6"  rx="1" fill="#1a1a1a"/>
+                  <rect x="40" y="93" width="6" height="6"  rx="1" fill="#1a1a1a"/>
+                  <rect x="50" y="93" width="6" height="6"  rx="1" fill="#1a1a1a"/>
+                  <rect x="75" y="75" width="6" height="6"  rx="1" fill="#1a1a1a"/>
+                  <rect x="84" y="84" width="6" height="6"  rx="1" fill="#1a1a1a"/>
+                  <rect x="93" y="75" width="6" height="6"  rx="1" fill="#1a1a1a"/>
+                  <rect x="102" y="84" width="6" height="6" rx="1" fill="#1a1a1a"/>
+                  <rect x="93" y="93" width="6" height="6"  rx="1" fill="#1a1a1a"/>
+                  <rect x="102" y="102" width="6" height="6" rx="1" fill="#1a1a1a"/>
+                </svg>
+              </div>
+              <div class="price">฿69</div>
+              <p>สแกนเพื่อชำระเงิน</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════ SLIDE 5 — B2B ═══════ -->
+    <div class="slide" id="s5">
+      <div class="mesh"></div>
+      <div class="glow g1"></div>
+      <div class="glow g2"></div>
+      <div class="content">
+        <div class="top">
+          <div>
+            <div class="chip fade-up">🏢 โอกาสทางธุรกิจ</div>
+            <h2 class="fade-up stagger-1">เหมาะสำหรับ<br/><span>ทุกสถานที่ธุรกิจ</span></h2>
+          </div>
+          <div class="stat-row slide-left stagger-2">
+            <div class="stat">
+              <div class="num">24/7</div>
+              <div class="lbl">ให้บริการตลอด</div>
+            </div>
+            <div class="stat">
+              <div class="num">0</div>
+              <div class="lbl">พนักงาน</div>
+            </div>
+            <div class="stat">
+              <div class="num">∞</div>
+              <div class="lbl">โอกาสรายได้</div>
+            </div>
+          </div>
+        </div>
+        <div class="locations">
+          <div class="loc fade-up stagger-1">
+            <div class="ico">🏨</div>
+            <h3>โรงแรม & รีสอร์ท</h3>
+            <p>บริการน้ำส้มสดแก่แขกในล็อบบี้ ห้องอาหาร และพื้นที่พักผ่อน</p>
+          </div>
+          <div class="loc fade-up stagger-2">
+            <div class="ico">🏢</div>
+            <h3>ออฟฟิศ & Co-Working</h3>
+            <p>เครื่องดื่มสุขภาพสำหรับพนักงาน เพิ่ม productivity และ wellness</p>
+          </div>
+          <div class="loc fade-up stagger-3">
+            <div class="ico">🏪</div>
+            <h3>ห้างสรรพสินค้า</h3>
+            <p>จุด Self-service ในพื้นที่ traffic สูง สร้างรายได้พาสซีฟ</p>
+          </div>
+          <div class="loc fade-up stagger-4">
+            <div class="ico">🏥</div>
+            <h3>โรงพยาบาล & คลินิก</h3>
+            <p>เครื่องดื่มสุขภาพ 100% Natural สำหรับผู้ป่วยและผู้มาใช้บริการ</p>
+          </div>
+          <div class="loc fade-up stagger-5">
+            <div class="ico">🎓</div>
+            <h3>มหาวิทยาลัย & โรงเรียน</h3>
+            <p>ทางเลือกสุขภาพสำหรับนักศึกษา ไม่มีน้ำตาล ดีต่อสุขภาพ</p>
+          </div>
+          <div class="loc fade-up stagger-6">
+            <div class="ico">✈️</div>
+            <h3>สนามบิน & สถานีขนส่ง</h3>
+            <p>บริการน้ำส้มสดสำหรับผู้โดยสาร ทำเลทอง รายได้ดี</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════ SLIDE 6 — BRAND & PACKAGING ═══════ -->
+    <div class="slide" id="s6">
+      <div class="left">
+        <div class="chip fade-up">✨ แบรนด์ & บรรจุภัณฑ์</div>
+        <h2 class="fade-up stagger-1"><span>O'Fresh</span><br/>แบรนด์ที่น่าเชื่อถือ</h2>
+        <p class="desc fade-up stagger-2">บรรจุภัณฑ์ถ้วยกระดาษออกแบบพิเศษ สะท้อนความสด ความเป็นธรรมชาติ และไลฟ์สไตล์ระดับพรีเมียม</p>
+        <div class="features">
+          <div class="feat fade-up stagger-3">
+            <div class="dot"></div>
+            <span>🎨 ออกแบบโดยทีม Graphic Designer มืออาชีพ</span>
+          </div>
+          <div class="feat fade-up stagger-4">
+            <div class="dot"></div>
+            <span>♻️ ถ้วยกระดาษรักษ์โลก ย่อยสลายได้ตามธรรมชาติ</span>
+          </div>
+          <div class="feat fade-up stagger-5">
+            <div class="dot"></div>
+            <span>🖨️ พิมพ์โลโก้และข้อมูลสินค้าครบถ้วนบนถ้วย</span>
+          </div>
+          <div class="feat fade-up stagger-6">
+            <div class="dot"></div>
+            <span>📏 ขนาดพอดีคำ จับถนัดมือ เหมาะสำหรับทุกวัย</span>
+          </div>
+        </div>
+      </div>
+      <div class="right">
+        <div class="img-stack">
+          <img class="cup-big float" src="File AW PAPER CUP O'FRESH-01.png" alt="O'Fresh Cup" />
+          <img class="machine-thumb float-2" src="Ofresh43.png" alt="O'Fresh Machine" />
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════ SLIDE 7 — CTA ═══════ -->
+    <div class="slide" id="s7">
+      <div class="circles"></div>
+      <div class="ring r1"></div>
+      <div class="ring r2"></div>
+      <div class="ring r3"></div>
+      <div class="content">
+        <img class="logo-big fade-in zoom-in" src="OFresh_Logo.png" alt="O'Fresh Logo" />
+        <h2 class="fade-up stagger-1">พร้อมเริ่มต้น<br/><span>ธุรกิจกับ O'Fresh?</span></h2>
+        <p class="sub fade-up stagger-2">น้ำส้มคั้นสด 100% Natural · ระบบอัตโนมัติ 24/7 · รายได้พาสซีฟ<br/>ลงทุนครั้งเดียว ผลตอบแทนระยะยาว</p>
+        <div class="cta-box fade-up stagger-3">
+          <div class="cta-item">
+            <div class="ico">📞</div>
+            <strong>ติดต่อเรา</strong>
+            <span>สอบถามข้อมูลเพิ่มเติม</span>
+          </div>
+          <div style="width:1px;background:rgba(255,255,255,.1)"></div>
+          <div class="cta-item">
+            <div class="ico">🍊</div>
+            <strong>O'Fresh</strong>
+            <span>ตู้คั้นน้ำส้มอัตโนมัติ</span>
+          </div>
+          <div style="width:1px;background:rgba(255,255,255,.1)"></div>
+          <div class="cta-item">
+            <div class="ico">🏆</div>
+            <strong>100% Natural</strong>
+            <span>No Sugar · No Preservatives</span>
+          </div>
+        </div>
+        <p class="tagline fade-in stagger-4">Serve freshly squeezed juice everywhere, every time</p>
+      </div>
+    </div>
+
+  </div><!-- /viewport -->
+</div><!-- /stage -->
+
+<!-- Controls -->
+<div id="controls">
+  <button id="btn-prev" title="ก่อนหน้า">◀</button>
+  <div class="dots" id="dots"></div>
+  <button id="btn-play" class="primary" title="เล่น/หยุด">▶</button>
+  <button id="btn-next" title="ถัดไป">▶</button>
+  <span class="slide-num" id="slide-num">1 / 7</span>
+  <button id="btn-fs" title="เต็มจอ">⛶</button>
+</div><!-- /controls -->
+
+<!-- Hint -->
+<div id="hint">กด Spacebar หรือ ลูกศรเพื่อเปลี่ยนสไลด์ | กด F เพื่อเต็มจอ</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const dotsContainer = document.getElementById('dots');
+  const btnPrev = document.getElementById('btn-prev');
+  const btnNext = document.getElementById('btn-next');
+  const btnPlay = document.getElementById('btn-play');
+  const btnFs = document.getElementById('btn-fs');
+  const slideNum = document.getElementById('slide-num');
+  const progress = document.getElementById('progress');
+
+  let currentSlide = 0;
+  let isPlaying = false;
+  let progressFrameId = null;
+  const slideDuration = 6000; // 6 seconds per slide
+
+  // Initialize dots
+  slides.forEach((_, index) => {
+    const dot = document.createElement('div');
+    dot.classList.add('dot');
+    if (index === 0) dot.classList.add('active');
+    dot.addEventListener('click', () => goToSlide(index));
+    dotsContainer.appendChild(dot);
+  });
+  const dots = document.querySelectorAll('.dot');
+
+  function updateSlideClasses(prevIndex, nextIndex, direction) {
+    slides.forEach((slide, idx) => {
+      slide.classList.remove('active', 'play', 'slide-in-left', 'slide-in-right', 'slide-out-left', 'slide-out-right');
+      if (idx === nextIndex) {
+        slide.classList.add('active');
+        // Trigger animations
+        setTimeout(() => slide.classList.add('play'), 50);
+        if (direction === 'next') {
+          slide.classList.add('slide-in-left');
+        } else if (direction === 'prev') {
+          slide.classList.add('slide-in-right');
+        }
+      } else if (idx === prevIndex) {
+        if (direction === 'next') {
+          slide.classList.add('slide-out-left');
+        } else if (direction === 'prev') {
+          slide.classList.add('slide-out-right');
+        }
+      }
+    });
+  }
+
+  function goToSlide(index, direction = 'next') {
+    if (index === currentSlide) return;
+    const prevSlide = currentSlide;
+    currentSlide = (index + slides.length) % slides.length;
+    
+    updateSlideClasses(prevSlide, currentSlide, direction);
+    
+    // Update dots and numbers
+    dots.forEach((dot, idx) => {
+      dot.classList.toggle('active', idx === currentSlide);
+    });
+    slideNum.textContent = `${currentSlide + 1} / ${slides.length}`;
+    
+    if (isPlaying) {
+      resetAutoplayTimer();
+    } else {
+      progress.style.width = '0%';
+    }
+  }
+
+  function nextSlide() {
+    goToSlide(currentSlide + 1, 'next');
+  }
+
+  function prevSlide() {
+    goToSlide(currentSlide - 1, 'prev');
+  }
+
+  // Autoplay features
+  function startProgressAnimation() {
+    const start = performance.now();
+    function animate(now) {
+      const elapsed = now - start;
+      const pct = Math.min((elapsed / slideDuration) * 100, 100);
+      progress.style.width = `${pct}%`;
+      if (elapsed < slideDuration) {
+        progressFrameId = requestAnimationFrame(animate);
+      } else {
+        nextSlide();
+      }
+    }
+    progressFrameId = requestAnimationFrame(animate);
+  }
+
+  function resetAutoplayTimer() {
+    cancelAnimationFrame(progressFrameId);
+    progress.style.width = '0%';
+    startProgressAnimation();
+  }
+
+  function togglePlay() {
+    isPlaying = !isPlaying;
+    if (isPlaying) {
+      btnPlay.innerHTML = '⏸';
+      btnPlay.title = 'หยุด';
+      startProgressAnimation();
+    } else {
+      btnPlay.innerHTML = '▶';
+      btnPlay.title = 'เล่น';
+      cancelAnimationFrame(progressFrameId);
+      progress.style.width = '0%';
+    }
+  }
+
+  // Fullscreen
+  function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(err => {
+        console.log(err);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  }
+
+  // Keyboard controls
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ') {
+      nextSlide();
+    } else if (e.key === 'ArrowLeft') {
+      prevSlide();
+    } else if (e.key === 'f' || e.key === 'F') {
+      toggleFullscreen();
+    }
+  });
+
+  btnPrev.addEventListener('click', prevSlide);
+  btnNext.addEventListener('click', nextSlide);
+  btnPlay.addEventListener('click', togglePlay);
+  btnFs.addEventListener('click', toggleFullscreen);
+
+  // Initialize first slide animations
+  setTimeout(() => {
+    slides[0].classList.add('play');
+  }, 100);
+
+  // Handle screen scaling to keep 16:9 ratio
+  function handleResize() {
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const ratio = 1280 / 720;
+    let scale = 1;
+    if (vw / vh > ratio) {
+      scale = vh / 720;
+    } else {
+      scale = vw / 1280;
+    }
+    // Apply scale to viewport
+    const viewport = document.getElementById('viewport');
+    viewport.style.transform = `scale(${scale})`;
+  }
+  window.addEventListener('resize', handleResize);
+  handleResize();
+</script>
+</body>
+</html>
