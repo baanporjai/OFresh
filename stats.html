@@ -424,7 +424,8 @@ footer a { color: var(--orange); text-decoration: none; }
   <div class="charts-1col">
     <div class="chart-card">
       <div class="chart-header">
-        <div class="chart-title">📈 <span data-th="ยอดขายรายวัน (30 วันล่าสุด)" data-en="Daily Sales (Last 30 Days)">ยอดขายรายวัน (30 วันล่าสุด)</span></div>
+        <div class="chart-title">📈 <span data-th="ยอดขายรายวัน" data-en="Daily Sales">ยอดขายรายวัน</span></div>
+        <select class="month-select" id="dailyMonthFilter" onchange="onDailyMonthChange(this.value)"></select>
         <div class="chart-badge" id="dailyBadge">—</div>
       </div>
       <canvas id="chartDaily" height="90"></canvas>
@@ -470,6 +471,7 @@ footer a { color: var(--orange); text-decoration: none; }
     <div class="chart-card">
       <div class="chart-header">
         <div class="chart-title">🌡️ <span data-th="ช่วงเวลาที่ลูกค้าสั่งมากที่สุด" data-en="Busiest Hours">ช่วงเวลาที่ลูกค้าสั่งมากที่สุด</span></div>
+        <select class="month-select" id="heatmapMonthFilter" onchange="onHeatmapMonthChange(this.value)"></select>
         <div class="chart-badge" id="peakHourBadge">—</div>
       </div>
       <div class="hour-grid" id="hourGrid"></div>
@@ -563,18 +565,54 @@ const chartDefaults = {
   }
 };
 
+let dailyMonthFilter = 'recent30';
+function onDailyMonthChange(val) {
+  dailyMonthFilter = val;
+  renderDailyChart(window._rows);
+}
+
+function populateDailyMonthFilter(rows) {
+  const isTh = currentLang === 'th';
+  const months = Array.from(new Set(rows.map(r => monthKey(r.datetime)))).sort();
+  const sel = document.getElementById('dailyMonthFilter');
+  const keepVal = sel.options.length ? dailyMonthFilter : 'recent30';
+  sel.innerHTML = `<option value="recent30">${isTh?'30 วันล่าสุด':'Last 30 days'}</option>` + months.map(m => {
+    const [y,mo] = m.split('-');
+    const label = new Date(+y,+mo-1,1).toLocaleDateString(isTh?'th-TH':'en-US',{month:'long',year:'numeric'});
+    return `<option value="${m}">${label}</option>`;
+  }).join('');
+  const stillExists = Array.from(sel.options).some(o => o.value === keepVal);
+  dailyMonthFilter = stillExists ? keepVal : 'recent30';
+  sel.value = dailyMonthFilter;
+}
+
 function renderDailyChart(rows) {
   destroyChart('daily');
-  const now = new Date(); const counts = {};
-  for (let i = 29; i >= 0; i--) {
-    const d = new Date(now); d.setDate(d.getDate()-i);
-    counts[d.toDateString()] = 0;
+  const isTh = currentLang === 'th';
+  let labels, data;
+
+  if (dailyMonthFilter === 'recent30') {
+    const now = new Date(); const counts = {};
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(now); d.setDate(d.getDate()-i);
+      counts[d.toDateString()] = 0;
+    }
+    rows.forEach(r => { const k = r.datetime.toDateString(); if (k in counts) counts[k]++; });
+    labels = Object.keys(counts).map(k => new Date(k).toLocaleDateString(isTh?'th-TH':'en-US',{day:'2-digit',month:'short'}));
+    data = Object.values(counts);
+  } else {
+    const [y,mo] = dailyMonthFilter.split('-').map(Number);
+    const daysInMonth = new Date(y, mo, 0).getDate();
+    const counts = Array(daysInMonth).fill(0);
+    rows.forEach(r => {
+      if (r.datetime.getFullYear()===y && r.datetime.getMonth()+1===mo) counts[r.datetime.getDate()-1]++;
+    });
+    labels = counts.map((_,i) => String(i+1));
+    data = counts;
   }
-  rows.forEach(r => { const k = r.datetime.toDateString(); if (k in counts) counts[k]++; });
-  const labels = Object.keys(counts).map(k => new Date(k).toLocaleDateString(currentLang==='th'?'th-TH':'en-US',{day:'2-digit',month:'short'}));
-  const data = Object.values(counts);
+
   const avg = data.reduce((a,b)=>a+b,0)/data.length;
-  document.getElementById('dailyBadge').textContent = `${currentLang==='th'?'เฉลี่ย':'Avg'} ${avg.toFixed(1)} ${currentLang==='th'?'แก้ว/วัน':'cups/day'}`;
+  document.getElementById('dailyBadge').textContent = `${isTh?'เฉลี่ย':'Avg'} ${avg.toFixed(1)} ${isTh?'แก้ว/วัน':'cups/day'}`;
 
   const ctx = document.getElementById('chartDaily').getContext('2d');
   const gradient = ctx.createLinearGradient(0,0,0,200);
@@ -727,6 +765,50 @@ function renderComparison(rows, isTh) {
   }).join('');
 }
 
+// ── HEATMAP ──
+let heatmapMonthFilter = 'all';
+function onHeatmapMonthChange(val) {
+  heatmapMonthFilter = val;
+  renderHeatmap(window._rows);
+}
+
+function populateHeatmapMonthFilter(rows) {
+  const isTh = currentLang === 'th';
+  const months = Array.from(new Set(rows.map(r => monthKey(r.datetime)))).sort();
+  const sel = document.getElementById('heatmapMonthFilter');
+  const keepVal = sel.options.length ? heatmapMonthFilter : 'all';
+  sel.innerHTML = `<option value="all">${isTh?'ทั้งหมด':'All time'}</option>` + months.map(m => {
+    const [y,mo] = m.split('-');
+    const label = new Date(+y,+mo-1,1).toLocaleDateString(isTh?'th-TH':'en-US',{month:'long',year:'numeric'});
+    return `<option value="${m}">${label}</option>`;
+  }).join('');
+  const stillExists = Array.from(sel.options).some(o => o.value === keepVal);
+  heatmapMonthFilter = stillExists ? keepVal : 'all';
+  sel.value = heatmapMonthFilter;
+}
+
+function renderHeatmap(rows) {
+  const isTh = currentLang === 'th';
+  const filtered = heatmapMonthFilter === 'all' ? rows : rows.filter(r => monthKey(r.datetime) === heatmapMonthFilter);
+  const hourCounts = Array(24).fill(0);
+  filtered.forEach(r=>hourCounts[r.datetime.getHours()]++);
+  const maxH = Math.max(...hourCounts), peakH = hourCounts.indexOf(maxH);
+
+  const grid = document.getElementById('hourGrid');
+  grid.innerHTML = '';
+  hourCounts.forEach((cnt,h) => {
+    const p = maxH>0?cnt/maxH:0;
+    const cls = p>=.85?'p1':p>=.55?'p2':p>=.25?'p3':'';
+    grid.innerHTML += `<div class="hour-cell ${cls}">
+      <div class="hc-count">${cnt||''}</div>
+      <div class="hc-lbl">${h}:00</div>
+    </div>`;
+  });
+  document.getElementById('peakHourBadge').textContent = filtered.length === 0
+    ? (isTh ? 'ไม่มีข้อมูล' : 'No data')
+    : (isTh ? `🔥 ยอดฮิต ${peakH}:00–${peakH+1}:00` : `🔥 Peak ${peakH}:00–${peakH+1}:00`);
+}
+
 // ── RENDER ──
 function render(rows) {
   window._rows = rows;
@@ -775,25 +857,15 @@ function render(rows) {
     :`Sold ${bestCount} cups in a single day 🔥`;
 
   // Charts
+  populateDailyMonthFilter(rows);
   renderDailyChart(rows);
   renderMonthlyChart(rows);
   populateWeekdayMonthFilter(rows);
   renderWeekdayChart(rows);
 
   // Heatmap
-  const grid = document.getElementById('hourGrid');
-  grid.innerHTML = '';
-  hourCounts.forEach((cnt,h) => {
-    const p = maxH>0?cnt/maxH:0;
-    const cls = p>=.85?'p1':p>=.55?'p2':p>=.25?'p3':'';
-    grid.innerHTML += `<div class="hour-cell ${cls}">
-      <div class="hc-count">${cnt||''}</div>
-      <div class="hc-lbl">${h}:00</div>
-    </div>`;
-  });
-  document.getElementById('peakHourBadge').textContent = isTh
-    ?`🔥 ยอดฮิต ${peakH}:00–${peakH+1}:00`
-    :`🔥 Peak ${peakH}:00–${peakH+1}:00`;
+  populateHeatmapMonthFilter(rows);
+  renderHeatmap(rows);
 
   // Best Days
   const top7 = sortedDays.slice(0,7), maxDay=top7[0]?.[1]||1;
