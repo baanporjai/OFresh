@@ -293,7 +293,6 @@ footer a { color: var(--orange); text-decoration: none; }
 
   if (sessionStorage.getItem('ofresh_admin_token')) {
     gate.classList.add('hidden');
-    load();
   } else {
     input.addEventListener('keydown', e => { if (e.key === 'Enter') checkPin(); });
     setTimeout(() => input.focus(), 100);
@@ -788,6 +787,8 @@ async function load(force) {
     if (btn) { btn.disabled = false; btn.classList.remove('spinning'); }
   }
 }
+
+if (sessionStorage.getItem('ofresh_admin_token')) load();
 </script>
 </body>
 </html>
