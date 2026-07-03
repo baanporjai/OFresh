@@ -134,8 +134,9 @@ const translations = {
 
     // Order page
     order_back: 'กลับหน้าหลัก',
-    order_hero_h1: 'สั่งซื้อส้มคั้นสด',
-    order_hero_p: 'ส้มแมนดารินคุณภาพพรีเมียม ส่งตรงถึงตู้ O\'Fresh ของคุณ',
+    order_hero_h1: 'สั่งซื้อส้มผลสด',
+    order_hero_p: 'ส้มแมนดารินพันธุ์เดียวกับที่ใช้คั้นในตู้ O\'Fresh สั่งเป็นกิโลกรัม จัดส่งถึงบ้านคุณ',
+    order_context_note: 'ชิมน้ำส้มคั้นสดจากตู้ O\'Fresh แล้วติดใจใช่ไหม? เราคัดส้มพันธุ์เดียวกันมาขายเป็นผลสด ให้คุณซื้อกลับบ้านได้เลย',
     order_price_name: 'ส้มแมนดารินไต้หวัน',
     order_price_desc: 'คัดเกรดพรีเมียม หวานฉ่ำ อุดมวิตามินซี',
     order_price_unit: 'ต่อกิโลกรัม',
@@ -304,8 +305,9 @@ const translations = {
 
     // Order page
     order_back: 'Back to Home',
-    order_hero_h1: 'Order Fresh Oranges',
-    order_hero_p: 'Premium Taiwanese Mandarin oranges delivered directly to your O\'Fresh machine.',
+    order_hero_h1: 'Order Fresh Whole Oranges',
+    order_hero_p: 'Same mandarin orange variety used in our O\'Fresh vending machine — order by the kilogram, delivered to your door.',
+    order_context_note: 'Loved the fresh orange juice from our O\'Fresh machine? We sell the same oranges as whole fruit so you can take them home.',
     order_price_name: 'Taiwanese Mandarin Oranges',
     order_price_desc: 'Premium grade — sweet, juicy, rich in Vitamin C',
     order_price_unit: 'per kilogram',
@@ -474,8 +476,9 @@ const translations = {
 
     // Order page
     order_back: '返回首页',
-    order_hero_h1: '订购新鲜橙子',
-    order_hero_p: '优质台湾甜橙，直接配送至您的 O\'Fresh 机器。',
+    order_hero_h1: '订购新鲜橙子（原果）',
+    order_hero_p: '与 O\'Fresh 榨汁机使用的同款甜橙品种，按公斤订购，直接配送到家。',
+    order_context_note: '喜欢 O\'Fresh 机器现榨的橙汁吗？我们也出售同款新鲜橙子原果，让您带回家享用。',
     order_price_name: '台湾甜橙',
     order_price_desc: '优质级别 — 香甜多汁，富含维生素C',
     order_price_unit: '每公斤',
@@ -643,8 +646,9 @@ const translations = {
     faq7_a: 'Tel. 087-986-7000 または LINE @ofresh までご連絡ください。毎日対応しております。',
 
     order_back: 'ホームへ戻る',
-    order_hero_h1: 'オレンジを注文する',
-    order_hero_p: '台湾産プレミアムマンダリンオレンジを O\'Fresh 自販機へ直送。',
+    order_hero_h1: '生オレンジを注文する',
+    order_hero_p: 'O\'Fresh 自販機で使用しているのと同じ品種のマンダリンオレンジを、キログラム単位でご自宅までお届けします。',
+    order_context_note: 'O\'Fresh のフレッシュジュースを気に入っていただけましたか？同じ品種のオレンジを生の果実としてご自宅にお届けします。',
     order_price_name: '台湾産マンダリンオレンジ',
     order_price_desc: 'プレミアムグレード — 甘くてジューシー、ビタミンC豊富',
     order_price_unit: '1キログラムあたり',
@@ -812,8 +816,9 @@ const translations = {
     faq7_a: '전화 087-986-7000 또는 LINE @ofresh 로 연락해 주세요. 팀이 매일 도움을 드립니다.',
 
     order_back: '홈으로 돌아가기',
-    order_hero_h1: '오렌지 주문하기',
-    order_hero_p: '프리미엄 대만산 만다린 오렌지를 O\'Fresh 자판기로 직접 배송.',
+    order_hero_h1: '생오렌지 주문하기',
+    order_hero_p: 'O\'Fresh 자판기에서 사용하는 것과 같은 품종의 만다린 오렌지를 킬로그램 단위로 주문하시면 댁까지 배송해 드립니다.',
+    order_context_note: 'O\'Fresh 기계에서 갓 짜낸 오렌지 주스가 마음에 드셨나요? 같은 품종의 오렌지를 생과일로도 판매하니 집에서 즐겨보세요.',
     order_price_name: '대만산 만다린 오렌지',
     order_price_desc: '프리미엄 등급 — 달콤하고 즙이 많으며 비타민C 풍부',
     order_price_unit: '킬로그램당',

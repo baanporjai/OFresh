@@ -153,6 +153,16 @@
             padding: 0 20px; position: relative; z-index: 10;
         }
 
+        /* ===== CONTEXT NOTE ===== */
+        .context-note {
+            background: linear-gradient(135deg, rgba(255,107,0,0.08), rgba(255,154,60,0.05));
+            border: 1.5px solid rgba(255,107,0,0.2); border-radius: 16px;
+            padding: 16px 20px; margin-bottom: 20px;
+            display: flex; align-items: flex-start; gap: 12px;
+        }
+        .context-note i { color: var(--orange); font-size: 18px; margin-top: 2px; flex-shrink: 0; }
+        .context-note p { font-size: 14px; color: var(--text-dark); line-height: 1.6; font-weight: 400; }
+
         /* ===== PRICE BANNER ===== */
         .price-banner {
             background: white; border-radius: 20px; padding: 24px 28px;
@@ -311,13 +321,19 @@
 <div class="page-hero">
     <div class="page-hero-content">
         <div class="icon-wrap">🍊</div>
-        <h1 data-i18n="order_hero_h1">สั่งซื้อส้มคั้นสด</h1>
-        <p data-i18n="order_hero_p">ส้มแมนดารินคุณภาพพรีเมียม ส่งตรงถึงตู้ O'Fresh ของคุณ</p>
+        <h1 data-i18n="order_hero_h1">สั่งซื้อส้มผลสด</h1>
+        <p data-i18n="order_hero_p">ส้มแมนดารินพันธุ์เดียวกับที่ใช้คั้นในตู้ O'Fresh สั่งเป็นกิโลกรัม จัดส่งถึงบ้านคุณ</p>
     </div>
 </div>
 
 <!-- MAIN -->
 <div class="main">
+
+    <!-- CONTEXT NOTE -->
+    <div class="context-note">
+        <i class="fas fa-lightbulb"></i>
+        <p data-i18n="order_context_note">ชิมน้ำส้มคั้นสดจากตู้ O'Fresh แล้วติดใจใช่ไหม? เราคัดส้มพันธุ์เดียวกันมาขายเป็นผลสด ให้คุณซื้อกลับบ้านได้เลย</p>
+    </div>
 
     <!-- PRICE BANNER -->
     <div class="price-banner">
