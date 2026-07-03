@@ -93,6 +93,7 @@ body { font-family: 'Prompt', sans-serif; background: var(--off-white); color: v
   box-shadow: var(--shadow); outline: none; transition: border-color .2s;
 }
 .search-bar input:focus { border-color: var(--orange); }
+.search-hint { font-size: .74rem; color: var(--muted); margin-top: 6px; padding: 0 4px; }
 
 .section-title {
   font-size: 1rem; font-weight: 700; color: var(--text);
@@ -157,6 +158,9 @@ body { font-family: 'Prompt', sans-serif; background: var(--off-white); color: v
 .delivery-row:last-child { border-bottom: none; }
 .delivery-row:hover { background: rgba(255,107,0,.05); }
 .delivery-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.delivery-name-group { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.print-check { display: inline-flex; align-items: center; cursor: pointer; }
+.print-check input { width: 17px; height: 17px; accent-color: var(--orange); cursor: pointer; }
 .delivery-name { font-weight: 700; color: var(--text); font-size: .95rem; }
 .delivery-total { font-weight: 800; color: var(--text); font-size: .95rem; white-space: nowrap; }
 .delivery-meta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 4px; font-size: .78rem; color: var(--muted); }
@@ -270,6 +274,7 @@ footer a { color: var(--orange); text-decoration: none; }
     break-inside: avoid;
   }
   .delivery-row { break-inside: avoid; padding: 10px 4px; }
+  .delivery-row.print-exclude { display: none !important; }
   .status-select { -webkit-appearance: menulist; appearance: menulist; background-image: none; }
 }
 </style>
@@ -356,7 +361,7 @@ footer a { color: var(--orange); text-decoration: none; }
   <button id="refreshBtn" onclick="load(true)" class="refresh-btn">
     <span id="refreshIcon">🔄</span> <span data-th="รีเฟรชข้อมูล" data-en="Refresh">รีเฟรชข้อมูล</span>
   </button>
-  <button id="printBtn" onclick="window.print()" class="refresh-btn no-print">
+  <button id="printBtn" onclick="printSelected()" class="refresh-btn no-print">
     <span>🖨️</span> <span data-th="พิมพ์ใบจัดของ" data-en="Print Packing List">พิมพ์ใบจัดของ</span>
   </button>
 </div>
@@ -367,6 +372,8 @@ footer a { color: var(--orange); text-decoration: none; }
     <input type="text" id="searchInput" oninput="onSearchInput(this.value)"
       placeholder="ค้นหาชื่อลูกค้า หรือเบอร์โทร..."
       data-th-placeholder="ค้นหาชื่อลูกค้า หรือเบอร์โทร..." data-en-placeholder="Search name or phone...">
+    <p class="search-hint" data-th="ติ๊กช่องหน้าชื่อลูกค้าเพื่อเลือกพิมพ์เฉพาะบางออเดอร์ — ถ้าไม่ติ๊กเลยจะพิมพ์ทุกออเดอร์ที่แสดงอยู่"
+       data-en="Check the box next to a name to print only selected orders — if none are checked, everything shown will print">ติ๊กช่องหน้าชื่อลูกค้าเพื่อเลือกพิมพ์เฉพาะบางออเดอร์ — ถ้าไม่ติ๊กเลยจะพิมพ์ทุกออเดอร์ที่แสดงอยู่</p>
   </div>
 
   <div class="chart-card" style="margin-bottom:20px">
@@ -612,6 +619,19 @@ function matchesSearch(r) {
   return (r.name||'').toLowerCase().includes(searchQuery) || (r.phone||'').includes(searchQuery);
 }
 
+// ── เลือกออเดอร์เฉพาะรายการที่จะพิมพ์ ──
+const printSelection = new Set();
+function togglePrintSelect(id, checked) {
+  if (checked) printSelection.add(id); else printSelection.delete(id);
+}
+function printSelected() {
+  const hasSelection = printSelection.size > 0;
+  document.querySelectorAll('.delivery-row').forEach(row => {
+    row.classList.toggle('print-exclude', hasSelection && !printSelection.has(row.dataset.id));
+  });
+  window.print();
+}
+
 function render(rows) {
   window._rows = rows;
   const N = rows.length;
@@ -690,9 +710,14 @@ function renderDeliveryList(rows, filterFn, listElId, badgeElId, emptyMsg, modal
   document.getElementById(listElId).innerHTML = deliveries.map((r,i) => {
     const st = getStatusInfo(r.status, isTh);
     return `
-    <div class="delivery-row" onclick="${modalFn}(${i})">
+    <div class="delivery-row" data-id="${r.id}" onclick="${modalFn}(${i})">
       <div class="delivery-top">
-        <div class="delivery-name">${r.name}</div>
+        <div class="delivery-name-group">
+          <label class="print-check no-print" onclick="event.stopPropagation()">
+            <input type="checkbox" ${printSelection.has(r.id)?'checked':''} onchange="togglePrintSelect('${r.id}', this.checked)">
+          </label>
+          <div class="delivery-name">${r.name}</div>
+        </div>
         <div class="delivery-total">฿${r.total.toLocaleString()}</div>
       </div>
       <div class="delivery-meta">
