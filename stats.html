@@ -183,6 +183,28 @@ body { font-family: 'Prompt', sans-serif; background: var(--off-white); color: v
 .pay-bar-fill { height: 100%; border-radius: 20px; transition: width .9s cubic-bezier(.4,0,.2,1); }
 .pay-pct { font-size: .9rem; font-weight: 700; color: var(--muted); min-width: 40px; text-align: right; }
 
+/* ── ALERT BANNER ── */
+.alert-banner {
+  background: rgba(239,68,68,.1); border: 1.5px solid rgba(239,68,68,.3);
+  color: #b91c1c; border-radius: 16px; padding: 16px 20px;
+  font-size: .88rem; font-weight: 600; margin-bottom: 20px;
+  display: flex; align-items: center; gap: 10px;
+}
+
+/* ── COMPARISON ── */
+.compare-list { display: flex; flex-direction: column; gap: 0; }
+.compare-row {
+  display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center;
+  padding: 12px 0; border-bottom: 1px solid var(--gray);
+}
+.compare-row:last-child { border-bottom: none; }
+.compare-label { font-size: .85rem; font-weight: 700; color: var(--text); }
+.compare-values { font-size: .76rem; color: var(--muted); margin-top: 2px; }
+.compare-delta { font-weight: 800; padding: 5px 12px; border-radius: 20px; font-size: .8rem; white-space: nowrap; }
+.compare-delta.up { background: rgba(16,185,129,.15); color: #047857; }
+.compare-delta.down { background: rgba(239,68,68,.15); color: #b91c1c; }
+.compare-delta.flat { background: rgba(107,114,128,.15); color: #6b7280; }
+
 /* ── SPOTLIGHT ── */
 .spotlight {
   background: linear-gradient(135deg, #FFF3E0, #FFF8F0);
@@ -337,6 +359,11 @@ footer a { color: var(--orange); text-decoration: none; }
 
 <div class="page">
 
+  <!-- SILENCE ALERT -->
+  <div class="alert-banner" id="silenceAlert" style="display:none">
+    <span>⚠️</span> <span id="silenceAlertText"></span>
+  </div>
+
   <!-- KPI -->
   <div class="kpi-grid">
     <div class="kpi orange">
@@ -347,6 +374,13 @@ footer a { color: var(--orange); text-decoration: none; }
       <div class="kpi-label" data-th="แก้วที่เสิร์ฟทั้งหมด" data-en="Total Cups Served">แก้วที่เสิร์ฟทั้งหมด</div>
       <div class="kpi-value" id="kpiTotal">—</div>
       <div class="kpi-sub" data-th="แก้วสด ไม่มีน้ำตาลเพิ่ม" data-en="Fresh · No added sugar">แก้วสด ไม่มีน้ำตาลเพิ่ม</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-accent green"></div>
+      <div class="kpi-icon">💰</div>
+      <div class="kpi-label" data-th="ยอดขายรวม" data-en="Total Revenue">ยอดขายรวม</div>
+      <div class="kpi-value" id="kpiRevenue">—</div>
+      <div class="kpi-sub" data-th="บาท" data-en="THB">บาท</div>
     </div>
     <div class="kpi">
       <div class="kpi-accent green"></div>
@@ -389,6 +423,22 @@ footer a { color: var(--orange); text-decoration: none; }
         <div class="chart-badge" id="dailyBadge">—</div>
       </div>
       <canvas id="chartDaily" height="90"></canvas>
+    </div>
+  </div>
+
+  <!-- เทียบกับช่วงก่อนหน้า + ยอดขายตามวันในสัปดาห์ -->
+  <div class="charts-2col">
+    <div class="chart-card">
+      <div class="chart-header">
+        <div class="chart-title">📊 <span data-th="เทียบกับช่วงก่อนหน้า" data-en="vs Previous Period">เทียบกับช่วงก่อนหน้า</span></div>
+      </div>
+      <div class="compare-list" id="compareList"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <div class="chart-title">🗓️ <span data-th="ยอดขายตามวันในสัปดาห์" data-en="Sales by Day of Week">ยอดขายตามวันในสัปดาห์</span></div>
+      </div>
+      <canvas id="chartWeekday" height="160"></canvas>
     </div>
   </div>
 
@@ -569,11 +619,92 @@ function renderMonthlyChart(rows) {
   });
 }
 
+function renderWeekdayChart(rows) {
+  destroyChart('weekday');
+  const isTh = currentLang === 'th';
+  const dayNames = isTh ? ['อา','จ','อ','พ','พฤ','ศ','ส'] : ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const counts = Array(7).fill(0);
+  rows.forEach(r => counts[r.datetime.getDay()]++);
+  const max = Math.max(...counts);
+
+  const ctx = document.getElementById('chartWeekday').getContext('2d');
+  charts.weekday = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: dayNames,
+      datasets: [{
+        data: counts, backgroundColor: counts.map(v => v===max ? '#FF6B00' : 'rgba(255,107,0,.45)'),
+        borderRadius: 8, borderSkipped: false,
+      }]
+    },
+    options: { ...chartDefaults, plugins: { legend:{display:false}, tooltip: {
+      callbacks: { label: ctx => ` ${ctx.raw} ${isTh?'แก้ว':'cups'}` }
+    }}}
+  });
+}
+
+// ── COMPARISON ──
+function sumInRange(rows, fromMs, toMs) {
+  return rows.reduce((acc,r) => {
+    const t = r.datetime.getTime();
+    if (t >= fromMs && t < toMs) { acc.cups++; acc.revenue += r.price; }
+    return acc;
+  }, { cups: 0, revenue: 0 });
+}
+
+function renderComparison(rows, isTh) {
+  const now = Date.now();
+  const DAY = 86400000;
+  const startOfToday = new Date(); startOfToday.setHours(0,0,0,0);
+  const todayMs = startOfToday.getTime();
+
+  const periods = [
+    {
+      label: isTh?'วันนี้ vs เมื่อวาน (ถึงตอนนี้)':'Today vs Yesterday (so far)',
+      cur: sumInRange(rows, todayMs, now),
+      prev: sumInRange(rows, todayMs - DAY, todayMs),
+    },
+    {
+      label: isTh?'7 วันล่าสุด vs 7 วันก่อนหน้า':'Last 7 Days vs Previous 7 Days',
+      cur: sumInRange(rows, now - 7*DAY, now),
+      prev: sumInRange(rows, now - 14*DAY, now - 7*DAY),
+    },
+    {
+      label: isTh?'30 วันล่าสุด vs 30 วันก่อนหน้า':'Last 30 Days vs Previous 30 Days',
+      cur: sumInRange(rows, now - 30*DAY, now),
+      prev: sumInRange(rows, now - 60*DAY, now - 30*DAY),
+    },
+  ];
+
+  document.getElementById('compareList').innerHTML = periods.map(p => {
+    let pct, cls;
+    if (p.prev.revenue > 0) {
+      pct = (p.cur.revenue - p.prev.revenue) / p.prev.revenue * 100;
+      cls = pct > 0.5 ? 'up' : pct < -0.5 ? 'down' : 'flat';
+    } else {
+      pct = p.cur.revenue > 0 ? 100 : 0;
+      cls = p.cur.revenue > 0 ? 'up' : 'flat';
+    }
+    const arrow = cls === 'up' ? '↑' : cls === 'down' ? '↓' : '→';
+    return `
+    <div class="compare-row">
+      <div>
+        <div class="compare-label">${p.label}</div>
+        <div class="compare-values">฿${p.cur.revenue.toLocaleString()} (${p.cur.cups} ${isTh?'แก้ว':'cups'}) ${isTh?'เทียบกับ':'vs'} ฿${p.prev.revenue.toLocaleString()}</div>
+      </div>
+      <div class="compare-delta ${cls}">${arrow} ${Math.abs(pct).toFixed(0)}%</div>
+    </div>`;
+  }).join('');
+}
+
 // ── RENDER ──
 function render(rows) {
   window._rows = rows;
   const N = rows.length;
   const isTh = currentLang==='th';
+
+  // Revenue
+  const totalRevenue = rows.reduce((s,r)=>s+r.price,0);
 
   // Days
   const days = new Set(rows.map(r=>r.datetime.toDateString())).size;
@@ -602,6 +733,7 @@ function render(rows) {
 
   // KPI
   animateNum('kpiTotal',N);
+  animateNum('kpiRevenue',totalRevenue);
   animateNum('kpiDays',days);
   animateNum('kpiPeakDay',bestCount);
   document.getElementById('kpiPeakHour').textContent = `${peakH}:00`;
@@ -615,6 +747,7 @@ function render(rows) {
   // Charts
   renderDailyChart(rows);
   renderMonthlyChart(rows);
+  renderWeekdayChart(rows);
 
   // Heatmap
   const grid = document.getElementById('hourGrid');
@@ -662,6 +795,22 @@ function render(rows) {
   const fmt = d=>d.toLocaleString(locale,{dateStyle:'medium',timeStyle:'short'});
   document.getElementById('lastUpdate').textContent=(isTh?'แก้วล่าสุด ':'Last order ')+fmt(latestRow.datetime);
   document.getElementById('footerDate').textContent=fmt(latestRow.datetime);
+
+  // ตู้เงียบ — เตือนถ้าไม่มียอดขายนานเกินไป (อาจแปลว่าตู้เสีย/ของหมด/ระบบจ่ายเงินมีปัญหา)
+  const SILENCE_ALERT_HOURS = 24;
+  const hoursSinceLastSale = (Date.now() - latestRow.datetime.getTime()) / 3600000;
+  const alertEl = document.getElementById('silenceAlert');
+  if (hoursSinceLastSale >= SILENCE_ALERT_HOURS) {
+    alertEl.style.display = 'flex';
+    const h = Math.floor(hoursSinceLastSale);
+    document.getElementById('silenceAlertText').textContent = isTh
+      ? `ไม่มียอดขายมา ${h} ชั่วโมงแล้ว — ลองตรวจสอบว่าตู้ทำงานปกติหรือของหมด`
+      : `No sales in the last ${h} hours — check if the machine is working or out of stock`;
+  } else {
+    alertEl.style.display = 'none';
+  }
+
+  renderComparison(rows, isTh);
 }
 
 // ── ANIMATE ──
