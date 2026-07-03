@@ -264,21 +264,40 @@ footer a { color: var(--orange); text-decoration: none; }
 
 <script>
 (function() {
-  const PIN = '718888';
   const gate = document.getElementById('pinGate');
-  if (sessionStorage.getItem('ofresh_admin_auth') === '1') { gate.classList.add('hidden'); return; }
   const input = document.getElementById('pinInput');
-  window.checkPin = function() {
-    if (input.value.trim() === PIN) {
-      sessionStorage.setItem('ofresh_admin_auth', '1');
-      gate.classList.add('hidden');
-    } else {
-      document.getElementById('pinError').textContent = 'รหัส PIN ไม่ถูกต้อง';
-      input.value = ''; input.focus();
+  const errorEl = document.getElementById('pinError');
+
+  window.checkPin = async function() {
+    const pin = input.value.trim();
+    errorEl.textContent = '';
+    try {
+      const res = await fetch(API_BASE + '/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin }),
+      });
+      const data = await res.json();
+      if (data.success && data.token) {
+        sessionStorage.setItem('ofresh_admin_token', data.token);
+        gate.classList.add('hidden');
+        load();
+      } else {
+        errorEl.textContent = 'รหัส PIN ไม่ถูกต้อง';
+        input.value = ''; input.focus();
+      }
+    } catch (e) {
+      errorEl.textContent = 'เชื่อมต่อไม่สำเร็จ ลองใหม่อีกครั้ง';
     }
   };
-  input.addEventListener('keydown', e => { if (e.key === 'Enter') checkPin(); });
-  setTimeout(() => input.focus(), 100);
+
+  if (sessionStorage.getItem('ofresh_admin_token')) {
+    gate.classList.add('hidden');
+    load();
+  } else {
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') checkPin(); });
+    setTimeout(() => input.focus(), 100);
+  }
 })();
 </script>
 
@@ -414,8 +433,7 @@ footer a { color: var(--orange); text-decoration: none; }
 </footer>
 
 <script>
-// TODO: แทนที่ด้วยลิงก์ CSV ที่ Publish to web จาก Google Sheet คำสั่งซื้อ
-const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRIfD51FD8M4qitJwv8m6QampyckbZMfkohDQSotlaBcCglVzVLksfDu8CgIXSlvJNiIPqf5rKMGQWA/pub?output=csv';
+const API_BASE = 'https://fancy-dust-060c.yai-taweewoot.workers.dev';
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxF3n2Q8t84KVeaspCUyRpDLDPuHkDWWNFn_MS4OydVBfttb6oZH8NIO5Vpt-A3HIM/exec';
 const CACHE_KEY = 'ofresh_orders_v1';
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 ชั่วโมง
@@ -747,7 +765,15 @@ async function load(force) {
     if (!force && cached && (now - cached.ts) < CACHE_TTL_MS) {
       rows = cached.rows.map(r => ({ ...r, datetime: new Date(r.datetime) }));
     } else {
-      const res = await fetch(SHEET_CSV_URL + (SHEET_CSV_URL.includes('?') ? '&' : '?') + 't=' + now);
+      const token = sessionStorage.getItem('ofresh_admin_token');
+      const res = await fetch(API_BASE + '/api/admin/orders', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.status === 401) {
+        sessionStorage.removeItem('ofresh_admin_token');
+        document.getElementById('pinGate').classList.remove('hidden');
+        return;
+      }
       const text = await res.text();
       rows = parseCSV(text);
       localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: now, rows }));
@@ -762,8 +788,6 @@ async function load(force) {
     if (btn) { btn.disabled = false; btn.classList.remove('spinning'); }
   }
 }
-
-load();
 </script>
 </body>
 </html>
