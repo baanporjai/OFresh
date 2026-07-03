@@ -382,27 +382,44 @@
         }
         .freshness-image-box {
             width: 100%; aspect-ratio: 1;
-            background: linear-gradient(135deg, #FFF3E0, #FFE0B2);
+            background: radial-gradient(circle at 30% 20%, #FFFAF2, #FFE7C2 75%);
             border-radius: 30px; display: flex; align-items: center; justify-content: center;
             position: relative; overflow: hidden;
         }
+        .fz-blob {
+            position: absolute; border-radius: 50%; filter: blur(45px); opacity: 0.55; z-index: 0;
+        }
+        .fz-blob-1 { width: 220px; height: 220px; background: #FFD9A0; top: -50px; right: -40px; }
+        .fz-blob-2 { width: 180px; height: 180px; background: #FFB347; bottom: -60px; left: -40px; }
+        .orange-slice {
+            position: absolute; width: 150px; height: 150px; border-radius: 50%;
+            bottom: 6%; right: 4%; z-index: 2; transform: rotate(-12deg);
+            border: 10px solid #FFF3E0;
+            background:
+                radial-gradient(circle at center, transparent 0 13%, rgba(255,255,255,.55) 13% 16%, transparent 16%),
+                repeating-conic-gradient(from 0deg, #FFAE5C 0deg 16deg, #FF8A1F 16deg 32deg);
+            box-shadow: 0 14px 30px rgba(200,90,0,.3);
+            animation: sliceIn 1s ease-out;
+        }
+        @keyframes sliceIn { from { opacity: 0; transform: rotate(-12deg) translate(20px,20px) scale(.7); } to { opacity: 1; transform: rotate(-12deg) translate(0,0) scale(1); } }
         .big-orange {
-            width: 250px; height: 250px;
-            background: radial-gradient(circle at 35% 35%, #FFB347, #FF8C00, #E67300);
+            width: 230px; height: 230px; z-index: 3;
+            background:
+                radial-gradient(circle at 32% 26%, rgba(255,255,255,.6), transparent 24%),
+                radial-gradient(circle at 68% 72%, rgba(170,65,0,.28), transparent 46%),
+                radial-gradient(circle at 35% 35%, #FFC46B, #FF8C00 55%, #D9600A 100%);
             border-radius: 50%; position: relative;
-            box-shadow: 0 20px 60px rgba(255,140,0,0.3); animation: pulse 3s ease-in-out infinite;
+            box-shadow: 0 25px 60px rgba(200,90,0,.35), inset -10px -14px 30px rgba(150,60,0,.22);
+            animation: orangeFloat 4s ease-in-out infinite;
         }
-        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
-        .big-orange::before {
-            content: ''; position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
-            width: 20px; height: 16px; background: var(--green-fresh); border-radius: 50% 50% 0 0;
+        @keyframes orangeFloat { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-12px) rotate(3deg); } }
+        .orange-leaf {
+            position: absolute; top: -16px; left: 50%; width: 34px; height: 20px;
+            background: linear-gradient(135deg, #6BBF59, #3E8E3F);
+            border-radius: 0 100% 0 100%; transform: translateX(-50%) rotate(-15deg);
+            box-shadow: 0 3px 6px rgba(0,0,0,.15); z-index: 4;
         }
-        .big-orange::after {
-            content: ''; position: absolute; top: 20%; left: 25%;
-            width: 30%; height: 20%; background: rgba(255,255,255,0.2);
-            border-radius: 50%; transform: rotate(-30deg);
-        }
-        .splash-drops { position: absolute; inset: 0; }
+        .splash-drops { position: absolute; inset: 0; z-index: 3; }
         .drop {
             position: absolute; width: 12px; height: 12px;
             background: var(--orange-light); border-radius: 50%; opacity: 0.4;
@@ -411,6 +428,15 @@
         .drop:nth-child(2) { top: 25%; right: 25%; animation: float 5s infinite 1s; width: 8px; height: 8px; }
         .drop:nth-child(3) { bottom: 20%; left: 15%; animation: float 6s infinite 0.5s; width: 16px; height: 16px; }
         .drop:nth-child(4) { bottom: 30%; right: 20%; animation: float 4.5s infinite 1.5s; }
+        .sparkle {
+            position: absolute; color: #fff; z-index: 5;
+            text-shadow: 0 0 10px rgba(255,190,110,.95);
+            animation: twinkle 2.4s ease-in-out infinite;
+        }
+        .sparkle-1 { top: 14%; right: 22%; font-size: 20px; animation-delay: 0s; }
+        .sparkle-2 { top: 58%; left: 8%; font-size: 13px; animation-delay: .8s; }
+        .sparkle-3 { bottom: 16%; right: 34%; font-size: 15px; animation-delay: 1.5s; }
+        @keyframes twinkle { 0%, 100% { opacity: 0; transform: scale(.5) rotate(0deg); } 50% { opacity: 1; transform: scale(1.15) rotate(25deg); } }
         .freshness-info h2 { font-size: 38px; font-weight: 800; color: var(--dark); margin-bottom: 20px; line-height: 1.2; }
         .freshness-info h2 .highlight { color: var(--orange-primary); }
         .freshness-info > p { font-size: 17px; color: var(--text-muted); line-height: 1.8; margin-bottom: 32px; font-weight: 300; }
@@ -759,11 +785,19 @@
         <div class="freshness-content">
             <div class="freshness-visual animate-on-scroll">
                 <div class="freshness-image-box">
-                    <div class="big-orange"></div>
+                    <div class="fz-blob fz-blob-1"></div>
+                    <div class="fz-blob fz-blob-2"></div>
+                    <div class="orange-slice"></div>
+                    <div class="big-orange">
+                        <div class="orange-leaf"></div>
+                    </div>
                     <div class="splash-drops">
                         <div class="drop"></div><div class="drop"></div>
                         <div class="drop"></div><div class="drop"></div>
                     </div>
+                    <div class="sparkle sparkle-1">✦</div>
+                    <div class="sparkle sparkle-2">✦</div>
+                    <div class="sparkle sparkle-3">✦</div>
                 </div>
             </div>
             <div class="freshness-info animate-on-scroll">
