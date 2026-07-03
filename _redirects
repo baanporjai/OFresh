@@ -1,0 +1,4 @@
+# แผนที่ URL จำง่ายสำหรับหน้าแอดมิน (Cloudflare Pages อ่านไฟล์นี้อัตโนมัติ)
+/admin              /stats.html         200
+/admin/orders       /orderstats.html    200
+/admin/customers    /customers.html     200
