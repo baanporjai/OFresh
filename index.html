@@ -382,25 +382,11 @@
         }
         .freshness-image-box {
             width: 100%; aspect-ratio: 1;
-            background: linear-gradient(135deg, #FFF3E0, #FFE0B2);
-            border-radius: 30px; display: flex; align-items: center; justify-content: center;
-            position: relative; overflow: hidden;
+            border-radius: 30px; position: relative; overflow: hidden;
+            box-shadow: 0 20px 60px rgba(255,140,0,0.15);
         }
-        .big-orange {
-            width: 250px; height: 250px;
-            background: radial-gradient(circle at 35% 35%, #FFB347, #FF8C00, #E67300);
-            border-radius: 50%; position: relative;
-            box-shadow: 0 20px 60px rgba(255,140,0,0.3); animation: pulse 3s ease-in-out infinite;
-        }
-        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
-        .big-orange::before {
-            content: ''; position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
-            width: 20px; height: 16px; background: var(--green-fresh); border-radius: 50% 50% 0 0;
-        }
-        .big-orange::after {
-            content: ''; position: absolute; top: 20%; left: 25%;
-            width: 30%; height: 20%; background: rgba(255,255,255,0.2);
-            border-radius: 50%; transform: rotate(-30deg);
+        .freshness-image-box img {
+            width: 100%; height: 100%; object-fit: cover; display: block;
         }
         .splash-drops { position: absolute; inset: 0; }
         .drop {
@@ -759,7 +745,7 @@
         <div class="freshness-content">
             <div class="freshness-visual animate-on-scroll">
                 <div class="freshness-image-box">
-                    <div class="big-orange"></div>
+                    <img src="ofresh-orange-juice-vending-chiangmai.jpg" alt="ส้มสดในตู้ O'Fresh มองเห็นผ่านหน้าต่างใส" loading="lazy">
                     <div class="splash-drops">
                         <div class="drop"></div><div class="drop"></div>
                         <div class="drop"></div><div class="drop"></div>
