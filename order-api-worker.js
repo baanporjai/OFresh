@@ -186,11 +186,8 @@ async function handlePublicHighlights(request, env) {
     monthRows.forEach(r => hourCounts[r.datetime.getHours()]++);
     const peakHour = hourCounts.every(c => c === 0) ? null : hourCounts.indexOf(Math.max(...hourCounts));
 
-    const payCounts = {};
-    rows.forEach(r => { payCounts[r.payment] = (payCounts[r.payment] || 0) + 1; });
-
     return jsonResponse(
-      { totalCups, peakHour, payCounts },
+      { totalCups, peakHour },
       200,
       { 'Cache-Control': 'public, max-age=300' }
     );
@@ -204,7 +201,7 @@ function parseNayaxCSV(text) {
   const lines = text.trim().split('\n');
   if (lines.length < 2) return [];
   const h = lines[0].split(',').map(s => s.trim().toLowerCase().replace(/\r/g, ''));
-  const iDt = h.indexOf('machineautime'), iPrice = h.indexOf('auvalue'), iPay = h.indexOf('card_type_desc');
+  const iDt = h.indexOf('machineautime'), iPrice = h.indexOf('auvalue');
 
   function parseDt(s) {
     if (!s) return null;
@@ -221,8 +218,7 @@ function parseNayaxCSV(text) {
     const g = i => (v[i] || '').trim().replace(/\r/g, '');
     const datetime = parseDt(g(iDt));
     const price = parseFloat(g(iPrice)) || 0;
-    const payment = g(iPay) || 'Other';
-    return { datetime, price, payment };
+    return { datetime, price };
   }).filter(r => r.datetime && !isNaN(r.datetime) && r.price > 0);
 }
 
