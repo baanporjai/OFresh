@@ -49,6 +49,10 @@ export default {
       return handlePublicHighlights(request, env);
     }
 
+    if (request.method === 'GET' && url.pathname === '/api/public/order-highlights') {
+      return handlePublicOrderHighlights(request, env);
+    }
+
     return jsonResponse({ error: 'Not found' }, 404);
   },
 };
@@ -195,6 +199,71 @@ async function handlePublicHighlights(request, env) {
     console.error('Public highlights error:', err);
     return jsonResponse({ error: 'Failed to compute highlights' }, 502);
   }
+}
+
+// เอนด์พอยต์สาธารณะสำหรับหน้าสั่งซื้อ — คืนแค่จำนวนออเดอร์/น้ำหนักรวม (ไม่มียอดขาย/ข้อมูลลูกค้า)
+async function handlePublicOrderHighlights(request, env) {
+  if (!env.ORDERS_SHEET_CSV_URL) return jsonResponse({ error: 'Not configured' }, 500);
+
+  try {
+    const res = await fetch(env.ORDERS_SHEET_CSV_URL + (env.ORDERS_SHEET_CSV_URL.includes('?') ? '&' : '?') + 't=' + Date.now());
+    const text = await res.text();
+    const rows = parseOrdersCSV(text);
+
+    const totalOrders = rows.length;
+    const totalQty = rows.reduce((s, r) => s + r.qty, 0);
+    const avgQty = totalOrders ? totalQty / totalOrders : 0;
+
+    return jsonResponse(
+      { totalOrders, totalQty, avgQty },
+      200,
+      { 'Cache-Control': 'public, max-age=300' }
+    );
+  } catch (err) {
+    console.error('Public order highlights error:', err);
+    return jsonResponse({ error: 'Failed to compute highlights' }, 502);
+  }
+}
+
+function parseOrdersCSV(text) {
+  const lines = text.trim().split('\n');
+  if (lines.length < 2) return [];
+  const h = splitCSVLine(lines[0]).map(s => s.trim().toLowerCase().replace(/\r/g, ''));
+  const iTs = h.indexOf('timestamp'), iQty = h.indexOf('qty');
+
+  return lines.slice(1).map(line => {
+    const v = splitCSVLine(line);
+    const g = i => (v[i] || '').trim().replace(/\r/g, '');
+    const datetime = parseTimestamp(g(iTs));
+    const qty = parseFloat(g(iQty)) || 0;
+    return { datetime, qty };
+  }).filter(r => r.datetime && !isNaN(r.datetime) && r.qty > 0);
+}
+
+function parseTimestamp(s) {
+  const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s*(\d{1,2}):(\d{2}):(\d{2})$/);
+  if (!m) return new Date(s);
+  const [, d, mo, y, hr, mi, se] = m.map(Number);
+  return new Date(y, mo - 1, d, hr, mi, se);
+}
+
+function splitCSVLine(line) {
+  const fields = [];
+  let cur = '', inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (line[i + 1] === '"') { cur += '"'; i++; } else { inQuotes = false; }
+      } else { cur += c; }
+    } else {
+      if (c === '"') inQuotes = true;
+      else if (c === ',') { fields.push(cur); cur = ''; }
+      else cur += c;
+    }
+  }
+  fields.push(cur);
+  return fields;
 }
 
 function parseNayaxCSV(text) {
