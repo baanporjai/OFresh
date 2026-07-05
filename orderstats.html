@@ -735,9 +735,14 @@ function renderDeliveryList(rows, filterFn, listElId, badgeElId, emptyMsg, modal
   const locale = isTh?'th-TH':'en-US';
   document.getElementById(listElId).innerHTML = deliveries.map((r,i) => {
     const st = getStatusInfo(r.status, isTh);
-    const dateLabel = showDate && r.deliveryDate
-      ? `<span>📅 ${new Date(r.deliveryDate+'T00:00:00').toLocaleDateString(locale,{day:'2-digit',month:'short',year:'2-digit'})}</span>`
-      : '';
+    const dateLabel = showDate && r.deliveryDate ? (() => {
+      const d = new Date(r.deliveryDate+'T00:00:00');
+      const dayNum = d.toLocaleDateString(locale, {day:'2-digit'});
+      const monthYear = d.toLocaleDateString(locale, {month:'short', year:'2-digit'});
+      const weekday = d.toLocaleDateString(locale, {weekday: isTh?'long':'short'});
+      const text = isTh ? `${weekday}ที่ ${dayNum} ${monthYear}` : `${weekday}, ${dayNum} ${monthYear}`;
+      return `<span>📅 ${text}</span>`;
+    })() : '';
     return `
     <div class="delivery-row" data-id="${r.id}" onclick="${modalFn}(${i})">
       <div class="delivery-top">
