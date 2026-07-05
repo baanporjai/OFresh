@@ -9,10 +9,10 @@
  *   ORDERS_SHEET_CSV_URL   = <ลิงก์ CSV ของ Google Sheet ออเดอร์ส้ม>
  *   NAYAX_SHEET_CSV_URL    = <ลิงก์ CSV ของ Google Sheet ยอดขาย Nayax>
  *
- * ADMIN_USER_ID ตั้งค่าไว้ใน code ด้านล่างได้เลย (ไม่ใช่ข้อมูลลับ)
+ * ADMIN_GROUP_ID ตั้งค่าไว้ใน code ด้านล่างได้เลย (ไม่ใช่ข้อมูลลับ)
  */
 
-const ADMIN_USER_ID = 'Uf98128660213c82a12e8cfc382fa5243';
+const ADMIN_GROUP_ID = 'C6cb7cc0124997383e2066d971d5d0819'; // LINE group: O'Fresh_admin
 const SESSION_TTL_MS = 12 * 60 * 60 * 1000; // 12 ชั่วโมง
 
 const CORS_HEADERS = {
@@ -92,7 +92,7 @@ async function handleOrder(request, env) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        to: ADMIN_USER_ID,
+        to: ADMIN_GROUP_ID,
         messages: [{ type: 'text', text }],
       }),
     });
