@@ -694,14 +694,17 @@ function render(rows) {
   window._tomorrowDeliveries = renderDeliveryList(rows, r => r.deliveryDate === tomorrowStr && matchesSearch(r), 'tomorrowList', 'tomorrowBadge',
     isTh?'ไม่มีรายการรอจัดส่งพรุ่งนี้':'No deliveries scheduled tomorrow', 'openTomorrowModal', isTh);
 
-  // รายการค้าง — deliveryDate ผ่านมาแล้ว แต่สถานะยังไม่ใช่ delivered/cancelled
+  // รายการค้าง — deliveryDate ผ่านมาแล้ว (เลยกำหนด) หรือสั่งล่วงหน้าเกินพรุ่งนี้ (ยังไม่ถึงคิววันนี้/พรุ่งนี้)
+  // แต่สถานะยังไม่ใช่ delivered/cancelled — วันนี้/พรุ่งนี้ไม่เอามาซ้ำเพราะมี section ของตัวเองแล้ว
   const isOverdue = r => {
-    if (!r.deliveryDate || r.deliveryDate >= todayStr) return false;
+    if (!r.deliveryDate) return false;
+    if (r.deliveryDate >= todayStr && r.deliveryDate <= tomorrowStr) return false;
     const cls = getStatusInfo(r.status, isTh).cls;
     return cls !== 'delivered' && cls !== 'cancelled' && matchesSearch(r);
   };
   window._overdueDeliveries = renderDeliveryList(rows, isOverdue, 'overdueList', 'overdueBadge',
-    isTh?'ไม่มีรายการค้าง':'No overdue deliveries', 'openOverdueModal', isTh);
+    isTh?'ไม่มีรายการค้าง':'No overdue deliveries', 'openOverdueModal', isTh,
+    (a,b) => a.deliveryDate.localeCompare(b.deliveryDate), true);
 
   if (N) {
     const latest = rows.reduce((a,b)=>a.datetime>b.datetime?a:b);
@@ -723,14 +726,18 @@ function statusOptionsHTML(currentCls, isTh) {
   }).join('');
 }
 
-function renderDeliveryList(rows, filterFn, listElId, badgeElId, emptyMsg, modalFn, isTh) {
-  const deliveries = rows.filter(filterFn).sort((a,b)=>a.datetime-b.datetime);
+function renderDeliveryList(rows, filterFn, listElId, badgeElId, emptyMsg, modalFn, isTh, sortFn, showDate) {
+  const deliveries = rows.filter(filterFn).sort(sortFn || ((a,b)=>a.datetime-b.datetime));
   const totalKg = deliveries.reduce((s,r)=>s+r.qty,0);
   document.getElementById(badgeElId).textContent = deliveries.length
     ? `${deliveries.length} ${isTh?'ออเดอร์':'orders'} · ${totalKg.toLocaleString(undefined,{maximumFractionDigits:1})} ${isTh?'กก.':'kg'}`
     : `0 ${isTh?'ออเดอร์':'orders'}`;
+  const locale = isTh?'th-TH':'en-US';
   document.getElementById(listElId).innerHTML = deliveries.map((r,i) => {
     const st = getStatusInfo(r.status, isTh);
+    const dateLabel = showDate && r.deliveryDate
+      ? `<span>📅 ${new Date(r.deliveryDate+'T00:00:00').toLocaleDateString(locale,{day:'2-digit',month:'short',year:'2-digit'})}</span>`
+      : '';
     return `
     <div class="delivery-row" data-id="${r.id}" onclick="${modalFn}(${i})">
       <div class="delivery-top">
@@ -743,6 +750,7 @@ function renderDeliveryList(rows, filterFn, listElId, badgeElId, emptyMsg, modal
         <div class="delivery-total">฿${r.total.toLocaleString()}</div>
       </div>
       <div class="delivery-meta">
+        ${dateLabel}
         <span>📞 ${r.phone}</span>
         <span>📍 ${r.address}</span>
       </div>
