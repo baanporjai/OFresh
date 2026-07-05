@@ -115,12 +115,22 @@ body { font-family: 'Prompt', sans-serif; background: var(--off-white); color: v
 }
 .cust-trophy {
   display: inline-block; margin-right: 6px; font-size: 1.05rem;
-  filter: drop-shadow(0 1px 2px rgba(255,180,0,.4));
 }
-.cust-row.top-spender {
+.cust-row.rank-1 {
   border-color: rgba(255,180,0,.5);
   box-shadow: var(--shadow), 0 0 0 1px rgba(255,180,0,.25) inset;
 }
+.cust-row.rank-1 .cust-trophy { filter: drop-shadow(0 1px 2px rgba(255,180,0,.4)); }
+.cust-row.rank-2 {
+  border-color: rgba(192,192,205,.6);
+  box-shadow: var(--shadow), 0 0 0 1px rgba(160,160,175,.25) inset;
+}
+.cust-row.rank-2 .cust-trophy { filter: drop-shadow(0 1px 2px rgba(160,160,175,.4)); }
+.cust-row.rank-3 {
+  border-color: rgba(205,127,50,.5);
+  box-shadow: var(--shadow), 0 0 0 1px rgba(205,127,50,.25) inset;
+}
+.cust-row.rank-3 .cust-trophy { filter: drop-shadow(0 1px 2px rgba(205,127,50,.4)); }
 
 .empty { text-align: center; color: var(--muted); font-size: .9rem; padding: 40px 0; }
 
@@ -439,12 +449,18 @@ function renderList() {
   window._sortedCustomers = sorted;
 
   const locale = isTh ? 'th-TH' : 'en-US';
+  const rankMeta = [
+    { emoji: '🥇', th: 'อันดับ 1 ซื้อเยอะสุด', en: 'Rank 1 top spender' },
+    { emoji: '🥈', th: 'อันดับ 2 ซื้อเยอะสุด', en: 'Rank 2 top spender' },
+    { emoji: '🥉', th: 'อันดับ 3 ซื้อเยอะสุด', en: 'Rank 3 top spender' },
+  ];
   document.getElementById('custList').innerHTML = sorted.map((c,i) => {
-    const isTop = c === window._topCustomer;
+    const rankIdx = window._top3 ? window._top3.indexOf(c) : -1;
+    const meta = rankIdx > -1 ? rankMeta[rankIdx] : null;
     return `
-    <div class="cust-row${isTop ? ' top-spender' : ''}" onclick="openCustModal(${i})">
+    <div class="cust-row${meta ? ` rank-${rankIdx+1}` : ''}" onclick="openCustModal(${i})">
       <div class="cust-top">
-        <div class="cust-name">${isTop ? `<span class="cust-trophy" title="${isTh?'ซื้อเยอะที่สุด':'Top spender'}">🏆</span>` : ''}${c.name}${c.orderCount > 1 ? `<span class="cust-badge">${isTh?'ลูกค้าประจำ':'Repeat'}</span>` : ''}</div>
+        <div class="cust-name">${meta ? `<span class="cust-trophy" title="${isTh?meta.th:meta.en}">${meta.emoji}</span>` : ''}${c.name}${c.orderCount > 1 ? `<span class="cust-badge">${isTh?'ลูกค้าประจำ':'Repeat'}</span>` : ''}</div>
         <div class="cust-total">฿${c.totalRevenue.toLocaleString()}</div>
       </div>
       <div class="cust-meta">
@@ -499,7 +515,7 @@ async function load() {
     const rows = parseCSV(text);
     const customers = groupByCustomer(rows);
     window._customers = customers;
-    window._topCustomer = customers.reduce((max, c) => (!max || c.totalRevenue > max.totalRevenue) ? c : max, null);
+    window._top3 = [...customers].sort((a,b) => b.totalRevenue - a.totalRevenue).slice(0,3);
 
     const isTh = currentLang === 'th';
     const repeatCount = customers.filter(c => c.orderCount > 1).length;
