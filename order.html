@@ -461,7 +461,11 @@
     qtyInput.addEventListener('input', updatePrice);
     updatePrice();
 
-    document.getElementById('deliveryDate').min = new Date().toISOString().split('T')[0];
+    const deliveryDateInput = document.getElementById('deliveryDate');
+    deliveryDateInput.min = new Date().toISOString().split('T')[0];
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    deliveryDateInput.value = tomorrow.toISOString().split('T')[0];
 
     function getLang() {
         return localStorage.getItem('ofresh_lang') || 'th';
@@ -535,7 +539,9 @@
     function resetForm() {
         document.getElementById('orderForm').reset();
         document.getElementById('qty').value = 2;
-        document.getElementById('deliveryDate').value = '';
+        const resetTomorrow = new Date();
+        resetTomorrow.setDate(resetTomorrow.getDate() + 1);
+        document.getElementById('deliveryDate').value = resetTomorrow.toISOString().split('T')[0];
         updatePrice();
         document.getElementById('formCard').style.display = 'block';
         document.getElementById('successCard').classList.remove('show');
