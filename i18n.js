@@ -27,6 +27,13 @@ const translations = {
     stat3_label: 'เวลาคั้นต่อแก้ว',
     stat4_label: 'น้ำตาลและสารเจือปน',
 
+    // Live stats
+    live_tag: 'อัปเดตแบบเรียลไทม์จากตู้จริง',
+    live_cups_label: 'แก้วที่เสิร์ฟไปแล้ว',
+    live_cups_sub: 'จากยอดขายจริงของตู้',
+    live_hour_label: 'ชั่วโมงยอดนิยม',
+    live_hour_sub: 'ช่วงเวลาที่มีคนสั่งมากที่สุด',
+
     // Quality section
     quality_tag: 'คุณภาพระดับพรีเมียม',
     quality_h2: '',
@@ -204,6 +211,13 @@ const translations = {
     stat3_label: 'Squeezing Time',
     stat4_label: 'Sugar & Additives',
 
+    // Live stats
+    live_tag: 'Live from the machine',
+    live_cups_label: 'Cups Served',
+    live_cups_sub: 'Real sales from the machine',
+    live_hour_label: 'Busiest Hour',
+    live_hour_sub: 'When most orders happen',
+
     quality_tag: 'Premium Quality',
     quality_h2: '',
     quality_h2_pre: 'Why',
@@ -374,6 +388,13 @@ const translations = {
     stat2_label: '全程温控',
     stat3_label: '榨汁时间',
     stat4_label: '糖分及添加剂',
+
+    // Live stats
+    live_tag: '实时数据来自本机',
+    live_cups_label: '已售出杯数',
+    live_cups_sub: '实际销售数据',
+    live_hour_label: '最热门时段',
+    live_hour_sub: '订单最多的时间',
 
     quality_tag: '优质品质',
     quality_h2: '',
@@ -546,6 +567,13 @@ const translations = {
     stat3_label: '搾汁時間',
     stat4_label: '砂糖・添加物',
 
+    // Live stats
+    live_tag: '実機からのリアルタイムデータ',
+    live_cups_label: '提供済みカップ数',
+    live_cups_sub: '実際の販売実績',
+    live_hour_label: '人気の時間帯',
+    live_hour_sub: '最も注文が多い時間',
+
     quality_tag: 'プレミアム品質',
     quality_h2: '',
     quality_h2_pre: 'なぜ',
@@ -715,6 +743,13 @@ const translations = {
     stat2_label: '상시 온도 관리',
     stat3_label: '착즙 시간',
     stat4_label: '설탕 및 첨가물',
+
+    // Live stats
+    live_tag: '실제 기기의 실시간 데이터',
+    live_cups_label: '제공된 컵 수',
+    live_cups_sub: '실제 판매 데이터 기준',
+    live_hour_label: '인기 시간대',
+    live_hour_sub: '주문이 가장 많은 시간',
 
     quality_tag: '프리미엄 품질',
     quality_h2: '',

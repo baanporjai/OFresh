@@ -45,6 +45,10 @@ export default {
       return handleAdminSheetProxy(request, env, env.NAYAX_SHEET_CSV_URL);
     }
 
+    if (request.method === 'GET' && url.pathname === '/api/public/highlights') {
+      return handlePublicHighlights(request, env);
+    }
+
     return jsonResponse({ error: 'Not found' }, 404);
   },
 };
@@ -163,6 +167,56 @@ async function handleAdminSheetProxy(request, env, sheetUrl) {
   }
 }
 
+// เอนด์พอยต์สาธารณะสำหรับหน้าแรก — คืนแค่ตัวเลขสรุป (ไม่มีข้อมูลลูกค้า/ธุรกรรมดิบ) จึงไม่ต้องใช้ PIN
+async function handlePublicHighlights(request, env) {
+  if (!env.NAYAX_SHEET_CSV_URL) return jsonResponse({ error: 'Not configured' }, 500);
+
+  try {
+    const res = await fetch(env.NAYAX_SHEET_CSV_URL + (env.NAYAX_SHEET_CSV_URL.includes('?') ? '&' : '?') + 't=' + Date.now());
+    const text = await res.text();
+    const rows = parseNayaxCSV(text);
+
+    const totalCups = rows.length;
+    const hourCounts = Array(24).fill(0);
+    rows.forEach(r => hourCounts[r.datetime.getHours()]++);
+    const peakHour = hourCounts.every(c => c === 0) ? null : hourCounts.indexOf(Math.max(...hourCounts));
+
+    return jsonResponse(
+      { totalCups, peakHour },
+      200,
+      { 'Cache-Control': 'public, max-age=300' }
+    );
+  } catch (err) {
+    console.error('Public highlights error:', err);
+    return jsonResponse({ error: 'Failed to compute highlights' }, 502);
+  }
+}
+
+function parseNayaxCSV(text) {
+  const lines = text.trim().split('\n');
+  if (lines.length < 2) return [];
+  const h = lines[0].split(',').map(s => s.trim().toLowerCase().replace(/\r/g, ''));
+  const iDt = h.indexOf('machineautime'), iPrice = h.indexOf('auvalue');
+
+  function parseDt(s) {
+    if (!s) return null;
+    const [dp, tp] = s.trim().split(' ');
+    const [d, m, y] = (dp || '').split('/').map(Number);
+    const [hr, mn] = (tp || '0:0').split(':').map(Number);
+    if (!y) return null;
+    const fullYear = y < 100 ? y + 2000 : y;
+    return new Date(fullYear, m - 1, d, hr, mn || 0);
+  }
+
+  return lines.slice(1).map(line => {
+    const v = line.split(',');
+    const g = i => (v[i] || '').trim().replace(/\r/g, '');
+    const datetime = parseDt(g(iDt));
+    const price = parseFloat(g(iPrice)) || 0;
+    return { datetime, price };
+  }).filter(r => r.datetime && !isNaN(r.datetime) && r.price > 0);
+}
+
 async function verifyAuthHeader(request, env) {
   const auth = request.headers.get('Authorization') || '';
   const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
@@ -220,9 +274,9 @@ function timingSafeEqual(a, b) {
   return diff === 0;
 }
 
-function jsonResponse(data, status = 200) {
+function jsonResponse(data, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+    headers: { ...CORS_HEADERS, 'Content-Type': 'application/json', ...extraHeaders },
   });
 }
