@@ -364,6 +364,21 @@
             .live-stats-bar { padding: 40px 20px; }
             .live-stats-container { grid-template-columns: 1fr; gap: 16px; }
         }
+        .live-payment-card {
+            max-width: 640px; margin: 24px auto 0; background: white; border-radius: 20px;
+            padding: 24px 28px; box-shadow: 0 10px 40px rgba(0,0,0,0.05); border: 1px solid rgba(255,107,0,0.08);
+        }
+        .live-payment-title {
+            font-size: 15px; font-weight: 700; color: var(--text-dark);
+            margin-bottom: 18px; display: flex; align-items: center; gap: 8px;
+        }
+        .live-pay-pills { display: flex; flex-direction: column; gap: 14px; }
+        .live-pay-pill { display: grid; grid-template-columns: 32px 1fr auto; align-items: center; gap: 12px; }
+        .live-pay-emoji { font-size: 1.3rem; }
+        .live-pay-name { font-size: .85rem; font-weight: 600; color: var(--text-dark); }
+        .live-pay-bar-wrap { background: var(--gray-light); border-radius: 20px; height: 8px; margin-top: 5px; overflow: hidden; }
+        .live-pay-bar-fill { height: 100%; border-radius: 20px; transition: width .9s cubic-bezier(.4,0,.2,1); }
+        .live-pay-pct { font-size: .9rem; font-weight: 700; color: var(--text-muted); min-width: 40px; text-align: right; }
 
         /* ===== SECTION STYLES ===== */
         .section { padding: 100px 40px; }
@@ -785,8 +800,12 @@
                 <div class="live-stat-icon">⏰</div>
                 <div class="live-stat-value" id="livePeakHourValue">—</div>
                 <div class="live-stat-label" data-i18n="live_hour_label">ชั่วโมงยอดนิยม</div>
-                <div class="live-stat-sub" data-i18n="live_hour_sub">ช่วงเวลาที่มีคนสั่งมากที่สุด</div>
+                <div class="live-stat-sub" data-i18n="live_hour_sub">ช่วงเวลาที่มีคนสั่งมากที่สุดเดือนนี้</div>
             </div>
+        </div>
+        <div class="live-payment-card animate-on-scroll" id="livePaymentCard" style="display:none">
+            <div class="live-payment-title">💳 <span data-i18n="live_payment_label">วิธีชำระเงิน</span></div>
+            <div class="live-pay-pills" id="livePayPills"></div>
         </div>
     </section>
 
@@ -1153,7 +1172,45 @@ Temperature kept within 3-9°C</p>
         // Init language
         initI18n();
 
-        // Live stats — cups served & busiest hour, from the public highlights endpoint
+        // Live stats — cups served, busiest hour, payment mix — from the public highlights endpoint
+        const PAY_INFO = {
+            'mobile phone':         { key: 'pay_mobile',      emoji: '📱', color: '#8b5cf6' },
+            'contactless reader':   { key: 'pay_contactless', emoji: '💳', color: '#3b82f6' },
+            'contact reader':       { key: 'pay_chip',        emoji: '🏦', color: '#10b981' },
+            'magnetic card reader': { key: 'pay_magnetic',    emoji: '💰', color: '#f59e0b' },
+        };
+        function payLabelInfo(raw) {
+            const lang = localStorage.getItem('ofresh_lang') || 'th';
+            const info = PAY_INFO[raw.toLowerCase()] || { key: 'pay_other', emoji: '💳', color: '#6b7280' };
+            const label = (translations[lang] && translations[lang][info.key]) || raw;
+            return { label, emoji: info.emoji, color: info.color };
+        }
+        function renderLivePayments(payCounts) {
+            const entries = Object.entries(payCounts || {}).sort((a, b) => b[1] - a[1]);
+            if (!entries.length) return;
+            const total = entries.reduce((s, [, c]) => s + c, 0);
+            const max = entries[0][1];
+            document.getElementById('livePayPills').innerHTML = entries.map(([raw, cnt]) => {
+                const info = payLabelInfo(raw);
+                return `<div class="live-pay-pill">
+                    <div class="live-pay-emoji">${info.emoji}</div>
+                    <div style="min-width:0">
+                        <div class="live-pay-name">${info.label}</div>
+                        <div class="live-pay-bar-wrap"><div class="live-pay-bar-fill" style="width:${(cnt / max * 100).toFixed(1)}%;background:${info.color}"></div></div>
+                    </div>
+                    <div class="live-pay-pct">${(cnt / total * 100).toFixed(0)}%</div>
+                </div>`;
+            }).join('');
+            document.getElementById('livePaymentCard').style.display = '';
+        }
+
+        // Re-render payment labels when the user switches language
+        const _origApplyLanguage = window.applyLanguage;
+        window.applyLanguage = function(lang) {
+            _origApplyLanguage(lang);
+            if (window._livePayCounts) renderLivePayments(window._livePayCounts);
+        };
+
         (async function loadLiveStats() {
             const API_BASE = 'https://fancy-dust-060c.yai-taweewoot.workers.dev';
             try {
@@ -1164,6 +1221,10 @@ Temperature kept within 3-9°C</p>
                     typeof data.totalCups === 'number' ? data.totalCups.toLocaleString() : '—';
                 document.getElementById('livePeakHourValue').textContent =
                     typeof data.peakHour === 'number' ? `${data.peakHour}:00-${(data.peakHour + 1) % 24}:00` : '—';
+                if (data.payCounts) {
+                    window._livePayCounts = data.payCounts;
+                    renderLivePayments(data.payCounts);
+                }
             } catch (e) {
                 document.getElementById('live-stats').style.display = 'none';
             }

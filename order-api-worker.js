@@ -177,12 +177,20 @@ async function handlePublicHighlights(request, env) {
     const rows = parseNayaxCSV(text);
 
     const totalCups = rows.length;
+
+    // ชั่วโมงยอดนิยม — ดูเฉพาะเดือนปัจจุบัน (เวลาไทย) เพื่อสะท้อนพฤติกรรมล่าสุด ไม่ใช่ค่าเฉลี่ยสะสมทั้งหมด
+    const nowBangkok = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
+    const curYear = nowBangkok.getFullYear(), curMonth = nowBangkok.getMonth();
+    const monthRows = rows.filter(r => r.datetime.getFullYear() === curYear && r.datetime.getMonth() === curMonth);
     const hourCounts = Array(24).fill(0);
-    rows.forEach(r => hourCounts[r.datetime.getHours()]++);
+    monthRows.forEach(r => hourCounts[r.datetime.getHours()]++);
     const peakHour = hourCounts.every(c => c === 0) ? null : hourCounts.indexOf(Math.max(...hourCounts));
 
+    const payCounts = {};
+    rows.forEach(r => { payCounts[r.payment] = (payCounts[r.payment] || 0) + 1; });
+
     return jsonResponse(
-      { totalCups, peakHour },
+      { totalCups, peakHour, payCounts },
       200,
       { 'Cache-Control': 'public, max-age=300' }
     );
@@ -196,7 +204,7 @@ function parseNayaxCSV(text) {
   const lines = text.trim().split('\n');
   if (lines.length < 2) return [];
   const h = lines[0].split(',').map(s => s.trim().toLowerCase().replace(/\r/g, ''));
-  const iDt = h.indexOf('machineautime'), iPrice = h.indexOf('auvalue');
+  const iDt = h.indexOf('machineautime'), iPrice = h.indexOf('auvalue'), iPay = h.indexOf('card_type_desc');
 
   function parseDt(s) {
     if (!s) return null;
@@ -213,7 +221,8 @@ function parseNayaxCSV(text) {
     const g = i => (v[i] || '').trim().replace(/\r/g, '');
     const datetime = parseDt(g(iDt));
     const price = parseFloat(g(iPrice)) || 0;
-    return { datetime, price };
+    const payment = g(iPay) || 'Other';
+    return { datetime, price, payment };
   }).filter(r => r.datetime && !isNaN(r.datetime) && r.price > 0);
 }
 
