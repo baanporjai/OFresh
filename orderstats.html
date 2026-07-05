@@ -822,7 +822,7 @@ function showOrderDetail(r) {
     [isTh?'จำนวน':'Quantity', `${r.qty} ${isTh?'กก.':'kg'}`],
     [isTh?'ยอดรวม':'Total', `฿${r.total.toLocaleString()}`],
     [isTh?'ที่อยู่':'Address', r.address],
-    [isTh?'วันที่ต้องการของ':'Desired Delivery Date', r.deliveryDate],
+    [isTh?'วันที่ต้องการของ':'Desired Delivery Date', r.deliveryDate ? new Date(r.deliveryDate + 'T00:00:00').toLocaleDateString(locale,{day:'numeric',month:'long',year:'numeric'}) : ''],
     [isTh?'หมายเหตุ':'Note', r.note],
   ].filter(([,v]) => v);
 

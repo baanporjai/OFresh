@@ -69,6 +69,10 @@ async function handleOrder(request, env) {
     hour: '2-digit', minute: '2-digit',
   });
 
+  const deliveryDateText = deliveryDate
+    ? new Date(deliveryDate + 'T00:00:00').toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' })
+    : null;
+
   const text = [
     '🍊 คำสั่งซื้อส้มใหม่! O\'Fresh',
     '─────────────────',
@@ -78,7 +82,7 @@ async function handleOrder(request, env) {
     `⚖️ จำนวน: ${qty} กก.`,
     `💰 ยอดรวม: ฿${Number(total).toLocaleString()} (ไม่รวมค่าส่ง)`,
     `📍 ที่อยู่: ${address}`,
-    deliveryDate ? `📅 วันที่ต้องการของ: ${deliveryDate}` : null,
+    deliveryDateText ? `📅 วันที่ต้องการของ: ${deliveryDateText}` : null,
     note ? `📝 หมายเหตุ: ${note}` : null,
     '─────────────────',
     `🕐 ${now}`,

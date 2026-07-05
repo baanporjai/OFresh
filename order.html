@@ -476,6 +476,12 @@
         return (translations[lang] && translations[lang][key]) || translations['th'][key] || key;
     }
 
+    function formatDate(isoDate) {
+        const locale = getLang() === 'th' ? 'th-TH' : 'en-US';
+        const [y, m, d] = isoDate.split('-').map(Number);
+        return new Date(y, m - 1, d).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' });
+    }
+
     document.getElementById('orderForm').addEventListener('submit', async (e) => {
         e.preventDefault();
 
@@ -528,7 +534,7 @@
             ${data.line ? `<div class="order-summary-row"><span class="key">${t('order_summary_line')}</span><span class="val">${data.line}</span></div>` : ''}
             <div class="order-summary-row"><span class="key">${t('order_summary_qty')}</span><span class="val">${data.qty} ${qtyUnit}</span></div>
             <div class="order-summary-row"><span class="key">${t('order_summary_address')}</span><span class="val">${data.address}</span></div>
-            ${data.deliveryDate ? `<div class="order-summary-row"><span class="key">${t('order_summary_date')}</span><span class="val">${data.deliveryDate}</span></div>` : ''}
+            ${data.deliveryDate ? `<div class="order-summary-row"><span class="key">${t('order_summary_date')}</span><span class="val">${formatDate(data.deliveryDate)}</span></div>` : ''}
             ${data.note ? `<div class="order-summary-row"><span class="key">${t('order_summary_note')}</span><span class="val">${data.note}</span></div>` : ''}
             <div class="order-summary-row total"><span class="key">${t('order_summary_total')}</span><span class="val">฿${data.total.toLocaleString()}</span></div>
         `;
