@@ -113,6 +113,14 @@ body { font-family: 'Prompt', sans-serif; background: var(--off-white); color: v
   display: inline-block; margin-left: 8px; padding: 2px 9px; border-radius: 20px;
   font-size: .68rem; font-weight: 700; background: rgba(255,107,0,.1); color: var(--orange);
 }
+.cust-trophy {
+  display: inline-block; margin-right: 6px; font-size: 1.05rem;
+  filter: drop-shadow(0 1px 2px rgba(255,180,0,.4));
+}
+.cust-row.top-spender {
+  border-color: rgba(255,180,0,.5);
+  box-shadow: var(--shadow), 0 0 0 1px rgba(255,180,0,.25) inset;
+}
 
 .empty { text-align: center; color: var(--muted); font-size: .9rem; padding: 40px 0; }
 
@@ -431,10 +439,12 @@ function renderList() {
   window._sortedCustomers = sorted;
 
   const locale = isTh ? 'th-TH' : 'en-US';
-  document.getElementById('custList').innerHTML = sorted.map((c,i) => `
-    <div class="cust-row" onclick="openCustModal(${i})">
+  document.getElementById('custList').innerHTML = sorted.map((c,i) => {
+    const isTop = c === window._topCustomer;
+    return `
+    <div class="cust-row${isTop ? ' top-spender' : ''}" onclick="openCustModal(${i})">
       <div class="cust-top">
-        <div class="cust-name">${c.name}${c.orderCount > 1 ? `<span class="cust-badge">${isTh?'ลูกค้าประจำ':'Repeat'}</span>` : ''}</div>
+        <div class="cust-name">${isTop ? `<span class="cust-trophy" title="${isTh?'ซื้อเยอะที่สุด':'Top spender'}">🏆</span>` : ''}${c.name}${c.orderCount > 1 ? `<span class="cust-badge">${isTh?'ลูกค้าประจำ':'Repeat'}</span>` : ''}</div>
         <div class="cust-total">฿${c.totalRevenue.toLocaleString()}</div>
       </div>
       <div class="cust-meta">
@@ -446,7 +456,8 @@ function renderList() {
         ${isTh?'ซื้อครั้งแรก':'First order'} ${c.firstOrder.toLocaleDateString(locale,{dateStyle:'medium'})}
         ${c.orderCount > 1 ? ` · ${isTh?'ล่าสุด':'Latest'} ${c.lastOrder.toLocaleDateString(locale,{dateStyle:'medium'})}` : ''}
       </div>
-    </div>`).join('') || `<div class="empty">${isTh?'ไม่พบลูกค้า':'No customers found'}</div>`;
+    </div>`;
+  }).join('') || `<div class="empty">${isTh?'ไม่พบลูกค้า':'No customers found'}</div>`;
 }
 
 function openCustModal(i) {
@@ -488,6 +499,7 @@ async function load() {
     const rows = parseCSV(text);
     const customers = groupByCustomer(rows);
     window._customers = customers;
+    window._topCustomer = customers.reduce((max, c) => (!max || c.totalRevenue > max.totalRevenue) ? c : max, null);
 
     const isTh = currentLang === 'th';
     const repeatCount = customers.filter(c => c.orderCount > 1).length;
