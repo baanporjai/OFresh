@@ -98,7 +98,6 @@ body { font-family: 'Prompt', sans-serif; background: var(--off-white); color: v
 .kpi-mini-value { font-size: 1.5rem; font-weight: 900; color: var(--orange); margin-top: 4px; }
 .kpi-mini.clickable { cursor: pointer; transition: transform .15s, box-shadow .15s; }
 .kpi-mini.clickable:hover { transform: translateY(-2px); box-shadow: var(--shadow-orange); }
-.kpi-mini-hint { font-size: .68rem; color: var(--orange); margin-top: 6px; font-weight: 600; }
 
 .cust-list { display: flex; flex-direction: column; gap: 10px; }
 .cust-row {
@@ -320,7 +319,6 @@ footer a { color: var(--orange); text-decoration: none; }
     <div class="kpi-mini clickable" onclick="openRepeatModal()">
       <div class="kpi-mini-label" data-th="ลูกค้าซื้อซ้ำ" data-en="Repeat Customers">ลูกค้าซื้อซ้ำ</div>
       <div class="kpi-mini-value" id="kpiRepeat">—</div>
-      <div class="kpi-mini-hint" data-th="ดูรายละเอียด →" data-en="View details →">ดูรายละเอียด →</div>
     </div>
     <div class="kpi-mini">
       <div class="kpi-mini-label" data-th="เฉลี่ยครั้ง/คน" data-en="Avg Orders/Customer">เฉลี่ยครั้ง/คน</div>
