@@ -96,6 +96,9 @@ body { font-family: 'Prompt', sans-serif; background: var(--off-white); color: v
 }
 .kpi-mini-label { font-size: .68rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); font-weight: 600; }
 .kpi-mini-value { font-size: 1.5rem; font-weight: 900; color: var(--orange); margin-top: 4px; }
+.kpi-mini.clickable { cursor: pointer; transition: transform .15s, box-shadow .15s; }
+.kpi-mini.clickable:hover { transform: translateY(-2px); box-shadow: var(--shadow-orange); }
+.kpi-mini-hint { font-size: .68rem; color: var(--orange); margin-top: 6px; font-weight: 600; }
 
 .cust-list { display: flex; flex-direction: column; gap: 10px; }
 .cust-row {
@@ -160,6 +163,21 @@ body { font-family: 'Prompt', sans-serif; background: var(--off-white); color: v
 .hist-row:last-child { border-bottom: none; }
 .hist-top { display: flex; justify-content: space-between; font-weight: 700; }
 .hist-meta { color: var(--muted); font-size: .78rem; margin-top: 3px; }
+
+/* ── REPEAT CUSTOMERS MODAL ── */
+.repeat-stats { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; margin-bottom: 18px; }
+.repeat-stat { background: var(--gray); border-radius: 12px; padding: 12px 14px; }
+.repeat-stat-label { font-size: .68rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }
+.repeat-stat-value { font-size: 1.15rem; font-weight: 800; color: var(--orange); margin-top: 2px; }
+.repeat-row {
+  display: flex; justify-content: space-between; align-items: center; gap: 10px;
+  padding: 11px 0; border-bottom: 1px solid var(--gray); cursor: pointer; transition: background .15s;
+}
+.repeat-row:last-child { border-bottom: none; }
+.repeat-row:hover { background: rgba(255,107,0,.05); }
+.repeat-row-name { font-weight: 700; font-size: .88rem; color: var(--text); }
+.repeat-row-meta { font-size: .76rem; color: var(--muted); margin-top: 2px; }
+.repeat-row-total { font-weight: 800; font-size: .9rem; color: var(--orange); white-space: nowrap; }
 
 #loading {
   position: fixed; inset: 0;
@@ -299,9 +317,10 @@ footer a { color: var(--orange); text-decoration: none; }
       <div class="kpi-mini-label" data-th="ลูกค้าทั้งหมด" data-en="Total Customers">ลูกค้าทั้งหมด</div>
       <div class="kpi-mini-value" id="kpiCustomers">—</div>
     </div>
-    <div class="kpi-mini">
+    <div class="kpi-mini clickable" onclick="openRepeatModal()">
       <div class="kpi-mini-label" data-th="ลูกค้าซื้อซ้ำ" data-en="Repeat Customers">ลูกค้าซื้อซ้ำ</div>
       <div class="kpi-mini-value" id="kpiRepeat">—</div>
+      <div class="kpi-mini-hint" data-th="ดูรายละเอียด →" data-en="View details →">ดูรายละเอียด →</div>
     </div>
     <div class="kpi-mini">
       <div class="kpi-mini-label" data-th="เฉลี่ยครั้ง/คน" data-en="Avg Orders/Customer">เฉลี่ยครั้ง/คน</div>
@@ -334,6 +353,26 @@ footer a { color: var(--orange); text-decoration: none; }
   </div>
 </div>
 
+<!-- REPEAT CUSTOMERS MODAL -->
+<div class="modal-overlay" id="repeatModal" onclick="if(event.target===this) closeRepeatModal()">
+  <div class="modal-card">
+    <button class="modal-close" onclick="closeRepeatModal()">✕</button>
+    <div class="modal-title" data-th="ลูกค้าซื้อซ้ำ" data-en="Repeat Customers">ลูกค้าซื้อซ้ำ</div>
+    <div class="modal-sub" id="repeatModalSub">—</div>
+    <div class="repeat-stats">
+      <div class="repeat-stat">
+        <div class="repeat-stat-label" data-th="สัดส่วนลูกค้า" data-en="Share of Customers">สัดส่วนลูกค้า</div>
+        <div class="repeat-stat-value" id="repeatRateValue">—</div>
+      </div>
+      <div class="repeat-stat">
+        <div class="repeat-stat-label" data-th="สัดส่วนยอดขาย" data-en="Share of Revenue">สัดส่วนยอดขาย</div>
+        <div class="repeat-stat-value" id="repeatRevenueShareValue">—</div>
+      </div>
+    </div>
+    <div id="repeatList"></div>
+  </div>
+</div>
+
 <footer>
   <p>🍊 O'Fresh · <a href="https://ofresh.baanporjai.com">ofresh.baanporjai.com</a></p>
 </footer>
@@ -349,6 +388,7 @@ function setLang(lang) {
   document.querySelectorAll('[data-th-placeholder]').forEach(el => el.placeholder = el.getAttribute(`data-${lang}-placeholder`));
   document.documentElement.lang = lang;
   if (window._customers) renderList();
+  if (document.getElementById('repeatModal').classList.contains('show')) openRepeatModal();
 }
 
 // แยกฟิลด์ CSV แบบรองรับ field ที่ครอบด้วย "..." ซึ่งอาจมี comma อยู่ข้างในได้
@@ -479,6 +519,10 @@ function renderList() {
 function openCustModal(i) {
   const c = window._sortedCustomers[i];
   if (!c) return;
+  showCustomerHistory(c);
+}
+
+function showCustomerHistory(c) {
   const isTh = currentLang === 'th';
   const locale = isTh ? 'th-TH' : 'en-US';
   document.getElementById('modalTitle').textContent = c.name;
@@ -498,6 +542,38 @@ function openCustModal(i) {
 }
 function closeCustModal() {
   document.getElementById('custModal').classList.remove('show');
+}
+
+function openRepeatModal() {
+  const isTh = currentLang === 'th';
+  const locale = isTh ? 'th-TH' : 'en-US';
+  const all = window._customers || [];
+  const repeats = all.filter(c => c.orderCount > 1).sort((a,b) => b.totalRevenue - a.totalRevenue);
+
+  const totalRevenue = all.reduce((s,c) => s + c.totalRevenue, 0);
+  const repeatRevenue = repeats.reduce((s,c) => s + c.totalRevenue, 0);
+  const rate = all.length ? (repeats.length / all.length * 100) : 0;
+  const revenueShare = totalRevenue ? (repeatRevenue / totalRevenue * 100) : 0;
+
+  document.getElementById('repeatModalSub').textContent =
+    `${repeats.length} ${isTh?'คน จากลูกค้าทั้งหมด':'customers out of'} ${all.length} ${isTh?'':'total'}`;
+  document.getElementById('repeatRateValue').textContent = `${rate.toFixed(0)}%`;
+  document.getElementById('repeatRevenueShareValue').textContent = `${revenueShare.toFixed(0)}%`;
+
+  document.getElementById('repeatList').innerHTML = repeats.map((c, i) => `
+    <div class="repeat-row" onclick="closeRepeatModal(); showCustomerHistory(window._repeatCustomers[${i}]);">
+      <div>
+        <div class="repeat-row-name">${c.name}</div>
+        <div class="repeat-row-meta">📦 ${c.orderCount} ${isTh?'ครั้ง':'orders'} · ${isTh?'ล่าสุด':'Latest'} ${c.lastOrder.toLocaleDateString(locale,{dateStyle:'medium'})}</div>
+      </div>
+      <div class="repeat-row-total">฿${c.totalRevenue.toLocaleString()}</div>
+    </div>`).join('') || `<div class="empty">${isTh?'ไม่มีลูกค้าซื้อซ้ำ':'No repeat customers yet'}</div>`;
+
+  window._repeatCustomers = repeats;
+  document.getElementById('repeatModal').classList.add('show');
+}
+function closeRepeatModal() {
+  document.getElementById('repeatModal').classList.remove('show');
 }
 
 async function load() {
