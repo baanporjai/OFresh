@@ -1,0 +1,18 @@
+{
+  "name": "O'Fresh - น้ำส้มคั้นสดอัตโนมัติ",
+  "short_name": "O'Fresh",
+  "description": "สั่งซื้อส้มผลสดและดูข้อมูลตู้น้ำส้มคั้นสดอัตโนมัติ O'Fresh",
+  "start_url": "/index.html",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#FFF8F0",
+  "theme_color": "#FF6B00",
+  "lang": "th",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
