@@ -15,7 +15,7 @@
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://ofresh.baanporjai.com/order.html">
        <meta property="og:title"       content="สั่งซื้อส้มแมนดาริน O'Fresh | ส่งฟรี อ.เมือง เชียงใหม่ ฿60/กก.">
-        <meta property="og:description"  content="ส้มแมนดารินไต้หวันคุณภาพพรีเมียม ราคา 60 บาท/กก. สั่งขั้นต่ำ 2 กก. จัดส่งฟรีใน อ.เมือง เชียงใหม่">
+        <meta property="og:description"  content="ส้มแมนดารินไต้หวันคุณภาพพรีเมียม ราคา 60 บาท/กก. สั่งขั้นต่ำ 1 กก. จัดส่งฟรีใน อ.เมือง เชียงใหม่">
     <meta property="og:image" content="https://ofresh.baanporjai.com/OFresh_Logo_transparent.png">
     <meta property="og:locale" content="th_TH">
     <meta property="og:site_name" content="O'Fresh">
@@ -23,7 +23,7 @@
 <!-- ═══ Twitter / X Card ═══ -->
 <meta name="twitter:card"       content="summary_large_image">
 <meta name="twitter:title"      content="สั่งซื้อส้มแมนดาริน O'Fresh | ส่งฟรี อ.เมือง เชียงใหม่ ฿60/กก.">
-<meta name="twitter:description" content="ส้มแมนดารินไต้หวันคุณภาพพรีเมียม ราคา 60 บาท/กก. สั่งขั้นต่ำ 2 กก. จัดส่งฟรีใน อ.เมือง เชียงใหม่">
+<meta name="twitter:description" content="ส้มแมนดารินไต้หวันคุณภาพพรีเมียม ราคา 60 บาท/กก. สั่งขั้นต่ำ 1 กก. จัดส่งฟรีใน อ.เมือง เชียงใหม่">
 <meta name="twitter:image"      content="https://ofresh.baanporjai.com/ofresh-orange-order.jpg">
 <meta name="twitter:image:alt"  content="ส้มแมนดารินไต้หวัน O'Fresh สั่งซื้อออนไลน์ ส่งฟรีเชียงใหม่">
 
@@ -423,7 +423,7 @@
                 <label><span data-i18n="order_qty_label">จำนวน (กิโลกรัม)</span> <span class="required">*</span></label>
                 <div class="qty-wrap">
                     <button type="button" class="qty-btn" onclick="changeQty(-1)">−</button>
-                    <input type="number" id="qty" class="qty-input" value="2" min="2" max="50" step="1" required>
+                    <input type="number" id="qty" class="qty-input" value="2" min="1" max="50" step="1" required>
                     <button type="button" class="qty-btn" onclick="changeQty(1)">+</button>
                 </div>
                 <div class="price-calc">
@@ -499,7 +499,7 @@
 
     function changeQty(delta) {
         let val = parseInt(qtyInput.value) || 0;
-        val = Math.min(50, Math.max(2, val + delta));
+        val = Math.min(50, Math.max(1, val + delta));
         qtyInput.value = val;
         updatePrice();
     }
@@ -543,7 +543,7 @@
             alert(t('order_err_required'));
             return;
         }
-        if (qty < 2) { alert(t('order_err_min')); return; }
+        if (qty < 1) { alert(t('order_err_min')); return; }
         if (qty > 50) { alert(t('order_err_max')); return; }
 
         const total = qty * 60;
