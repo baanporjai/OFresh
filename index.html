@@ -135,16 +135,6 @@
 
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
-
-    <!-- ═══ PWA — ติดตั้งเป็นแอปบน Android/iOS ได้จาก Chrome/Safari ═══ -->
-    <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#FF6B00">
-    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="O'Fresh">
-
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
@@ -1161,11 +1151,6 @@ Temperature kept within 3-9°C</p>
 
         // Init language
         initI18n();
-
-        // Register service worker so the site can be installed as an app on Android/iOS
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js'));
-        }
 
         // Live stats — cups served & busiest hour, from the public highlights endpoint
         (async function loadLiveStats() {

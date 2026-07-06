@@ -1,8 +1,10 @@
-const CACHE_NAME = 'ofresh-v1';
+const CACHE_NAME = 'ofresh-v2';
+// ต้องเป็น URL ปลายทางจริง (ไม่ใช่ URL ที่ Cloudflare Pages 307-redirect ต่อ)
+// เพราะ Cache API ห้าม cache response ที่มาจาก redirect — ถ้าใส่ URL ที่ redirect ไป install จะ fail ทั้งหมด
 const APP_SHELL = [
-  '/index.html',
-  '/order.html',
-  '/i18n.js',
+  '/stats',
+  '/orderstats',
+  '/customers',
   '/manifest.json',
   '/OFresh_Logo_transparent.png',
   '/icons/icon-192.png',
@@ -11,7 +13,9 @@ const APP_SHELL = [
 
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL))
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(APP_SHELL))
+      .catch(err => console.error('App shell caching failed:', err))
   );
   self.skipWaiting();
 });

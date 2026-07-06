@@ -4,6 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>O'Fresh Stats — ตัวเลขที่พูดแทนเรา</title>
+
+<!-- ═══ PWA — ติดตั้งเป็นแอปสำหรับแอดมิน บน Android/iOS ═══ -->
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#FF6B00">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="O'Fresh Admin">
+
 <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
@@ -976,6 +986,11 @@ async function load(force) {
 }
 
 if (sessionStorage.getItem('ofresh_admin_token')) load();
+
+// Register service worker so the admin dashboard can be installed as an app
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js'));
+}
 </script>
 </body>
 </html>

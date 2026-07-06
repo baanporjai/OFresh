@@ -1,8 +1,8 @@
 {
-  "name": "O'Fresh - น้ำส้มคั้นสดอัตโนมัติ",
-  "short_name": "O'Fresh",
-  "description": "สั่งซื้อส้มผลสดและดูข้อมูลตู้น้ำส้มคั้นสดอัตโนมัติ O'Fresh",
-  "start_url": "/index.html",
+  "name": "O'Fresh Admin - แดชบอร์ดผู้ดูแล",
+  "short_name": "O'Fresh Admin",
+  "description": "แดชบอร์ดผู้ดูแล O'Fresh - ยอดขายตู้ ยอดสั่งซื้อส้ม และประวัติลูกค้า",
+  "start_url": "/stats",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
