@@ -27,3 +27,8 @@ node_modules/
 # ไฟล์ระบบของแต่ละเครื่อง
 .DS_Store
 Thumbs.db
+
+.dev.vars*
+!.dev.vars.example
+.env*
+!.env.example
