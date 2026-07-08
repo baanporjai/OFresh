@@ -216,6 +216,25 @@
             box-shadow: 0 2px 8px rgba(255,107,0,0.3);
         }
 
+        /* ===== VIDEO TABS ===== */
+        .video-tabs {
+            display: flex; align-items: center; justify-content: center; gap: 4px;
+            background: rgba(0,0,0,0.05); border-radius: 50px; padding: 4px;
+            max-width: fit-content; margin: 0 auto 16px;
+        }
+        .video-tab {
+            background: none; border: none; cursor: pointer;
+            font-size: 13px; font-weight: 700; padding: 6px 16px;
+            border-radius: 50px; color: var(--text-muted);
+            font-family: 'Prompt','Inter',sans-serif;
+            transition: all 0.2s;
+        }
+        .video-tab:hover { color: var(--orange-primary); }
+        .video-tab.active {
+            background: var(--orange-primary); color: white;
+            box-shadow: 0 2px 8px rgba(255,107,0,0.3);
+        }
+
         .mobile-toggle {
             display: none; background: none; border: none;
             font-size: 24px; color: var(--text-dark); cursor: pointer;
@@ -978,8 +997,17 @@
             <h2 data-i18n="video_h2">ชมตู้น้ำส้มคั้นสด O'Fresh ทำงานจริง</h2>
             <p data-i18n="video_p">คลิปสั้นๆ ให้เห็นภาพการคั้นสดแบบสดๆ ต่อหน้า</p>
         </div>
+        <div class="video-tabs">
+            <button class="video-tab active" data-video-tab="1" onclick="showVideoTab(1)">1</button>
+            <button class="video-tab" data-video-tab="2" onclick="showVideoTab(2)">2</button>
+        </div>
         <div style="max-width:400px;margin:0 auto">
-            <div class="fb-video" data-href="https://www.facebook.com/reel/770215659427405/" data-width="400" data-show-text="false" data-allowfullscreen="true"></div>
+            <div class="video-panel" data-video-panel="1">
+                <div class="fb-video" data-href="https://www.facebook.com/reel/770215659427405/" data-width="400" data-show-text="false" data-allowfullscreen="true"></div>
+            </div>
+            <div class="video-panel" data-video-panel="2" style="display:none">
+                <div class="fb-video" data-href="https://www.facebook.com/reel/682463241522622/" data-width="400" data-show-text="false" data-allowfullscreen="true"></div>
+            </div>
         </div>
     </section>
 
@@ -1132,6 +1160,16 @@ Temperature kept within 3-9°C</p>
         // Mobile nav toggle
         function toggleNav() {
             document.getElementById('navLinks').classList.toggle('active');
+        }
+
+        // Switch between the two embedded Facebook videos
+        function showVideoTab(n) {
+            document.querySelectorAll('.video-panel').forEach(el => {
+                el.style.display = el.dataset.videoPanel == n ? '' : 'none';
+            });
+            document.querySelectorAll('.video-tab').forEach(el => {
+                el.classList.toggle('active', el.dataset.videoTab == n);
+            });
         }
 
         document.querySelectorAll('.nav-links a').forEach(link => {
