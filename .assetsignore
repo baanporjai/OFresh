@@ -1,0 +1,12 @@
+# Not part of the public website — excluded from the Worker's static assets upload
+LINE OA Chatbot/
+_archive/
+business-data/
+Design/
+Facebook Post/
+node_modules/
+.git/
+.wrangler/
+*.py
+*.gs
+*.md
