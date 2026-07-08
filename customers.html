@@ -516,8 +516,8 @@ function renderList() {
         <span>📞 ${c.phone || '—'}</span>
         <span>📦 ${c.orderCount} ${isTh?'ครั้ง':'orders'}</span>
         <span>⚖️ ${c.totalQty.toLocaleString(undefined,{maximumFractionDigits:1})} ${isTh?'กก.':'kg'}</span>
+        ${c.address ? `<span>📍 ${c.address}</span>` : ''}
       </div>
-      ${c.address ? `<div class="cust-dates">📍 ${c.address}</div>` : ''}
       <div class="cust-dates">
         ${isTh?'ซื้อครั้งแรก':'First order'} ${c.firstOrder.toLocaleDateString(locale,{dateStyle:'medium'})}
         ${c.orderCount > 1 ? ` · ${isTh?'ล่าสุด':'Latest'} ${c.lastOrder.toLocaleDateString(locale,{dateStyle:'medium'})}` : ''}
