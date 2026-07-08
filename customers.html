@@ -460,6 +460,7 @@ function groupByCustomer(rows) {
     return {
       name: orders[0].name,
       phone: orders[0].phone,
+      address: orders[0].address,
       orders,
       orderCount: orders.length,
       totalQty: orders.reduce((s,o)=>s+o.qty,0),
@@ -516,6 +517,7 @@ function renderList() {
         <span>📦 ${c.orderCount} ${isTh?'ครั้ง':'orders'}</span>
         <span>⚖️ ${c.totalQty.toLocaleString(undefined,{maximumFractionDigits:1})} ${isTh?'กก.':'kg'}</span>
       </div>
+      ${c.address ? `<div class="cust-dates">📍 ${c.address}</div>` : ''}
       <div class="cust-dates">
         ${isTh?'ซื้อครั้งแรก':'First order'} ${c.firstOrder.toLocaleDateString(locale,{dateStyle:'medium'})}
         ${c.orderCount > 1 ? ` · ${isTh?'ล่าสุด':'Latest'} ${c.lastOrder.toLocaleDateString(locale,{dateStyle:'medium'})}` : ''}
@@ -535,7 +537,8 @@ function showCustomerHistory(c) {
   const locale = isTh ? 'th-TH' : 'en-US';
   document.getElementById('modalTitle').textContent = c.name;
   document.getElementById('modalSub').textContent =
-    `📞 ${c.phone || '—'} · ${c.orderCount} ${isTh?'ครั้ง':'orders'} · ฿${c.totalRevenue.toLocaleString()} · ${c.totalQty.toLocaleString(undefined,{maximumFractionDigits:1})} ${isTh?'กก.':'kg'}`;
+    `📞 ${c.phone || '—'} · ${c.orderCount} ${isTh?'ครั้ง':'orders'} · ฿${c.totalRevenue.toLocaleString()} · ${c.totalQty.toLocaleString(undefined,{maximumFractionDigits:1})} ${isTh?'กก.':'kg'}` +
+    (c.address ? ` · 📍 ${c.address}` : '');
 
   document.getElementById('modalBody').innerHTML = c.orders.map(o => `
     <div class="hist-row">
