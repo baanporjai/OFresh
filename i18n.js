@@ -112,6 +112,11 @@ const translations = {
     footer_privacy: 'นโยบายความเป็นส่วนตัว',
     footer_copy: '© 2026 O\'Fresh. All rights reserved. น้ำส้มคั้นสดอัตโนมัติ',
 
+    // Video
+    video_tag: 'วิดีโอ',
+    video_h2: 'ชมตู้น้ำส้มคั้นสด O\'Fresh ทำงานจริง',
+    video_p: 'คลิปสั้นๆ ให้เห็นภาพการคั้นสดแบบสดๆ ต่อหน้า',
+
     // Reviews
     reviews_tag: 'รีวิวจากลูกค้า',
     reviews_h2_pre: 'ลูกค้าพูดถึง',
@@ -295,6 +300,11 @@ const translations = {
     footer_news: 'News',
     footer_privacy: 'Privacy Policy',
     footer_copy: '© 2026 O\'Fresh. All rights reserved.',
+
+    // Video
+    video_tag: 'Video',
+    video_h2: 'See O\'Fresh in action',
+    video_p: 'A short clip showing the juice being freshly squeezed in real time',
 
     // Reviews
     reviews_tag: 'Customer Reviews',
@@ -480,6 +490,11 @@ const translations = {
     footer_privacy: '隐私政策',
     footer_copy: '© 2026 O\'Fresh. 版权所有。',
 
+    // Video
+    video_tag: '视频',
+    video_h2: '看看 O\'Fresh 现榨果汁的实况',
+    video_p: '短片带你看现场新鲜压榨的过程',
+
     // Reviews
     reviews_tag: '顾客评价',
     reviews_h2_pre: '顾客怎么评价',
@@ -664,6 +679,11 @@ const translations = {
     footer_privacy: 'プライバシーポリシー',
     footer_copy: '© 2026 O\'Fresh. All rights reserved.',
 
+    // Video
+    video_tag: '動画',
+    video_h2: 'O\'Fresh のできたてジュースをご覧ください',
+    video_p: 'その場で搾りたてのオレンジジュースができる様子を短い動画でご紹介',
+
     // Reviews
     reviews_tag: 'お客様の声',
     reviews_h2_pre: '',
@@ -846,6 +866,11 @@ const translations = {
     footer_news: '뉴스',
     footer_privacy: '개인정보 처리방침',
     footer_copy: '© 2026 O\'Fresh. All rights reserved.',
+
+    // Video
+    video_tag: '동영상',
+    video_h2: 'O\'Fresh가 즉석에서 만들어지는 모습을 확인하세요',
+    video_p: '눈앞에서 바로 착즙하는 모습을 담은 짧은 영상',
 
     // Reviews
     reviews_tag: '고객 후기',
