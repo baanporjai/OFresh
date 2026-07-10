@@ -526,6 +526,7 @@ function orderRowHTML(o, opts) {
   opts = opts || {};
   const status = o.status || "รอยืนยัน";
   const row = String(o._row || "");
+  const id = String(o.id || "");
   const dateLabel = opts.showDate ? (() => {
     const d = getDeliveryDateOnly(o);
     return d ? `<div class="order-date-label">📅 ${formatDateTH(d)}</div>` : "";
@@ -538,17 +539,17 @@ function orderRowHTML(o, opts) {
         <div class="order-meta">📞 ${o.phone || "-"} &nbsp;·&nbsp; 📍 ${o.address && o.address !== "-" ? o.address : "รับที่ร้าน"}</div>
         <div class="order-items">🛍 ${o.items || "-"}</div>
         ${o.note && o.note !== "-" ? `<div class="order-note">📝 ${o.note}</div>` : ""}
-        <select class="status-select status-${status}" data-current="${status}" onchange="updateStatus(this,'${row}')">${statusOptionsHTML(status)}</select>
+        <select class="status-select status-${status}" data-current="${status}" onchange="updateStatus(this,'${row}','${id}')">${statusOptionsHTML(status)}</select>
       </div>
       <div class="order-total">${o.total}</div>
     </div>`;
 }
 
-async function updateStatus(selectEl, row) {
+async function updateStatus(selectEl, row, id) {
   const previous = selectEl.dataset.current || selectEl.value;
   const next = selectEl.value;
 
-  if (!row) {
+  if (!row && !id) {
     alert("บันทึกสถานะไม่สำเร็จ: ไม่พบหมายเลขแถวของออเดอร์นี้ กรุณารีเฟรชหน้าแล้วลองใหม่");
     selectEl.value = previous;
     return;
@@ -563,7 +564,7 @@ async function updateStatus(selectEl, row) {
     const res = await fetch(API_BASE + "/api/admin/update-status", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ row: Number(row), status: next }),
+      body: JSON.stringify({ row: row ? Number(row) : undefined, id: id || undefined, status: next }),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     selectEl.dataset.current = next;
