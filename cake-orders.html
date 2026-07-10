@@ -281,9 +281,10 @@ const API_BASE = "https://larnaapi.yai-taweewoot.workers.dev";
   }
   .status-select:disabled { opacity: .6; cursor: wait; }
   .status-รอยืนยัน   { background-color: #F7E7C4; color: #8A6215; }
-  .status-จัดเตรียมแล้ว { background-color: #DCF1F8; color: var(--frost-deep); }
+  .status-ยืนยันแล้ว  { background-color: #DCF1F8; color: var(--frost-deep); }
   .status-แพ็คแล้ว    { background-color: #EAE0F4; color: #6B3FA0; }
-  .status-ส่งแล้ว    { background-color: #DCEFDF; color: #1E7A3C; }
+  .status-จัดส่งแล้ว   { background-color: #DCEFDF; color: #1E7A3C; }
+  .status-ยกเลิก     { background-color: #E5E0DA; color: var(--choco-soft); }
   .order-row.sent .order-name,
   .order-row.sent .order-items { opacity: 0.4; }
 
@@ -510,7 +511,12 @@ function closeModal(e) {
 
 document.addEventListener("keydown", e => { if (e.key === "Escape") document.getElementById("modalOverlay").classList.remove("open"); });
 
-const STATUS_CODES = ["รอยืนยัน", "จัดเตรียมแล้ว", "แพ็คแล้ว", "ส่งแล้ว"];
+const STATUS_CODES = ["รอยืนยัน", "ยืนยันแล้ว", "แพ็คแล้ว", "จัดส่งแล้ว", "ยกเลิก"];
+
+// "จบเรื่องแล้ว" ไม่ต้องดำเนินการต่อ — ใช้จุดเดียวเทียบสถานะ แทนการเทียบ string "จัดส่งแล้ว" กระจายอยู่หลายที่
+function isFinalStatus(status) {
+  return status === "จัดส่งแล้ว" || status === "ยกเลิก";
+}
 
 function statusOptionsHTML(current) {
   return STATUS_CODES.map(code => `<option value="${code}" ${code === current ? "selected" : ""}>${code}</option>`).join("");
@@ -525,7 +531,7 @@ function orderRowHTML(o, opts) {
     return d ? `<div class="order-date-label">📅 ${formatDateTH(d)}</div>` : "";
   })() : "";
   return `
-    <div class="order-row${status === 'ส่งแล้ว' ? ' sent' : ''}${opts.urgent ? ' urgent' : ''}">
+    <div class="order-row${isFinalStatus(status) ? ' sent' : ''}${opts.urgent ? ' urgent' : ''}">
       <div>
         <div class="order-name">${o.name || "-"}</div>
         ${dateLabel}
@@ -550,7 +556,7 @@ async function updateStatus(selectEl, row) {
 
   selectEl.className = `status-select status-${next}`;
   const orderRow = selectEl.closest(".order-row");
-  if (orderRow) orderRow.classList.toggle("sent", next === "ส่งแล้ว");
+  if (orderRow) orderRow.classList.toggle("sent", isFinalStatus(next));
   selectEl.disabled = true;
   try {
     const token = sessionStorage.getItem("dash_token");
@@ -566,7 +572,7 @@ async function updateStatus(selectEl, row) {
     alert("บันทึกสถานะไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
     selectEl.value = previous;
     selectEl.className = `status-select status-${previous}`;
-    if (orderRow) orderRow.classList.toggle("sent", previous === "ส่งแล้ว");
+    if (orderRow) orderRow.classList.toggle("sent", isFinalStatus(previous));
   } finally {
     selectEl.disabled = false;
   }
@@ -608,6 +614,7 @@ function parseItems(str) {
 }
 
 function isTodayOrder(o) {
+  if (o.status === "ยกเลิก") return false;
   const today = todayISO();
   if (o.date && o.date !== "-" && String(o.date).slice(0, 10) === today) return true;
   const ts = parseTimestamp(o.timestamp);
@@ -629,6 +636,7 @@ function getDeliveryDateOnly(o) {
 }
 
 function isTomorrowOrder(o) {
+  if (o.status === "ยกเลิก") return false;
   return getDeliveryDateOnly(o) === tomorrowISO();
 }
 
@@ -638,9 +646,7 @@ function isOverdueOrder(o) {
   const d = getDeliveryDateOnly(o);
   if (!d) return false;
   if (d >= todayISO() && d <= tomorrowISO()) return false;
-  const status = o.status || "";
-  if (status.includes("ยกเลิก")) return false;
-  return status !== "ส่งแล้ว";
+  return !isFinalStatus(o.status || "");
 }
 
 function formatDateTH(iso) {
