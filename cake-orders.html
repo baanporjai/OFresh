@@ -532,28 +532,41 @@ function orderRowHTML(o, opts) {
         <div class="order-meta">📞 ${o.phone || "-"} &nbsp;·&nbsp; 📍 ${o.address && o.address !== "-" ? o.address : "รับที่ร้าน"}</div>
         <div class="order-items">🛍 ${o.items || "-"}</div>
         ${o.note && o.note !== "-" ? `<div class="order-note">📝 ${o.note}</div>` : ""}
-        <select class="status-select status-${status}" onchange="updateStatus(this,'${row}')">${statusOptionsHTML(status)}</select>
+        <select class="status-select status-${status}" data-current="${status}" onchange="updateStatus(this,'${row}')">${statusOptionsHTML(status)}</select>
       </div>
       <div class="order-total">${o.total}</div>
     </div>`;
 }
 
 async function updateStatus(selectEl, row) {
+  const previous = selectEl.dataset.current || selectEl.value;
   const next = selectEl.value;
+
+  if (!row) {
+    alert("บันทึกสถานะไม่สำเร็จ: ไม่พบหมายเลขแถวของออเดอร์นี้ กรุณารีเฟรชหน้าแล้วลองใหม่");
+    selectEl.value = previous;
+    return;
+  }
+
   selectEl.className = `status-select status-${next}`;
   const orderRow = selectEl.closest(".order-row");
   if (orderRow) orderRow.classList.toggle("sent", next === "ส่งแล้ว");
-  if (!row) return;
   selectEl.disabled = true;
   try {
     const token = sessionStorage.getItem("dash_token");
-    await fetch(API_BASE + "/api/admin/update-status", {
+    const res = await fetch(API_BASE + "/api/admin/update-status", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({ row: Number(row), status: next }),
     });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    selectEl.dataset.current = next;
   } catch(e) {
     console.log("Status update failed:", e);
+    alert("บันทึกสถานะไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
+    selectEl.value = previous;
+    selectEl.className = `status-select status-${previous}`;
+    if (orderRow) orderRow.classList.toggle("sent", previous === "ส่งแล้ว");
   } finally {
     selectEl.disabled = false;
   }
