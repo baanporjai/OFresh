@@ -1,9 +1,12 @@
-const SHEET_ID = '<ใส่ Spreadsheet ID ของชีตต้นทุน/ค่าใช้จ่ายที่สร้างใหม่>';
+// ใช้สเปรดชีตเดิม (เช่นชีตออเดอร์ส้ม) แล้วเพิ่มแท็บใหม่ก็ได้ — ใส่ ID สเปรดชีตที่จะใช้ตรงนี้
+const SHEET_ID = '<ใส่ Spreadsheet ID ของสเปรดชีต (ใหม่หรือของเดิมก็ได้)>';
+// ชื่อแท็บ (sheet tab) ที่เก็บข้อมูลต้นทุน/ค่าใช้จ่ายจริงๆ — ต้องระบุชื่อเจาะจง
+// ห้ามใช้ getSheets()[0] เหมือน order-sheet-script.gs เพราะถ้าใช้สเปรดชีตร่วมกับออเดอร์
+// แท็บแรก (index 0) จะเป็นแท็บออเดอร์ ไม่ใช่แท็บต้นทุน/ค่าใช้จ่าย — จะเขียนข้อมูลผิดที่ทันที
+const SHEET_NAME = 'Expenses';
 
 function doPost(e) {
-  // เปิดสเปรดชีตด้วย ID ตรงๆ เหมือน order-sheet-script.gs — ทำงานได้แน่นอนไม่ว่า
-  // deployment จะถูกสร้างแบบ container-bound หรือ standalone ก็ตาม
-  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheets()[0];
+  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME);
   const data = JSON.parse(e.postData.contents);
 
   // อ่านหัวคอลัมน์จริงจากแถวแรกของชีต แล้วจับคู่ค่าตามชื่อคอลัมน์เสมอ
