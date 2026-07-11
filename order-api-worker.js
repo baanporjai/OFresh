@@ -8,6 +8,8 @@
  *   SESSION_SECRET         = <ค่าสุ่มยาวๆ ใช้เซ็นชื่อ session token>
  *   ORDERS_SHEET_CSV_URL   = <ลิงก์ CSV ของ Google Sheet ออเดอร์ส้ม>
  *   NAYAX_SHEET_CSV_URL    = <ลิงก์ CSV ของ Google Sheet ยอดขาย Nayax>
+ *   EXPENSES_SHEET_CSV_URL    = <ลิงก์ CSV ของ Google Sheet ต้นทุน/ค่าใช้จ่าย>
+ *   EXPENSE_SHEET_WEBHOOK_URL = <Apps Script webhook สำหรับบันทึก/แก้ไข/ลบ รายการต้นทุน-ค่าใช้จ่าย>
  *
  * ADMIN_GROUP_ID ตั้งค่าไว้ใน code ด้านล่างได้เลย (ไม่ใช่ข้อมูลลับ)
  */
@@ -43,6 +45,14 @@ export default {
 
     if (request.method === 'GET' && url.pathname === '/api/admin/nayax-stats') {
       return handleAdminSheetProxy(request, env, env.NAYAX_SHEET_CSV_URL);
+    }
+
+    if (request.method === 'GET' && url.pathname === '/api/admin/expenses') {
+      return handleAdminSheetProxy(request, env, env.EXPENSES_SHEET_CSV_URL);
+    }
+
+    if (request.method === 'POST' && url.pathname === '/api/admin/expenses') {
+      return handleAdminExpenseWrite(request, env);
     }
 
     if (request.method === 'GET' && url.pathname === '/api/public/highlights') {
@@ -168,6 +178,50 @@ async function handleAdminSheetProxy(request, env, sheetUrl) {
   } catch (err) {
     console.error('Sheet proxy error:', err);
     return jsonResponse({ error: 'Failed to fetch sheet' }, 502);
+  }
+}
+
+// เขียนรายการต้นทุน/ค่าใช้จ่าย (เพิ่ม/แก้ไข/ลบ) — ต้องผ่าน PIN token เพราะเป็นข้อมูลการเงินที่กระทบยอดกำไร
+// ต่างจาก updateOrderStatus ใน orderstats.html ที่ยิงตรงไปที่ Apps Script โดยไม่ auth
+// (เหมาะกับสถานะออเดอร์ซึ่งความเสี่ยงต่ำ) — ที่นี่ให้ Worker เป็นตัวกลางยืนยัน token ก่อน
+// แล้วค่อย forward ไป Apps Script แทน เพื่อไม่ให้ URL เขียนข้อมูลการเงินหลุดไปอยู่ใน client-side JS เปิดเผย
+async function handleAdminExpenseWrite(request, env) {
+  const ok = await verifyAuthHeader(request, env);
+  if (!ok) return jsonResponse({ error: 'Unauthorized' }, 401);
+
+  if (!env.EXPENSE_SHEET_WEBHOOK_URL) return jsonResponse({ error: 'Not configured' }, 500);
+
+  let data;
+  try {
+    data = await request.json();
+  } catch {
+    return jsonResponse({ success: false, error: 'Invalid JSON' }, 400);
+  }
+
+  const action = (data.action === 'update' || data.action === 'delete') ? data.action : 'add';
+
+  if (action === 'add') {
+    if (!data.id || !data.type || !data.category || !data.amount || !data.date) {
+      return jsonResponse({ success: false, error: 'Missing required fields' }, 400);
+    }
+    if (data.type !== 'cogs' && data.type !== 'opex') {
+      return jsonResponse({ success: false, error: 'Invalid type' }, 400);
+    }
+  } else if (!data.id) {
+    return jsonResponse({ success: false, error: 'Missing id' }, 400);
+  }
+
+  try {
+    const res = await fetch(env.EXPENSE_SHEET_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...data, action }),
+    });
+    const result = await res.json().catch(() => ({ success: res.ok }));
+    return jsonResponse(result, result.success === false ? 502 : 200);
+  } catch (err) {
+    console.error('Expense webhook error:', err);
+    return jsonResponse({ success: false, error: 'Failed to save expense' }, 502);
   }
 }
 

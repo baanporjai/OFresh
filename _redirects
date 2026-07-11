@@ -2,4 +2,5 @@
 /admin              /stats.html         200
 /admin/orders       /orderstats.html    200
 /admin/customers    /customers.html     200
+/admin/accounting   /accounting.html    200
 /admin/cake         /cake-orders.html   200
