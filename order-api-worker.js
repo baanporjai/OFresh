@@ -9,7 +9,9 @@
  *   ORDERS_SHEET_CSV_URL   = <ลิงก์ CSV ของ Google Sheet ออเดอร์ส้ม>
  *   NAYAX_SHEET_CSV_URL    = <ลิงก์ CSV ของ Google Sheet ยอดขาย Nayax>
  *   EXPENSES_SHEET_CSV_URL    = <ลิงก์ CSV ของ Google Sheet ต้นทุน/ค่าใช้จ่าย>
- *   EXPENSE_SHEET_WEBHOOK_URL = <Apps Script webhook สำหรับบันทึก/แก้ไข/ลบ รายการต้นทุน-ค่าใช้จ่าย>
+ *   EXPENSE_SHEET_WEBHOOK_URL = <Apps Script webhook สำหรับบันทึก/แก้ไข/ลบ รายการต้นทุน-ค่าใช้จ่าย —
+ *                                ไม่ตั้งก็ได้ ถ้าใช้ Apps Script/สเปรดชีตตัวเดียวกับออเดอร์ส้ม (แค่คนละแท็บ)
+ *                                จะ fallback ไปใช้ SHEET_WEBHOOK_URL แทนอัตโนมัติ>
  *
  * ADMIN_GROUP_ID ตั้งค่าไว้ใน code ด้านล่างได้เลย (ไม่ใช่ข้อมูลลับ)
  */
@@ -189,7 +191,10 @@ async function handleAdminExpenseWrite(request, env) {
   const ok = await verifyAuthHeader(request, env);
   if (!ok) return jsonResponse({ error: 'Unauthorized' }, 401);
 
-  if (!env.EXPENSE_SHEET_WEBHOOK_URL) return jsonResponse({ error: 'Not configured' }, 500);
+  // ถ้าไม่ได้ตั้ง secret แยกไว้ ให้ fallback ไปใช้ SHEET_WEBHOOK_URL เดิม (ออเดอร์ส้ม) แทน
+  // เผื่อกรณีเก็บต้นทุน/ค่าใช้จ่ายไว้ในสเปรดชีตเดียวกัน (คนละแท็บ) กับออเดอร์ ใช้ Apps Script ตัวเดียวกันได้
+  const webhookUrl = env.EXPENSE_SHEET_WEBHOOK_URL || env.SHEET_WEBHOOK_URL;
+  if (!webhookUrl) return jsonResponse({ error: 'Not configured' }, 500);
 
   let data;
   try {
@@ -212,10 +217,11 @@ async function handleAdminExpenseWrite(request, env) {
   }
 
   try {
-    const res = await fetch(env.EXPENSE_SHEET_WEBHOOK_URL, {
+    const res = await fetch(webhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...data, action }),
+      // target: 'expense' ให้ Apps Script แยกเส้นทางออกจากการเขียนออเดอร์ส้ม เผื่อใช้ webhook เดียวกัน
+      body: JSON.stringify({ ...data, action, target: 'expense' }),
     });
     const result = await res.json().catch(() => ({ success: res.ok }));
     return jsonResponse(result, result.success === false ? 502 : 200);
