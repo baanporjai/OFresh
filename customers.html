@@ -91,6 +91,11 @@ body { font-family: 'Prompt', sans-serif; background: var(--off-white); color: v
   font-family: 'Prompt', sans-serif; font-size: .85rem; color: var(--text);
   background: var(--white); box-shadow: var(--shadow); outline: none; cursor: pointer;
 }
+.month-select {
+  padding: 13px 16px; border-radius: 14px; border: 1.5px solid var(--border);
+  font-family: 'Prompt', sans-serif; font-size: .85rem; color: var(--text);
+  background: var(--white); box-shadow: var(--shadow); outline: none; cursor: pointer;
+}
 
 .kpi-strip { display: grid; grid-template-columns: repeat(auto-fit,minmax(150px,1fr)); gap: 14px; margin-bottom: 24px; }
 .kpi-mini {
@@ -329,6 +334,7 @@ footer a { color: var(--orange); text-decoration: none; }
     <input type="text" id="searchInput" oninput="onSearchInput(this.value)"
       placeholder="ค้นหาชื่อลูกค้า หรือเบอร์โทร..."
       data-th-placeholder="ค้นหาชื่อลูกค้า หรือเบอร์โทร..." data-en-placeholder="Search name or phone...">
+    <select class="month-select" id="monthFilter" onchange="onMonthFilterChange(this.value)"></select>
     <select class="sort-select" id="sortSelect" onchange="onSortChange(this.value)">
       <option value="revenue" data-th="ยอดซื้อสูงสุด" data-en="Highest spend">ยอดซื้อสูงสุด</option>
       <option value="count" data-th="ซื้อบ่อยสุด" data-en="Most orders">ซื้อบ่อยสุด</option>
@@ -405,6 +411,8 @@ function parseTimestamp(s) {
   return new Date(y, mo - 1, d, h, mi, se);
 }
 
+function monthKey(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; }
+
 // Google Sheet เก็บเบอร์โทรเป็นตัวเลข ทำให้เลข 0 นำหน้าหายไป (เช่น 812345678 ที่จริงคือ 0812345678)
 function formatPhone(raw) {
   const s = (raw||'').trim();
@@ -459,6 +467,46 @@ function onSearchInput(val) {
 let sortMode = 'revenue';
 function onSortChange(val) {
   sortMode = val;
+  renderList();
+}
+
+let monthFilter = 'all';
+function onMonthFilterChange(val) {
+  monthFilter = val;
+  applyMonthFilter();
+}
+
+function populateMonthFilter(rows) {
+  const isTh = currentLang === 'th';
+  const months = Array.from(new Set(rows.map(r => monthKey(r.datetime)))).sort().reverse();
+  const sel = document.getElementById('monthFilter');
+  const keepVal = sel.options.length ? monthFilter : 'all';
+  sel.innerHTML = `<option value="all">${isTh?'ทั้งหมด (ทุกเดือน)':'All time'}</option>` + months.map(m => {
+    const [y,mo] = m.split('-');
+    const label = new Date(+y,+mo-1,1).toLocaleDateString(isTh?'th-TH':'en-US',{month:'long',year:'numeric'});
+    return `<option value="${m}">${label}</option>`;
+  }).join('');
+  const stillExists = Array.from(sel.options).some(o => o.value === keepVal);
+  monthFilter = stillExists ? keepVal : 'all';
+  sel.value = monthFilter;
+}
+
+// กรองข้อมูลตามเดือนที่เลือก แล้วคำนวณลูกค้า/KPI ใหม่จากชุดที่กรองแล้ว — ไม่ต้องโหลดข้อมูลใหม่จากเซิร์ฟเวอร์
+function applyMonthFilter() {
+  const rows = monthFilter === 'all'
+    ? window._allRows
+    : window._allRows.filter(r => monthKey(r.datetime) === monthFilter);
+
+  const customers = groupByCustomer(rows);
+  window._customers = customers;
+  window._top3 = [...customers].sort((a,b) => b.totalRevenue - a.totalRevenue).slice(0,3);
+
+  const repeatCount = customers.filter(c => c.orderCount > 1).length;
+  const avgOrders = customers.length ? (rows.length / customers.length) : 0;
+  document.getElementById('kpiCustomers').textContent = customers.length.toLocaleString();
+  document.getElementById('kpiRepeat').textContent = repeatCount.toLocaleString();
+  document.getElementById('kpiAvgOrders').textContent = avgOrders.toFixed(1);
+
   renderList();
 }
 
@@ -580,18 +628,10 @@ async function load() {
     }
     const text = await res.text();
     const rows = parseCSV(text);
-    const customers = groupByCustomer(rows);
-    window._customers = customers;
-    window._top3 = [...customers].sort((a,b) => b.totalRevenue - a.totalRevenue).slice(0,3);
+    window._allRows = rows;
 
-    const isTh = currentLang === 'th';
-    const repeatCount = customers.filter(c => c.orderCount > 1).length;
-    const avgOrders = customers.length ? (rows.length / customers.length) : 0;
-    document.getElementById('kpiCustomers').textContent = customers.length.toLocaleString();
-    document.getElementById('kpiRepeat').textContent = repeatCount.toLocaleString();
-    document.getElementById('kpiAvgOrders').textContent = avgOrders.toFixed(1);
-
-    renderList();
+    populateMonthFilter(rows);
+    applyMonthFilter();
   } catch(e) {
     console.error(e);
     document.getElementById('custList').innerHTML = `<div class="empty">โหลดข้อมูลไม่สำเร็จ</div>`;
