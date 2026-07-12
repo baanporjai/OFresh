@@ -48,7 +48,6 @@ body { font-family: 'Prompt', sans-serif; background: var(--off-white); color: v
 }
 .nav-logo { justify-self: start; }
 .nav-logo img { height: 44px; width: auto; object-fit: contain; }
-.nav-right { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; justify-self: end; }
 .page-tabs { display: flex; gap: 2px; background: rgba(0,0,0,.05); border-radius: 30px; padding: 4px; justify-self: center; flex-wrap: wrap; }
 .page-tab {
   padding: 6px 16px; border-radius: 24px; font-size: .78rem; font-weight: 700;
@@ -59,13 +58,6 @@ body { font-family: 'Prompt', sans-serif; background: var(--off-white); color: v
 @media (max-width: 600px) {
   .page-tab { padding: 6px 11px; font-size: .72rem; }
 }
-.lang-bar { display: flex; gap: 0; background: rgba(0,0,0,.05); border-radius: 30px; padding: 4px; }
-.lang-btn {
-  padding: 5px 14px; border-radius: 24px; border: none;
-  font-family: 'Prompt', sans-serif; font-size: .8rem; font-weight: 700;
-  cursor: pointer; background: transparent; color: var(--muted); transition: all .2s;
-}
-.lang-btn.active { background: var(--orange); color: #fff; box-shadow: 0 2px 8px rgba(255,107,0,.3); }
 
 /* ── HERO ── */
 .hero {
@@ -369,12 +361,7 @@ footer a { color: var(--orange); text-decoration: none; }
     <a href="/admin/accounting" class="page-tab" data-th="บัญชี" data-en="Accounting">บัญชี</a>
     <a href="/admin/cake" class="page-tab" data-th="ยอดสั่งซื้อเค้ก" data-en="Cake Orders">ยอดสั่งซื้อเค้ก</a>
   </div>
-  <div class="nav-right">
-    <div class="lang-bar">
-      <button class="lang-btn active" onclick="setLang('th')">TH</button>
-      <button class="lang-btn" onclick="setLang('en')">EN</button>
-    </div>
-  </div>
+
 </nav>
 
 <!-- HERO -->
@@ -535,13 +522,6 @@ const CACHE_KEY = 'ofresh_csv_v3';
 
 // ── LANG ──
 let currentLang = 'th';
-function setLang(lang) {
-  currentLang = lang;
-  document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent === lang.toUpperCase()));
-  document.querySelectorAll('[data-th]').forEach(el => el.textContent = el.getAttribute(`data-${lang}`));
-  document.documentElement.lang = lang;
-  if (window._rows) render(window._rows);
-}
 
 // ── PARSE ──
 function parseCSV(text) {
