@@ -133,7 +133,15 @@ body { font-family: 'Prompt', sans-serif; background: var(--off-white); color: v
 .heatmap-grid { display: inline-grid; grid-template-columns: 46px repeat(24, minmax(20px,1fr)); gap: 3px; min-width: 680px; }
 .heatmap-hourlabel { font-size: .6rem; color: var(--muted); text-align: center; }
 .heatmap-daylabel { font-size: .72rem; color: var(--muted); font-weight: 600; display: flex; align-items: center; white-space: nowrap; padding-right: 6px; }
-.heatmap-cell { aspect-ratio: 1; border-radius: 4px; }
+.heatmap-cell { aspect-ratio: 1; border-radius: 4px; cursor: pointer; transition: outline .1s; }
+.heatmap-cell:hover, .heatmap-cell.active { outline: 2px solid var(--dark); outline-offset: 1px; }
+.heatmap-tooltip {
+  position: fixed; pointer-events: none; z-index: 400;
+  background: var(--dark); color: #fff; font-size: .74rem; font-weight: 600;
+  padding: 7px 12px; border-radius: 8px; box-shadow: 0 6px 18px rgba(0,0,0,.3);
+  opacity: 0; transition: opacity .12s; white-space: nowrap;
+}
+.heatmap-tooltip.show { opacity: 1; }
 
 .chart-card {
   background: var(--white); border-radius: 18px; padding: 24px;
@@ -406,20 +414,6 @@ footer a { color: var(--orange); text-decoration: none; }
       <div class="kpi-value" id="kpiNetMargin">—</div>
       <div class="kpi-sub" data-th="%" data-en="%">%</div>
     </div>
-    <div class="kpi">
-      <div class="kpi-accent" style="background:linear-gradient(90deg,#f59e0b,#fbbf24)"></div>
-      <div class="kpi-icon">🥤</div>
-      <div class="kpi-label" data-th="ต้นทุนต่อแก้ว" data-en="Cost per Cup">ต้นทุนต่อแก้ว</div>
-      <div class="kpi-value" id="kpiCostPerCup">—</div>
-      <div class="kpi-sub" data-th="บาท/แก้ว (จากยอดขายตู้)" data-en="THB/cup (machine sales)">บาท/แก้ว (จากยอดขายตู้)</div>
-    </div>
-    <div class="kpi">
-      <div class="kpi-accent green"></div>
-      <div class="kpi-icon">💵</div>
-      <div class="kpi-label" data-th="กำไรขั้นต้นต่อแก้ว" data-en="Gross Profit per Cup">กำไรขั้นต้นต่อแก้ว</div>
-      <div class="kpi-value" id="kpiProfitPerCup">—</div>
-      <div class="kpi-sub" data-th="บาท/แก้ว (จากยอดขายตู้)" data-en="THB/cup (machine sales)">บาท/แก้ว (จากยอดขายตู้)</div>
-    </div>
   </div>
 
   <!-- Trend -->
@@ -442,6 +436,7 @@ footer a { color: var(--orange); text-decoration: none; }
       <div class="chart-empty" id="heatmapEmpty" data-th="ยังไม่มีข้อมูลยอดขายตู้ในเดือนนี้" data-en="No machine sales data this month">ยังไม่มีข้อมูลยอดขายตู้ในเดือนนี้</div>
     </div>
   </div>
+  <div class="heatmap-tooltip" id="heatmapTooltip"></div>
 
   <!-- Category breakdown -->
   <div class="charts-3col">
@@ -637,12 +632,11 @@ function parseExpensesCSV(text) {
 // ── รวมยอดรายเดือน: รายได้ (ตู้ + ออเดอร์), ต้นทุน, รายจ่าย ──
 function computeMonthlyPL(nayaxRows, orderRows, expenseRows) {
   const months = {};
-  const ensure = k => months[k] || (months[k] = { revenue: 0, machineRevenue: 0, orderRevenue: 0, cupsSold: 0, cogs: 0, opex: 0 });
+  const ensure = k => months[k] || (months[k] = { revenue: 0, machineRevenue: 0, orderRevenue: 0, cogs: 0, opex: 0 });
   nayaxRows.forEach(r => {
     const b = ensure(monthKey(r.datetime));
     b.revenue += r.price;
     b.machineRevenue += r.price;
-    b.cupsSold += 1;
   });
   orderRows.forEach(r => {
     const b = ensure(monthKey(r.datetime));
@@ -698,12 +692,10 @@ function animateNum(id, target) {
 }
 
 function renderKPIs() {
-  const b = (window._months && window._months[currentMonth]) || { revenue: 0, machineRevenue: 0, orderRevenue: 0, cupsSold: 0, cogs: 0, opex: 0 };
+  const b = (window._months && window._months[currentMonth]) || { revenue: 0, machineRevenue: 0, orderRevenue: 0, cogs: 0, opex: 0 };
   const gross = b.revenue - b.cogs;
   const net = gross - b.opex;
   const margin = b.revenue > 0 ? (net / b.revenue * 100) : 0;
-  const costPerCup = b.cupsSold > 0 ? b.cogs / b.cupsSold : 0;
-  const profitPerCup = b.cupsSold > 0 ? (b.machineRevenue - b.cogs) / b.cupsSold : 0;
 
   animateNum('kpiRevenue', b.revenue);
   animateNum('kpiCogs', b.cogs);
@@ -711,13 +703,9 @@ function renderKPIs() {
   animateNum('kpiOpex', b.opex);
   animateNum('kpiNetProfit', net);
   document.getElementById('kpiNetMargin').textContent = margin.toFixed(1) + '%';
-  document.getElementById('kpiCostPerCup').textContent = b.cupsSold > 0 ? costPerCup.toFixed(2) : '—';
-  document.getElementById('kpiProfitPerCup').textContent = b.cupsSold > 0 ? profitPerCup.toFixed(2) : '—';
 
   const npEl = document.getElementById('kpiNetProfit');
   npEl.style.color = net < 0 ? '#b91c1c' : '';
-  const ppEl = document.getElementById('kpiProfitPerCup');
-  ppEl.style.color = (b.cupsSold > 0 && profitPerCup < 0) ? '#b91c1c' : '';
 }
 
 const charts = {};
@@ -885,13 +873,49 @@ function renderHeatmap() {
     for (let h = 0; h < 24; h++) {
       const c = counts[d][h];
       const alpha = c === 0 ? 0.06 : 0.15 + 0.85 * (c / max);
-      const title = `${dayLabels[d]} ${String(h).padStart(2,'0')}:00 — ${c} ${isTh ? 'แก้ว' : 'cups'}`;
-      html += `<div class="heatmap-cell" style="background:rgba(255,107,0,${alpha.toFixed(2)})" title="${title}"></div>`;
+      const label = `${dayLabels[d]} ${String(h).padStart(2,'0')}:00`;
+      html += `<div class="heatmap-cell" style="background:rgba(255,107,0,${alpha.toFixed(2)})" data-count="${c}" data-label="${escapeHtml(label)}"></div>`;
     }
   }
   html += '</div>';
   wrap.innerHTML = html;
 }
+
+// ── HEATMAP TOOLTIP (hover for desktop, tap for mobile) ──
+(function setupHeatmapTooltip() {
+  const wrap = document.getElementById('heatmapWrap');
+  const tooltip = document.getElementById('heatmapTooltip');
+  let activeCell = null;
+
+  function show(cell, x, y) {
+    if (activeCell) activeCell.classList.remove('active');
+    activeCell = cell;
+    cell.classList.add('active');
+    const isTh = currentLang === 'th';
+    tooltip.textContent = `${cell.dataset.label} — ${cell.dataset.count} ${isTh ? 'แก้ว' : 'cups'}`;
+    tooltip.style.left = (x + 14) + 'px';
+    tooltip.style.top = (y + 14) + 'px';
+    tooltip.classList.add('show');
+  }
+  function hide() {
+    if (activeCell) activeCell.classList.remove('active');
+    activeCell = null;
+    tooltip.classList.remove('show');
+  }
+
+  wrap.addEventListener('mousemove', e => {
+    const cell = e.target.closest('.heatmap-cell');
+    if (cell) show(cell, e.clientX, e.clientY); else hide();
+  });
+  wrap.addEventListener('mouseleave', hide);
+  wrap.addEventListener('click', e => {
+    const cell = e.target.closest('.heatmap-cell');
+    if (cell) show(cell, e.clientX, e.clientY);
+  });
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.heatmap-cell')) hide();
+  });
+})();
 
 function renderExpenseList() {
   const isTh = currentLang === 'th';
