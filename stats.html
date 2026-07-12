@@ -43,12 +43,13 @@ body { font-family: 'Prompt', sans-serif; background: var(--off-white); color: v
   background: rgba(255,255,255,.95); backdrop-filter: blur(20px);
   box-shadow: 0 2px 20px rgba(0,0,0,.05);
   padding: 10px 32px; min-height: 68px;
-  display: flex; align-items: center; justify-content: space-between;
-  flex-wrap: wrap; gap: 10px;
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+  gap: 10px;
 }
+.nav-logo { justify-self: start; }
 .nav-logo img { height: 44px; width: auto; object-fit: contain; }
-.nav-right { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
-.page-tabs { display: flex; gap: 2px; background: rgba(0,0,0,.05); border-radius: 30px; padding: 4px; }
+.nav-right { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; justify-self: end; }
+.page-tabs { display: flex; gap: 2px; background: rgba(0,0,0,.05); border-radius: 30px; padding: 4px; justify-self: center; flex-wrap: wrap; }
 .page-tab {
   padding: 6px 16px; border-radius: 24px; font-size: .78rem; font-weight: 700;
   text-decoration: none; color: var(--muted); transition: all .2s; white-space: nowrap;
@@ -361,14 +362,14 @@ footer a { color: var(--orange); text-decoration: none; }
 <!-- NAVBAR -->
 <nav class="navbar">
   <a href="/index.html" class="nav-logo"><img src="/OFresh_Logo_transparent.png" alt="O'Fresh"></a>
+  <div class="page-tabs">
+    <span class="page-tab active" data-th="ยอดขายตู้" data-en="Machine Sales">ยอดขายตู้</span>
+    <a href="/admin/orders" class="page-tab" data-th="ยอดสั่งซื้อส้ม" data-en="Order Sales">ยอดสั่งซื้อส้ม</a>
+    <a href="/admin/customers" class="page-tab" data-th="ประวัติลูกค้า" data-en="Customers">ประวัติลูกค้า</a>
+    <a href="/admin/accounting" class="page-tab" data-th="บัญชี" data-en="Accounting">บัญชี</a>
+    <a href="/admin/cake" class="page-tab" data-th="ยอดสั่งซื้อเค้ก" data-en="Cake Orders">ยอดสั่งซื้อเค้ก</a>
+  </div>
   <div class="nav-right">
-    <div class="page-tabs">
-      <span class="page-tab active" data-th="ยอดขายตู้" data-en="Machine Sales">ยอดขายตู้</span>
-      <a href="/admin/orders" class="page-tab" data-th="ยอดสั่งซื้อส้ม" data-en="Order Sales">ยอดสั่งซื้อส้ม</a>
-      <a href="/admin/customers" class="page-tab" data-th="ประวัติลูกค้า" data-en="Customers">ประวัติลูกค้า</a>
-      <a href="/admin/accounting" class="page-tab" data-th="บัญชี" data-en="Accounting">บัญชี</a>
-      <a href="/admin/cake" class="page-tab" data-th="ยอดสั่งซื้อเค้ก" data-en="Cake Orders">ยอดสั่งซื้อเค้ก</a>
-    </div>
     <div class="lang-bar">
       <button class="lang-btn active" onclick="setLang('th')">TH</button>
       <button class="lang-btn" onclick="setLang('en')">EN</button>
