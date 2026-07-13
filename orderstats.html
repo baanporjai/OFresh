@@ -131,6 +131,7 @@ body { font-family: 'Prompt', sans-serif; background: var(--off-white); color: v
 .kpi-accent.green { background: linear-gradient(90deg, var(--green), #5cb85c); }
 .kpi-accent.blue  { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
 .kpi-accent.purple{ background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
+.kpi-accent.pink { background: linear-gradient(90deg, #ec4899, #f472b6); }
 .kpi-icon { font-size: 1.8rem; margin-bottom: 8px; }
 .kpi-label { font-size: .72rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); font-weight: 600; }
 .kpi-value { font-size: 2.2rem; font-weight: 900; color: var(--text); line-height: 1; margin: 6px 0 4px; }
@@ -384,8 +385,8 @@ footer a { color: var(--orange); text-decoration: none; }
 
   <div class="search-bar no-print">
     <input type="text" id="searchInput" oninput="onSearchInput(this.value)"
-      placeholder="ค้นหาชื่อลูกค้า หรือเบอร์โทร..."
-      data-th-placeholder="ค้นหาชื่อลูกค้า หรือเบอร์โทร..." data-en-placeholder="Search name or phone...">
+      placeholder="ค้นหาชื่อลูกค้า เบอร์โทร หรือที่อยู่..."
+      data-th-placeholder="ค้นหาชื่อลูกค้า เบอร์โทร หรือที่อยู่..." data-en-placeholder="Search name, phone, or address...">
     <p class="search-hint" data-th="ติ๊กช่องหน้าชื่อลูกค้าเพื่อเลือกพิมพ์เฉพาะบางออเดอร์ — ถ้าไม่ติ๊กเลยจะพิมพ์ทุกออเดอร์ที่แสดงอยู่"
        data-en="Check the box next to a name to print only selected orders — if none are checked, everything shown will print">ติ๊กช่องหน้าชื่อลูกค้าเพื่อเลือกพิมพ์เฉพาะบางออเดอร์ — ถ้าไม่ติ๊กเลยจะพิมพ์ทุกออเดอร์ที่แสดงอยู่</p>
   </div>
@@ -442,6 +443,23 @@ footer a { color: var(--orange); text-decoration: none; }
       <div class="kpi-label" data-th="เฉลี่ยต่อออเดอร์" data-en="Avg per Order">เฉลี่ยต่อออเดอร์</div>
       <div class="kpi-value" id="kpiAvg">—</div>
       <div class="kpi-sub" data-th="กก./ออเดอร์" data-en="kg/order">กก./ออเดอร์</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-accent pink"></div>
+      <div class="kpi-icon">📆</div>
+      <div class="kpi-label" data-th="ออเดอร์ 30 วันล่าสุด" data-en="Orders (Last 30 Days)">ออเดอร์ 30 วันล่าสุด</div>
+      <div class="kpi-value" id="kpiLast30">—</div>
+      <div class="kpi-sub" id="kpiLast30Sub">—</div>
+    </div>
+  </div>
+
+  <div class="charts-1col">
+    <div class="chart-card">
+      <div class="chart-header">
+        <div class="chart-title">📍 <span data-th="ที่อยู่สั่งบ่อย" data-en="Top Addresses">ที่อยู่สั่งบ่อย</span></div>
+        <div class="chart-badge" id="addressBadge">—</div>
+      </div>
+      <div class="order-list" id="addressList"></div>
     </div>
   </div>
 
@@ -628,7 +646,35 @@ function onSearchInput(val) {
 }
 function matchesSearch(r) {
   if (!searchQuery) return true;
-  return (r.name||'').toLowerCase().includes(searchQuery) || (r.phone||'').includes(searchQuery);
+  return (r.name||'').toLowerCase().includes(searchQuery) || (r.phone||'').includes(searchQuery) ||
+    (r.address||'').toLowerCase().includes(searchQuery);
+}
+
+// จัดกลุ่มออเดอร์ตามที่อยู่ (ทั้งหมด ไม่กรองด้วยช่องค้นหา) เรียงตามจำนวนครั้งที่สั่งมากสุด
+function renderAddressLeaderboard(rows) {
+  const isTh = currentLang === 'th';
+  const locale = isTh ? 'th-TH' : 'en-US';
+  const groups = {};
+  rows.forEach(r => {
+    const key = (r.address || '').trim();
+    if (!key) return;
+    if (!groups[key]) groups[key] = { address: key, count: 0, qty: 0, revenue: 0, lastOrder: r.datetime };
+    const g = groups[key];
+    g.count++; g.qty += r.qty; g.revenue += r.total;
+    if (r.datetime > g.lastOrder) g.lastOrder = r.datetime;
+  });
+  const all = Object.values(groups).sort((a,b) => b.count - a.count);
+  const top = all.slice(0, 10);
+
+  document.getElementById('addressBadge').textContent = `${all.length} ${isTh?'ที่อยู่':'addresses'}`;
+  document.getElementById('addressList').innerHTML = top.map(g => `
+    <div class="order-row" style="cursor:default">
+      <div>
+        <div class="order-name">📍 ${g.address}</div>
+        <div class="order-date">${g.qty.toLocaleString(undefined,{maximumFractionDigits:1})} ${isTh?'กก.':'kg'} · ฿${g.revenue.toLocaleString()} · ${isTh?'ล่าสุด':'Latest'} ${g.lastOrder.toLocaleDateString(locale,{dateStyle:'medium'})}</div>
+      </div>
+      <div class="order-qty">${g.count} ${isTh?'ครั้ง':'orders'}</div>
+    </div>`).join('') || `<p style="color:var(--muted);font-size:.85rem">${isTh?'ยังไม่มีข้อมูล':'No data yet'}</p>`;
 }
 
 // ── เลือกออเดอร์เฉพาะรายการที่จะพิมพ์ ──
@@ -658,10 +704,21 @@ function render(rows) {
   document.getElementById('kpiRevenue').textContent = totalRevenue.toLocaleString(undefined,{maximumFractionDigits:0});
   document.getElementById('kpiAvg').textContent = avgQty.toFixed(1);
 
+  // ออเดอร์ในรอบ 30 วันล่าสุด (นับจากตอนนี้ย้อนหลังไป ไม่ใช่ตามปฏิทิน)
+  const DAY_MS = 86400000;
+  const cutoff30 = Date.now() - 30 * DAY_MS;
+  const last30 = rows.filter(r => r.datetime.getTime() >= cutoff30);
+  const last30Qty = last30.reduce((s,r)=>s+r.qty,0);
+  const last30Revenue = last30.reduce((s,r)=>s+r.total,0);
+  animateNum('kpiLast30', last30.length);
+  document.getElementById('kpiLast30Sub').textContent =
+    `${last30Qty.toLocaleString(undefined,{maximumFractionDigits:1})} ${isTh?'กก.':'kg'} · ฿${last30Revenue.toLocaleString()}`;
+
   renderDailyChart(rows);
   renderMonthlyChart(rows);
+  renderAddressLeaderboard(rows);
 
-  const recent = [...rows].sort((a,b)=>b.datetime-a.datetime).slice(0,8);
+  const recent = rows.filter(matchesSearch).sort((a,b)=>b.datetime-a.datetime).slice(0,8);
   window._recentOrders = recent;
   const locale = isTh?'th-TH':'en-US';
   document.getElementById('orderList').innerHTML = recent.map((r,i)=>`
