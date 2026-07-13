@@ -64,31 +64,14 @@
             -webkit-text-size-adjust: 100%;
         }
 
-        /* ===== CSS AUTO-SCROLL (ไม่ต้อง JS) ===== */
+        /* ===== AUTO-SCROLL =====
+           เดิมใช้ CSS transform: translateY(calc(-100% + 100vh)) ล้วนๆ แต่ vh/percent
+           ผสมกันแบบนี้ไม่เสถียรบน WebView ของตู้ (กระพริบ + ค้างเลื่อนสุดตลอด)
+           เปลี่ยนมาใช้ scrollTop จริงที่ขับด้วย JS ด้านล่างแทน (ดู <script> ท้ายหน้า)
+           ถ้า JS รันไม่ได้ หน้าจะหยุดนิ่งที่ด้านบนสุด ไม่กระพริบ/ไม่ค้าง */
         .scroll-wrapper {
-            -webkit-animation: kiosk-scroll 120s linear infinite;
-            animation: kiosk-scroll 120s linear infinite;
-            -webkit-transform-origin: top center;
-            transform-origin: top center;
-        }
-        /* แตะค้าง → หยุด, ปล่อย → เลื่อนต่อ */
-        .scroll-wrapper:active {
-            -webkit-animation-play-state: paused;
-            animation-play-state: paused;
-        }
-        @-webkit-keyframes kiosk-scroll {
-            0%     { -webkit-transform: translateY(0); transform: translateY(0); }
-            96.7%  { -webkit-transform: translateY(calc(-100% + 100vh)); transform: translateY(calc(-100% + 100vh)); }
-            98.3%  { -webkit-transform: translateY(calc(-100% + 100vh)); transform: translateY(calc(-100% + 100vh)); }
-            98.4%  { -webkit-transform: translateY(0); transform: translateY(0); }
-            100%   { -webkit-transform: translateY(0); transform: translateY(0); }
-        }
-        @keyframes kiosk-scroll {
-            0%     { -webkit-transform: translateY(0); transform: translateY(0); }
-            96.7%  { -webkit-transform: translateY(calc(-100% + 100vh)); transform: translateY(calc(-100% + 100vh)); }
-            98.3%  { -webkit-transform: translateY(calc(-100% + 100vh)); transform: translateY(calc(-100% + 100vh)); }
-            98.4%  { -webkit-transform: translateY(0); transform: translateY(0); }
-            100%   { -webkit-transform: translateY(0); transform: translateY(0); }
+            height: 100%;
+            overflow-y: hidden;
         }
 
         /* ===== NAVBAR ===== */
@@ -1270,5 +1253,65 @@ Temperature kept within 3-9°C</p>
         </div>
     </footer>
     </div><!-- end scroll-wrapper -->
+
+    <script>
+    // Auto-scroll driver — replaces the old CSS calc(-100% + 100vh) transform loop,
+    // which flickered and stuck at the end on the kiosk WebView. Pure pixel scrollTop,
+    // no vh/percent math, so it can't drift or get stuck.
+    (function () {
+        var wrap = document.querySelector('.scroll-wrapper');
+        if (!wrap) { return; }
+
+        var CYCLE_MS = 120000;   // full loop duration, same pace as before
+        var HOLD_MS = 2000;      // pause at top / bottom before continuing
+        var paused = false;
+        var phase = 'down';      // down -> holdBottom -> holdTop -> down ...
+        var holdUntil = 0;
+        var lastTs = null;
+
+        function maxScroll() {
+            return Math.max(0, wrap.scrollHeight - wrap.clientHeight);
+        }
+
+        function step(ts) {
+            if (lastTs === null) { lastTs = ts; }
+            var dt = ts - lastTs;
+            lastTs = ts;
+
+            if (!paused) {
+                var max = maxScroll();
+                if (max > 0) {
+                    if (phase === 'down') {
+                        var duration = Math.max(1, CYCLE_MS - HOLD_MS * 2);
+                        wrap.scrollTop = wrap.scrollTop + (max / duration) * dt;
+                        if (wrap.scrollTop >= max - 1) {
+                            wrap.scrollTop = max;
+                            phase = 'holdBottom';
+                            holdUntil = ts + HOLD_MS;
+                        }
+                    } else if (phase === 'holdBottom') {
+                        if (ts >= holdUntil) {
+                            wrap.scrollTop = 0;
+                            phase = 'holdTop';
+                            holdUntil = ts + HOLD_MS;
+                        }
+                    } else if (phase === 'holdTop') {
+                        if (ts >= holdUntil) { phase = 'down'; }
+                    }
+                }
+            }
+            requestAnimationFrame(step);
+        }
+
+        function pause() { paused = true; }
+        function resume() { paused = false; }
+        wrap.addEventListener('touchstart', pause, { passive: true });
+        wrap.addEventListener('touchend', resume, { passive: true });
+        wrap.addEventListener('mousedown', pause);
+        wrap.addEventListener('mouseup', resume);
+
+        requestAnimationFrame(step);
+    })();
+    </script>
 </body>
 </html>
