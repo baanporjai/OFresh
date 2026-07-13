@@ -16,6 +16,8 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <style>
 :root {
   --orange: #FF6B00;
@@ -500,7 +502,7 @@ footer a { color: var(--orange); text-decoration: none; }
       </div>
       <div class="form-field">
         <label data-th="วันที่" data-en="Date">วันที่</label>
-        <input type="date" id="expenseDate" required>
+        <input type="text" id="expenseDate" placeholder="DD/MM/YYYY" autocomplete="off" required>
       </div>
       <div class="form-field">
         <label data-th="หมายเหตุ (ถ้ามี)" data-en="Note (optional)">หมายเหตุ (ถ้ามี)</label>
@@ -942,6 +944,17 @@ function renderExpenseList() {
 // ── EXPENSE MODAL / CRUD ──
 let editingExpenseId = null;
 
+// วันที่ในฟอร์มโชว์เป็น DD/MM/YYYY ให้แน่นอน — input type="date" ของเบราว์เซอร์โชว์ format
+// ตาม locale ของเครื่อง (เช่น MM/DD/YYYY) ควบคุมจาก HTML/CSS ตรงๆ ไม่ได้ จึงใช้ flatpickr แทน
+// altInput โชว์ d/m/Y ให้ผู้ใช้เห็น ส่วน input ต้นฉบับ (id="expenseDate" ที่โค้ดส่วนอื่นอ่านค่าอยู่)
+// ยังคงเก็บเป็น Y-m-d (ISO) เหมือนเดิมทุกประการ ไม่ต้องแก้ saveExpense/postExpense เลย
+const expenseDatePicker = flatpickr('#expenseDate', {
+  dateFormat: 'Y-m-d',
+  altInput: true,
+  altFormat: 'd/m/Y',
+  allowInput: false,
+});
+
 function openExpenseModal(id) {
   editingExpenseId = id || null;
   const isTh = currentLang === 'th';
@@ -952,7 +965,7 @@ function openExpenseModal(id) {
   onExpenseTypeChange(r ? r.category : null);
   document.getElementById('expenseDesc').value = r ? r.description : '';
   document.getElementById('expenseAmount').value = r ? r.amount : '';
-  document.getElementById('expenseDate').value = r ? formatDateISO(r.date) : formatDateISO(new Date());
+  expenseDatePicker.setDate(r ? r.date : new Date(), true);
   document.getElementById('expenseNote').value = r ? r.note : '';
   document.getElementById('deleteExpenseBtn').style.display = r ? 'inline-block' : 'none';
 
