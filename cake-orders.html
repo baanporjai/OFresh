@@ -638,9 +638,17 @@ async function updateStatus(selectEl, row, id) {
   }
 }
 
+// "YYYY-MM-DD" จาก local date getters แทน d.toISOString().slice(0,10) — toISOString()
+// แปลงเป็น UTC ก่อนเสมอ ซึ่งเลื่อนวันที่ผิดไป 1 วันได้ในไทย (UTC+7): ทั้งช่วงเวลาเที่ยงคืน-06:59
+// ของทุกวัน (เวลาไทยยังเป็นวันนี้ แต่ UTC ยังเป็นเมื่อวาน) และวันที่ที่ parse มาเป็นเที่ยงคืน
+// local เป๊ะๆ (เช่น getDeliveryDateOnly) จะเลื่อนถอยหลัง 1 วันเสมอไม่ว่าเวลาไหน
+function toLocalISODate(d) {
+  const pad = n => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
 function todayISO() {
-  const d = new Date();
-  return d.toISOString().slice(0, 10);
+  return toLocalISODate(new Date());
 }
 
 function parseTimestamp(str) {
@@ -680,13 +688,13 @@ function isTodayOrder(o) {
   const today = todayISO();
   if (o.date && o.date !== "-" && String(o.date).slice(0, 10) === today) return true;
   const ts = parseTimestamp(o.timestamp);
-  return ts ? ts.toISOString().slice(0, 10) === today : false;
+  return ts ? toLocalISODate(ts) === today : false;
 }
 
 function tomorrowISO() {
   const d = new Date();
   d.setDate(d.getDate() + 1);
-  return d.toISOString().slice(0, 10);
+  return toLocalISODate(d);
 }
 
 // ไม่ fallback ไปใช้ timestamp เหมือน getOrderDate — ใช้เฉพาะ "วันที่ต้องการของ" (o.date)
@@ -694,7 +702,7 @@ function tomorrowISO() {
 function getDeliveryDateOnly(o) {
   if (!o.date || o.date === "-") return null;
   const d = parseTimestamp(o.date);
-  return d ? d.toISOString().slice(0, 10) : null;
+  return d ? toLocalISODate(d) : null;
 }
 
 function isTomorrowOrder(o) {
@@ -711,8 +719,15 @@ function isOverdueOrder(o) {
   return !isFinalStatus(o.status || "");
 }
 
+// DD/MM/YYYY ปีพ.ศ. (เช่น "10/07/2569") — ให้ตรงกับปีที่แสดงอยู่ทั่วทั้งเว็บ (th-TH locale
+// ใช้ปีพ.ศ. โดย default) แต่เขียนเป็นตัวเลขล้วนแทนชื่อเดือนสะกดเต็ม
+function formatDateDMY(date) {
+  const pad = n => String(n).padStart(2, "0");
+  return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear() + 543}`;
+}
+
 function formatDateTH(iso) {
-  return new Date(iso + "T12:00:00").toLocaleDateString("th-TH", { weekday: "long", day: "numeric", month: "long" });
+  return formatDateDMY(new Date(iso + "T12:00:00"));
 }
 
 async function loadData() {
@@ -768,17 +783,17 @@ function render(orders) {
   orders.forEach(o => {
     const ts = parseTimestamp(o.timestamp);
     if (!ts) return;
-    const d = ts.toISOString().slice(0, 10);
+    const d = toLocalISODate(ts);
     dailyMap[d] = (dailyMap[d] || 0) + parseTotal(o.total);
   });
   const days = Array.from({ length: 14 }, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() - (13 - i));
-    return d.toISOString().slice(0, 10);
+    return toLocalISODate(d);
   });
   const dailyLabels = days.map(d => {
     const dt = new Date(d + "T00:00:00");
-    return dt.toLocaleDateString("th-TH", { day: "numeric", month: "short" });
+    return `${String(dt.getDate()).padStart(2, "0")}/${String(dt.getMonth() + 1).padStart(2, "0")}`;
   });
   const dailyValues = days.map(d => dailyMap[d] || 0);
 
@@ -874,7 +889,7 @@ function render(orders) {
         <div class="order-row" style="cursor:pointer" onclick="showAddressHistory(${i})">
           <div>
             <div class="order-name">📍 ${g.address}</div>
-            <div class="order-meta">${g.revenue.toLocaleString("th-TH")} THB · ล่าสุด ${g.lastOrder ? g.lastOrder.toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "2-digit" }) : "-"}</div>
+            <div class="order-meta">${g.revenue.toLocaleString("th-TH")} THB · ล่าสุด ${g.lastOrder ? formatDateDMY(g.lastOrder) : "-"}</div>
           </div>
           <div class="order-total">${g.count} ครั้ง</div>
         </div>`).join("")}
