@@ -389,13 +389,13 @@ const API_BASE = "https://larnaapi.yai-taweewoot.workers.dev";
 
 <div class="container">
   <div class="search-bar">
-    <input type="text" id="searchInput" oninput="onSearchInput(this.value)" placeholder="ค้นหาชื่อลูกค้า หรือเบอร์โทร...">
+    <input type="text" id="searchInput" oninput="onSearchInput(this.value)" placeholder="ค้นหาชื่อลูกค้า เบอร์โทร หรือที่อยู่...">
   </div>
   <div id="content"><div class="loading-state">กำลังโหลดข้อมูล...</div></div>
 </div>
 
 <script>
-let dailyChart, flavorChart, allOrders = [];
+let dailyChart, flavorChart, monthlyChart, allOrders = [];
 
 let searchQuery = "";
 function onSearchInput(val) {
@@ -404,7 +404,8 @@ function onSearchInput(val) {
 }
 function matchesSearch(o) {
   if (!searchQuery) return true;
-  return (o.name || "").toLowerCase().includes(searchQuery) || (o.phone || "").toString().includes(searchQuery);
+  return (o.name || "").toLowerCase().includes(searchQuery) || (o.phone || "").toString().includes(searchQuery) ||
+    (o.address || "").toLowerCase().includes(searchQuery);
 }
 
 function sumInRange(orders, fromMs, toMs) {
@@ -415,6 +416,58 @@ function sumInRange(orders, fromMs, toMs) {
     if (t >= fromMs && t < toMs) { acc.count++; acc.revenue += parseTotal(o.total); }
     return acc;
   }, { count: 0, revenue: 0 });
+}
+
+// จัดกลุ่มออเดอร์ตามที่อยู่ (ทั้งหมด ไม่กรองด้วยช่องค้นหา) เรียงตามจำนวนครั้งที่สั่งมากสุด
+function buildAddressLeaderboard(orders) {
+  const groups = {};
+  orders.forEach(o => {
+    const key = (o.address || "").trim();
+    if (!key || key === "-") return;
+    if (!groups[key]) groups[key] = { address: key, count: 0, revenue: 0, lastOrder: null };
+    const g = groups[key];
+    g.count++;
+    g.revenue += parseTotal(o.total);
+    const ts = parseTimestamp(o.timestamp);
+    if (ts && (!g.lastOrder || ts > g.lastOrder)) g.lastOrder = ts;
+  });
+  const all = Object.values(groups).sort((a, b) => b.count - a.count);
+  window._addressGroups = all.slice(0, 10);
+  return { total: all.length, top: window._addressGroups };
+}
+
+// เปิด modal แสดงประวัติออเดอร์ทั้งหมดของที่อยู่นั้น (คลิกจากตาราง "ที่อยู่สั่งบ่อย")
+function showAddressHistory(i) {
+  const g = window._addressGroups && window._addressGroups[i];
+  if (!g) return;
+  const orders = allOrders.filter(o => (o.address || "").trim() === g.address)
+    .sort((a, b) => (parseTimestamp(b.timestamp) || 0) - (parseTimestamp(a.timestamp) || 0));
+
+  document.getElementById("modalTitle").textContent = "📍 " + g.address;
+  const summary = `<div style="font-size:13px;color:var(--choco);opacity:.6;margin-bottom:14px;">${orders.length} ครั้ง · ${g.revenue.toLocaleString("th-TH")} THB</div>`;
+  document.getElementById("modalBody").innerHTML = summary +
+    (orders.length === 0 ? '<div class="empty">ไม่มีข้อมูล</div>' : orders.map(o => orderRowHTML(o)).join(""));
+  document.getElementById("modalOverlay").classList.add("open");
+}
+
+// รวมยอดขายรายเดือน key แบบ Y-M เรียงลำดับได้ — ต่างจาก monthMap ใน openModal('revenue')
+// ที่ key เป็น locale string ("กรกฎาคม 2569") เรียงตามตัวอักษรไม่ได้
+function computeMonthlySeries(orders) {
+  const monthMap = {};
+  orders.forEach(o => {
+    const ts = parseTimestamp(o.timestamp);
+    if (!ts) return;
+    const k = `${ts.getFullYear()}-${String(ts.getMonth() + 1).padStart(2, "0")}`;
+    monthMap[k] = (monthMap[k] || 0) + parseTotal(o.total);
+  });
+  const sorted = Object.entries(monthMap).sort((a, b) => a[0].localeCompare(b[0]));
+  return {
+    labels: sorted.map(([k]) => {
+      const [y, m] = k.split("-");
+      return new Date(+y, +m - 1, 1).toLocaleDateString("th-TH", { month: "short", year: "2-digit" });
+    }),
+    data: sorted.map(([, v]) => v),
+  };
 }
 
 function renderComparisonHTML(orders) {
@@ -499,6 +552,12 @@ function openModal(type) {
       `<div class="order-row"><div class="order-name">${name}</div><div class="order-total">${qty} ชิ้น</div></div>`
     ).join("");
     body.innerHTML = rows || '<div class="empty">ไม่มีข้อมูล</div>';
+  } else if (type === "last30") {
+    const cutoff = Date.now() - 30 * 86400000;
+    const list = allOrders.filter(o => { const ts = parseTimestamp(o.timestamp); return ts && ts.getTime() >= cutoff; })
+      .sort((a, b) => (parseTimestamp(b.timestamp) || 0) - (parseTimestamp(a.timestamp) || 0));
+    title.textContent = "📆 ออเดอร์ 30 วันล่าสุด";
+    body.innerHTML = list.length === 0 ? '<div class="empty">ยังไม่มีออเดอร์ในช่วงนี้</div>' : list.map(o => orderRowHTML(o)).join("");
   }
 
   overlay.classList.add("open");
@@ -586,18 +645,20 @@ function todayISO() {
 
 function parseTimestamp(str) {
   if (!str || str === "-") return null;
+  // Thai locale format: "D/M/YYYY HH:MM:SS" with Buddhist year (e.g. "2/7/2569 17:37:21")
+  // ต้องเช็ค pattern นี้ก่อนเสมอ — new Date(str) ของเบราว์เซอร์จะตีความ "D/M" แบบอเมริกา (M/D)
+  // แบบเงียบๆ ทุกครั้งที่ D <= 12 (คือ valid ทั้งสองแบบ) ทำให้ได้วันที่ผิดโดยไม่มี error ให้เห็นเลย
+  const m = String(str).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})[,\s]+(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+  if (m) {
+    const year = parseInt(m[3]) > 2500 ? parseInt(m[3]) - 543 : parseInt(m[3]);
+    return new Date(year, parseInt(m[2]) - 1, parseInt(m[1]), parseInt(m[4]), parseInt(m[5]), parseInt(m[6] || 0));
+  }
   const d = new Date(str);
   if (!isNaN(d)) {
     if (d.getFullYear() > 2500) {
       return new Date(d.getFullYear() - 543, d.getMonth(), d.getDate(), d.getHours(), d.getMinutes(), d.getSeconds());
     }
     return d;
-  }
-  // Thai locale format: "D/M/YYYY HH:MM:SS" with Buddhist year (e.g. "2/7/2569 17:37:21")
-  const m = String(str).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})[,\s]+(\d{1,2}):(\d{2})(?::(\d{2}))?/);
-  if (m) {
-    const year = parseInt(m[3]) > 2500 ? parseInt(m[3]) - 543 : parseInt(m[3]);
-    return new Date(year, parseInt(m[2]) - 1, parseInt(m[1]), parseInt(m[4]), parseInt(m[5]), parseInt(m[6] || 0));
   }
   return null;
 }
@@ -721,6 +782,10 @@ function render(orders) {
   });
   const dailyValues = days.map(d => dailyMap[d] || 0);
 
+  const monthlySeries = computeMonthlySeries(orders);
+  const addressStats = buildAddressLeaderboard(orders);
+  const last30 = sumInRange(orders, Date.now() - 30 * 86400000, Date.now());
+
   // Render HTML
   document.getElementById("content").innerHTML = `
     <div class="card">
@@ -777,6 +842,11 @@ function render(orders) {
         <div class="stat-value">${avgOrder.toLocaleString()}</div>
         <div class="stat-unit">THB</div>
       </div>
+      <div class="stat-card" onclick="openModal('last30')">
+        <div class="stat-label">ยอดขาย 30 วันล่าสุด ↗</div>
+        <div class="stat-value">${last30.revenue.toLocaleString("th-TH")}</div>
+        <div class="stat-unit">${last30.count} ออเดอร์ · THB</div>
+      </div>
     </div>
 
     <div class="charts">
@@ -790,7 +860,27 @@ function render(orders) {
       </div>
     </div>
 
-    <div class="card">
+    <div class="card" style="margin-top:20px;">
+      <h3>📅 ยอดขายรายเดือน</h3>
+      <canvas id="monthlyChart"></canvas>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+      <div class="section-header">
+        <h3>📍 ที่อยู่สั่งบ่อย</h3>
+        <span class="count-badge">${addressStats.total} ที่อยู่</span>
+      </div>
+      ${addressStats.top.length === 0 ? '<div class="empty">ยังไม่มีข้อมูล</div>' : addressStats.top.map((g, i) => `
+        <div class="order-row" style="cursor:pointer" onclick="showAddressHistory(${i})">
+          <div>
+            <div class="order-name">📍 ${g.address}</div>
+            <div class="order-meta">${g.revenue.toLocaleString("th-TH")} THB · ล่าสุด ${g.lastOrder ? g.lastOrder.toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "2-digit" }) : "-"}</div>
+          </div>
+          <div class="order-total">${g.count} ครั้ง</div>
+        </div>`).join("")}
+    </div>
+
+    <div class="card" style="margin-top:20px;">
       <h3>📊 เทียบกับช่วงก่อนหน้า</h3>
       ${renderComparisonHTML(orders)}
     </div>
@@ -799,6 +889,7 @@ function render(orders) {
   // Destroy old charts if re-rendering
   if (dailyChart) dailyChart.destroy();
   if (flavorChart) flavorChart.destroy();
+  if (monthlyChart) monthlyChart.destroy();
 
   dailyChart = new Chart(document.getElementById("dailyChart"), {
     type: "bar",
@@ -842,6 +933,29 @@ function render(orders) {
       scales: {
         x: { beginAtZero: true, ticks: { stepSize: 1 } },
         y: { ticks: { font: { size: 12 } } }
+      }
+    }
+  });
+
+  monthlyChart = new Chart(document.getElementById("monthlyChart"), {
+    type: "bar",
+    data: {
+      labels: monthlySeries.labels,
+      datasets: [{
+        data: monthlySeries.data,
+        backgroundColor: "rgba(30,122,156,0.65)",
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false }, tooltip: {
+        callbacks: { label: ctx => ` ${ctx.raw.toLocaleString("th-TH")} THB` }
+      }},
+      scales: {
+        y: { beginAtZero: true, ticks: { callback: v => v.toLocaleString("th-TH") } },
+        x: { ticks: { font: { size: 10 } } }
       }
     }
   });
