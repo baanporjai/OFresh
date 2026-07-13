@@ -164,11 +164,10 @@ body { font-family: 'Prompt', sans-serif; background: var(--off-white); color: v
 .order-date { color: var(--muted); font-size: .74rem; }
 .order-qty { color: var(--orange); font-weight: 700; }
 
-.name-summary-title { font-size: .78rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
-.name-summary-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 2px; font-size: .84rem; }
+.name-summary-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 2px; font-size: .85rem; border-bottom: 1px solid var(--gray); }
+.name-summary-row:last-child { border-bottom: none; }
 .name-summary-name { font-weight: 600; color: var(--text); }
 .name-summary-meta { color: var(--orange); font-weight: 700; font-size: .8rem; white-space: nowrap; }
-.name-summary-divider { border-top: 1.5px dashed var(--border); margin: 4px 0 14px; }
 
 /* ── TODAY DELIVERY LIST ── */
 .delivery-list { display: flex; flex-direction: column; gap: 0; }
@@ -693,7 +692,6 @@ function showAddressHistory(i) {
   const isTh = currentLang === 'th';
   const locale = isTh ? 'th-TH' : 'en-US';
   const orders = (window._rows || []).filter(r => (r.address||'').trim() === g.address).sort((a,b)=>b.datetime-a.datetime);
-  window._addressOrders = orders;
 
   document.getElementById('modalTitle').textContent = '📍 ' + g.address;
   const subEl = document.getElementById('modalSub');
@@ -709,32 +707,13 @@ function showAddressHistory(i) {
   });
   const nameSummary = Object.values(nameGroups).sort((a,b) => b.qty - a.qty);
 
-  const summaryHtml = nameSummary.length > 1 ? `
-    <div class="name-summary-title">${isTh?'สรุปยอดตามชื่อ':'Totals by Name'}</div>
-    <div class="name-summary-list">
-      ${nameSummary.map(n => `
-        <div class="name-summary-row">
-          <span class="name-summary-name">${n.name}</span>
-          <span class="name-summary-meta">${n.qty.toLocaleString(undefined,{maximumFractionDigits:1})} ${isTh?'กก.':'kg'} · ${n.count} ${isTh?'ครั้ง':'orders'}</span>
-        </div>`).join('')}
-    </div>
-    <div class="name-summary-divider"></div>` : '';
-
-  document.getElementById('modalBody').innerHTML = summaryHtml + orders.map((r,idx) => `
-    <div class="order-row" onclick="openAddressOrderModal(${idx})">
-      <div>
-        <div class="order-name">${r.name}</div>
-        <div class="order-date">${r.datetime.toLocaleString(locale,{dateStyle:'medium',timeStyle:'short'})}</div>
-      </div>
-      <div class="order-qty">${r.qty} ${isTh?'กก.':'kg'}</div>
+  document.getElementById('modalBody').innerHTML = nameSummary.map(n => `
+    <div class="name-summary-row">
+      <span class="name-summary-name">${n.name}</span>
+      <span class="name-summary-meta">${n.qty.toLocaleString(undefined,{maximumFractionDigits:1})} ${isTh?'กก.':'kg'} · ${n.count} ${isTh?'ครั้ง':'orders'}</span>
     </div>`).join('');
 
   document.getElementById('orderModal').classList.add('show');
-}
-
-function openAddressOrderModal(i) {
-  const r = window._addressOrders && window._addressOrders[i];
-  if (r) showOrderDetail(r);
 }
 
 // ── เลือกออเดอร์เฉพาะรายการที่จะพิมพ์ ──
