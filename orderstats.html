@@ -222,7 +222,8 @@ body { font-family: 'Prompt', sans-serif; background: var(--off-white); color: v
   font-size: 1rem; color: var(--muted); display: flex; align-items: center; justify-content: center;
 }
 .modal-close:hover { background: rgba(255,107,0,.15); color: var(--orange); }
-.modal-title { font-size: 1.1rem; font-weight: 800; color: var(--text); margin-bottom: 18px; padding-right: 30px; }
+.modal-title { font-size: 1.1rem; font-weight: 800; color: var(--text); margin-bottom: 4px; padding-right: 30px; }
+.modal-sub { font-size: .8rem; color: var(--muted); margin-bottom: 18px; }
 .modal-row { display: flex; justify-content: space-between; gap: 14px; padding: 9px 0; border-bottom: 1px solid var(--gray); font-size: .85rem; }
 .modal-row:last-child { border-bottom: none; }
 .modal-row .k { color: var(--muted); flex-shrink: 0; }
@@ -496,6 +497,7 @@ footer a { color: var(--orange); text-decoration: none; }
   <div class="modal-card">
     <button class="modal-close" onclick="closeOrderModal()">✕</button>
     <div class="modal-title" id="modalTitle">—</div>
+    <div class="modal-sub" id="modalSub" style="display:none"></div>
     <div id="modalBody"></div>
   </div>
 </div>
@@ -665,16 +667,48 @@ function renderAddressLeaderboard(rows) {
   });
   const all = Object.values(groups).sort((a,b) => b.count - a.count);
   const top = all.slice(0, 10);
+  window._addressGroups = top;
 
   document.getElementById('addressBadge').textContent = `${all.length} ${isTh?'ที่อยู่':'addresses'}`;
-  document.getElementById('addressList').innerHTML = top.map(g => `
-    <div class="order-row" style="cursor:default">
+  document.getElementById('addressList').innerHTML = top.map((g,i) => `
+    <div class="order-row" onclick="showAddressHistory(${i})">
       <div>
         <div class="order-name">📍 ${g.address}</div>
         <div class="order-date">${g.qty.toLocaleString(undefined,{maximumFractionDigits:1})} ${isTh?'กก.':'kg'} · ฿${g.revenue.toLocaleString()} · ${isTh?'ล่าสุด':'Latest'} ${g.lastOrder.toLocaleDateString(locale,{dateStyle:'medium'})}</div>
       </div>
       <div class="order-qty">${g.count} ${isTh?'ครั้ง':'orders'}</div>
     </div>`).join('') || `<p style="color:var(--muted);font-size:.85rem">${isTh?'ยังไม่มีข้อมูล':'No data yet'}</p>`;
+}
+
+// เปิด modal แสดงประวัติออเดอร์ทั้งหมดของที่อยู่นั้น (คลิกจากตาราง "ที่อยู่สั่งบ่อย")
+function showAddressHistory(i) {
+  const g = window._addressGroups && window._addressGroups[i];
+  if (!g) return;
+  const isTh = currentLang === 'th';
+  const locale = isTh ? 'th-TH' : 'en-US';
+  const orders = (window._rows || []).filter(r => (r.address||'').trim() === g.address).sort((a,b)=>b.datetime-a.datetime);
+  window._addressOrders = orders;
+
+  document.getElementById('modalTitle').textContent = '📍 ' + g.address;
+  const subEl = document.getElementById('modalSub');
+  subEl.style.display = 'block';
+  subEl.textContent = `${orders.length} ${isTh?'ครั้ง':'orders'} · ${g.qty.toLocaleString(undefined,{maximumFractionDigits:1})} ${isTh?'กก.':'kg'} · ฿${g.revenue.toLocaleString()}`;
+
+  document.getElementById('modalBody').innerHTML = orders.map((r,idx) => `
+    <div class="order-row" onclick="openAddressOrderModal(${idx})">
+      <div>
+        <div class="order-name">${r.name}</div>
+        <div class="order-date">${r.datetime.toLocaleString(locale,{dateStyle:'medium',timeStyle:'short'})}</div>
+      </div>
+      <div class="order-qty">${r.qty} ${isTh?'กก.':'kg'}</div>
+    </div>`).join('');
+
+  document.getElementById('orderModal').classList.add('show');
+}
+
+function openAddressOrderModal(i) {
+  const r = window._addressOrders && window._addressOrders[i];
+  if (r) showOrderDetail(r);
 }
 
 // ── เลือกออเดอร์เฉพาะรายการที่จะพิมพ์ ──
@@ -860,6 +894,7 @@ function showOrderDetail(r) {
   const locale = isTh?'th-TH':'en-US';
   const st = getStatusInfo(r.status, isTh);
   document.getElementById('modalTitle').textContent = r.name;
+  document.getElementById('modalSub').style.display = 'none';
 
   const rows = [
     [isTh?'สถานะ':'Status', `<select class="status-select ${st.cls}" onchange="updateOrderStatus('${r.id}', this)">${statusOptionsHTML(st.cls, isTh)}</select>`],
