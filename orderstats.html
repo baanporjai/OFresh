@@ -164,6 +164,12 @@ body { font-family: 'Prompt', sans-serif; background: var(--off-white); color: v
 .order-date { color: var(--muted); font-size: .74rem; }
 .order-qty { color: var(--orange); font-weight: 700; }
 
+.name-summary-title { font-size: .78rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
+.name-summary-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 2px; font-size: .84rem; }
+.name-summary-name { font-weight: 600; color: var(--text); }
+.name-summary-meta { color: var(--orange); font-weight: 700; font-size: .8rem; white-space: nowrap; }
+.name-summary-divider { border-top: 1.5px dashed var(--border); margin: 4px 0 14px; }
+
 /* ── TODAY DELIVERY LIST ── */
 .delivery-list { display: flex; flex-direction: column; gap: 0; }
 .delivery-row {
@@ -694,7 +700,27 @@ function showAddressHistory(i) {
   subEl.style.display = 'block';
   subEl.textContent = `${orders.length} ${isTh?'ครั้ง':'orders'} · ${g.qty.toLocaleString(undefined,{maximumFractionDigits:1})} ${isTh?'กก.':'kg'} · ฿${g.revenue.toLocaleString()}`;
 
-  document.getElementById('modalBody').innerHTML = orders.map((r,idx) => `
+  const nameGroups = {};
+  orders.forEach(r => {
+    const key = (r.name || '').trim() || (isTh ? 'ไม่ระบุชื่อ' : 'Unnamed');
+    if (!nameGroups[key]) nameGroups[key] = { name: key, count: 0, qty: 0 };
+    nameGroups[key].count++;
+    nameGroups[key].qty += r.qty;
+  });
+  const nameSummary = Object.values(nameGroups).sort((a,b) => b.qty - a.qty);
+
+  const summaryHtml = nameSummary.length > 1 ? `
+    <div class="name-summary-title">${isTh?'สรุปยอดตามชื่อ':'Totals by Name'}</div>
+    <div class="name-summary-list">
+      ${nameSummary.map(n => `
+        <div class="name-summary-row">
+          <span class="name-summary-name">${n.name}</span>
+          <span class="name-summary-meta">${n.qty.toLocaleString(undefined,{maximumFractionDigits:1})} ${isTh?'กก.':'kg'} · ${n.count} ${isTh?'ครั้ง':'orders'}</span>
+        </div>`).join('')}
+    </div>
+    <div class="name-summary-divider"></div>` : '';
+
+  document.getElementById('modalBody').innerHTML = summaryHtml + orders.map((r,idx) => `
     <div class="order-row" onclick="openAddressOrderModal(${idx})">
       <div>
         <div class="order-name">${r.name}</div>
