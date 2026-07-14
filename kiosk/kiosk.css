@@ -14,19 +14,32 @@ body {
     -webkit-text-size-adjust: 100%;
 }
 
-/* ===== AUTO-SCROLL =====
-   JS sets element.style.transform directly (see the <script> before </body> in
-   index.html) — inline style always wins the cascade, so kill any animation/transform
-   here too in case a stale cached copy of this file tries to fight it. */
+/* ===== AUTO-SCROLL (pure CSS — this WebView does not run JavaScript at all,
+   confirmed on-device) =====
+   Content is duplicated once (.scroll-copy x2 in the markup) and .scroll-track
+   animates a single translateY(-50%) — exactly one copy's height, since the track's
+   own height is copy1+copy2 stacked. That lands pixel-perfect at the start of copy 2,
+   so the loop is seamless: no calc()/vh mixing and no ultra-short snap-back keyframe,
+   the two things that broke on this device in the original version. */
 .scroll-wrapper {
-    -webkit-animation: none;
-    animation: none;
+    height: 100%;
+    overflow: hidden;
 }
-#kioskDebug {
-    position: fixed; bottom: 6px; right: 6px; z-index: 99999;
-    background: rgba(0,0,0,0.65); color: #6BFF6B;
-    font: 11px/1.4 monospace; padding: 4px 8px; border-radius: 6px;
-    pointer-events: none; white-space: pre;
+.scroll-track {
+    -webkit-animation: kiosk-marquee 120s linear infinite;
+    animation: kiosk-marquee 120s linear infinite;
+}
+.scroll-wrapper:active .scroll-track {
+    -webkit-animation-play-state: paused;
+    animation-play-state: paused;
+}
+@-webkit-keyframes kiosk-marquee {
+    from { -webkit-transform: translateY(0); transform: translateY(0); }
+    to   { -webkit-transform: translateY(-50%); transform: translateY(-50%); }
+}
+@keyframes kiosk-marquee {
+    from { -webkit-transform: translateY(0); transform: translateY(0); }
+    to   { -webkit-transform: translateY(-50%); transform: translateY(-50%); }
 }
 
 /* ===== NAVBAR ===== */
