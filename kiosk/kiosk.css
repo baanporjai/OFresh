@@ -15,17 +15,18 @@ body {
 }
 
 /* ===== AUTO-SCROLL =====
-   JS-driven scrollTop (see the <script> before </body> in index.html) instead of a
-   CSS transform keyframe loop — the old calc(-100% + 100vh) animation froze on the
-   kiosk WebView's compositor and wouldn't advance. animation/transform explicitly
-   killed here so a stale cached copy of this file can't reintroduce the old behavior. */
+   JS sets element.style.transform directly (see the <script> before </body> in
+   index.html) — inline style always wins the cascade, so kill any animation/transform
+   here too in case a stale cached copy of this file tries to fight it. */
 .scroll-wrapper {
-    height: 100%;
-    overflow-y: hidden;
     -webkit-animation: none;
     animation: none;
-    -webkit-transform: none;
-    transform: none;
+}
+#kioskDebug {
+    position: fixed; bottom: 6px; right: 6px; z-index: 99999;
+    background: rgba(0,0,0,0.65); color: #6BFF6B;
+    font: 11px/1.4 monospace; padding: 4px 8px; border-radius: 6px;
+    pointer-events: none; white-space: pre;
 }
 
 /* ===== NAVBAR ===== */

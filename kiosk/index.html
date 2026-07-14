@@ -65,17 +65,19 @@
         }
 
         /* ===== AUTO-SCROLL =====
-           เดิมใช้ CSS transform: translateY(calc(-100% + 100vh)) ล้วนๆ แต่ vh/percent
-           ผสมกันแบบนี้ไม่เสถียรบน WebView ของตู้ (กระพริบ + ค้างเลื่อนสุดตลอด)
-           เปลี่ยนมาใช้ scrollTop จริงที่ขับด้วย JS ด้านล่างแทน (ดู <script> ท้ายหน้า)
+           JS คำนวณ px จริงแล้วเซ็ต element.style.transform ตรงๆ (inline style ชนะ
+           stylesheet เสมอ กัน CSS เก่าที่อาจ cache ค้างมาแย่งซีนอีก) ขับด้วย setInterval
+           แทน requestAnimationFrame เพราะน่าเชื่อถือกว่าบน WebView แปลกๆ
            ถ้า JS รันไม่ได้ หน้าจะหยุดนิ่งที่ด้านบนสุด ไม่กระพริบ/ไม่ค้าง */
         .scroll-wrapper {
-            height: 100%;
-            overflow-y: hidden;
             -webkit-animation: none;
             animation: none;
-            -webkit-transform: none;
-            transform: none;
+        }
+        #kioskDebug {
+            position: fixed; bottom: 6px; right: 6px; z-index: 99999;
+            background: rgba(0,0,0,0.65); color: #6BFF6B;
+            font: 11px/1.4 monospace; padding: 4px 8px; border-radius: 6px;
+            pointer-events: none; white-space: pre;
         }
 
         /* ===== NAVBAR ===== */
@@ -1258,53 +1260,62 @@ Temperature kept within 3-9°C</p>
     </footer>
     </div><!-- end scroll-wrapper -->
 
+    <div id="kioskDebug">JS: waiting…</div>
+
     <script>
-    // Auto-scroll driver — replaces the old CSS calc(-100% + 100vh) transform loop,
-    // which flickered and stuck at the end on the kiosk WebView. Pure pixel scrollTop,
-    // no vh/percent math, so it can't drift or get stuck.
+    // Auto-scroll driver v3 — sets element.style.transform directly (inline style always
+    // wins over any stylesheet, so a stale cached CSS file can't fight it again) using
+    // real measured px (no vh/% calc) and setInterval (more reliably fires than
+    // requestAnimationFrame on odd WebViews). #kioskDebug shows live state on-screen so a
+    // frozen "JS: waiting…" means JS itself never ran, not that the scroll math is wrong.
     (function () {
         var wrap = document.querySelector('.scroll-wrapper');
+        var debug = document.getElementById('kioskDebug');
         if (!wrap) { return; }
 
         var CYCLE_MS = 120000;   // full loop duration, same pace as before
         var HOLD_MS = 2000;      // pause at top / bottom before continuing
+        var TICK_MS = 100;
         var paused = false;
         var phase = 'down';      // down -> holdBottom -> holdTop -> down ...
+        var offset = 0;          // current translateY offset in px
         var holdUntil = 0;
-        var lastTs = null;
 
         function maxScroll() {
-            return Math.max(0, wrap.scrollHeight - wrap.clientHeight);
+            // wrap has no height/overflow constraint of its own (so transform can reveal
+            // its full content) — measure it against the viewport, not wrap.clientHeight.
+            var viewportH = window.innerHeight || document.documentElement.clientHeight;
+            return Math.max(0, wrap.scrollHeight - viewportH);
         }
 
-        function step(ts) {
-            if (lastTs === null) { lastTs = ts; }
-            var dt = ts - lastTs;
-            lastTs = ts;
+        function tick() {
+            var now = Date.now();
+            var max = maxScroll();
 
-            if (!paused) {
-                var max = maxScroll();
-                if (max > 0) {
-                    if (phase === 'down') {
-                        var duration = Math.max(1, CYCLE_MS - HOLD_MS * 2);
-                        wrap.scrollTop = wrap.scrollTop + (max / duration) * dt;
-                        if (wrap.scrollTop >= max - 1) {
-                            wrap.scrollTop = max;
-                            phase = 'holdBottom';
-                            holdUntil = ts + HOLD_MS;
-                        }
-                    } else if (phase === 'holdBottom') {
-                        if (ts >= holdUntil) {
-                            wrap.scrollTop = 0;
-                            phase = 'holdTop';
-                            holdUntil = ts + HOLD_MS;
-                        }
-                    } else if (phase === 'holdTop') {
-                        if (ts >= holdUntil) { phase = 'down'; }
+            if (!paused && max > 0) {
+                if (phase === 'down') {
+                    var duration = Math.max(1, CYCLE_MS - HOLD_MS * 2);
+                    offset = offset + (max / duration) * TICK_MS;
+                    if (offset >= max) {
+                        offset = max;
+                        phase = 'holdBottom';
+                        holdUntil = now + HOLD_MS;
                     }
+                } else if (phase === 'holdBottom') {
+                    if (now >= holdUntil) {
+                        offset = 0;
+                        phase = 'holdTop';
+                        holdUntil = now + HOLD_MS;
+                    }
+                } else if (phase === 'holdTop') {
+                    if (now >= holdUntil) { phase = 'down'; }
                 }
+                wrap.style.transform = 'translateY(' + (-offset) + 'px)';
             }
-            requestAnimationFrame(step);
+
+            if (debug) {
+                debug.textContent = 'JS OK | max=' + Math.round(max) + 'px | off=' + Math.round(offset) + 'px | ' + phase + (paused ? ' | PAUSED' : '');
+            }
         }
 
         function pause() { paused = true; }
@@ -1314,7 +1325,8 @@ Temperature kept within 3-9°C</p>
         wrap.addEventListener('mousedown', pause);
         wrap.addEventListener('mouseup', resume);
 
-        requestAnimationFrame(step);
+        setInterval(tick, TICK_MS);
+        tick();
     })();
     </script>
 </body>
