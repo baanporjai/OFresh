@@ -14,30 +14,18 @@ body {
     -webkit-text-size-adjust: 100%;
 }
 
-/* ===== CSS AUTO-SCROLL ===== */
+/* ===== AUTO-SCROLL =====
+   JS-driven scrollTop (see the <script> before </body> in index.html) instead of a
+   CSS transform keyframe loop — the old calc(-100% + 100vh) animation froze on the
+   kiosk WebView's compositor and wouldn't advance. animation/transform explicitly
+   killed here so a stale cached copy of this file can't reintroduce the old behavior. */
 .scroll-wrapper {
-    -webkit-animation: kiosk-scroll 120s linear infinite;
-    animation: kiosk-scroll 120s linear infinite;
-    -webkit-transform-origin: top center;
-    transform-origin: top center;
-}
-.scroll-wrapper:active {
-    -webkit-animation-play-state: paused;
-    animation-play-state: paused;
-}
-@-webkit-keyframes kiosk-scroll {
-    0%     { -webkit-transform: translateY(0); transform: translateY(0); }
-    96.7%  { -webkit-transform: translateY(calc(-100% + 100vh)); transform: translateY(calc(-100% + 100vh)); }
-    98.3%  { -webkit-transform: translateY(calc(-100% + 100vh)); transform: translateY(calc(-100% + 100vh)); }
-    98.4%  { -webkit-transform: translateY(0); transform: translateY(0); }
-    100%   { -webkit-transform: translateY(0); transform: translateY(0); }
-}
-@keyframes kiosk-scroll {
-    0%     { -webkit-transform: translateY(0); transform: translateY(0); }
-    96.7%  { -webkit-transform: translateY(calc(-100% + 100vh)); transform: translateY(calc(-100% + 100vh)); }
-    98.3%  { -webkit-transform: translateY(calc(-100% + 100vh)); transform: translateY(calc(-100% + 100vh)); }
-    98.4%  { -webkit-transform: translateY(0); transform: translateY(0); }
-    100%   { -webkit-transform: translateY(0); transform: translateY(0); }
+    height: 100%;
+    overflow-y: hidden;
+    -webkit-animation: none;
+    animation: none;
+    -webkit-transform: none;
+    transform: none;
 }
 
 /* ===== NAVBAR ===== */
