@@ -26,8 +26,8 @@ body {
     overflow: hidden;
 }
 .scroll-track {
-    -webkit-animation: kiosk-marquee 30s linear infinite;
-    animation: kiosk-marquee 30s linear infinite;
+    -webkit-animation: kiosk-marquee 60s linear infinite;
+    animation: kiosk-marquee 60s linear infinite;
 }
 .scroll-wrapper:active .scroll-track {
     -webkit-animation-play-state: paused;
