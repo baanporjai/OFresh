@@ -562,6 +562,28 @@
         .benefit-card h3 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
         .benefit-card p { font-size: 14px; color: rgba(255,255,255,0.6); line-height: 1.7; font-weight: 300; }
 
+        /* ===== REVIEWS ===== */
+        .reviews-grid {
+            max-width: 1100px; margin: 0 auto 48px;
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px;
+        }
+        .review-card {
+            background: white; border-radius: 20px; padding: 32px; text-align: left;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.05); border: 1px solid rgba(255,107,0,0.08);
+            display: flex; flex-direction: column; gap: 16px;
+        }
+        .review-stars { color: #FFA41C; font-size: 16px; letter-spacing: 2px; }
+        .review-text { font-size: 15px; color: var(--text-dark); line-height: 1.8; font-weight: 300; flex-grow: 1; }
+        .review-author { display: flex; align-items: center; gap: 12px; }
+        .review-avatar {
+            width: 40px; height: 40px; min-width: 40px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--orange-primary), var(--orange-light));
+            color: white; font-weight: 700; font-size: 16px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .review-name { font-size: 14px; font-weight: 700; color: var(--dark); }
+        .review-source { font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
+
         /* ===== CTA SECTION ===== */
         .cta-section {
             background: linear-gradient(135deg, var(--orange-primary), var(--orange-dark));
@@ -1019,6 +1041,30 @@
                 <span data-i18n="reviews_h2_pre">ลูกค้าพูดถึง</span><img src="OFresh_Logo_transparent.png" alt="O'Fresh" style="height:44px;width:auto;vertical-align:middle;object-fit:contain"><span data-i18n="reviews_h2_suf">ว่ายังไง?</span>
             </h2>
             <p data-i18n="reviews_p">อ่านและเขียนรีวิวจริงได้ที่ Google Maps</p>
+        </div>
+        <div class="reviews-grid">
+            <div class="review-card animate-on-scroll">
+                <div class="review-stars">★★★★★</div>
+                <p class="review-text">"ตู้กดน้ำส้มคั้นสดอัตโนมัติ ตั้งอยู่หน้าฟิตเนสเวอร์จิ้น ใกล้ฟู้ดคอร์ด รสชาติดี สด อร่อย ใช้งานง่ายรองรับการชำระเงินหลายรูปแบบ เจ้าของร้านบริการดีมาก รอน้ำส้มไม่นาน ราคาไม่แพง หากอยากทานน้ำส้มคั้นอร่อยๆ รับรองไม่ผิดหวังครับ"</p>
+                <div class="review-author">
+                    <div class="review-avatar">G</div>
+                    <div>
+                        <div class="review-name">GEARPAWA</div>
+                        <div class="review-source"><i class="fab fa-google"></i> รีวิวจาก Google Maps</div>
+                    </div>
+                </div>
+            </div>
+            <div class="review-card animate-on-scroll">
+                <div class="review-stars">★★★★★</div>
+                <p class="review-text">"น้ำส้มอร่อยสดชื่นมากๆค่ะ คั้นสดๆจากตู้เลย ว้าววมากค่ะ 😍"</p>
+                <div class="review-author">
+                    <div class="review-avatar">C</div>
+                    <div>
+                        <div class="review-name">Chatwara Techachaicherdchoo</div>
+                        <div class="review-source"><i class="fab fa-google"></i> รีวิวจาก Google Maps</div>
+                    </div>
+                </div>
+            </div>
         </div>
         <div style="max-width:600px;margin:0 auto;text-align:center;display:flex;flex-wrap:wrap;gap:16px;justify-content:center">
             <a href="https://www.google.com/maps/place/O'Fresh+Orance+Juice/@18.8065323,99.0179214,16z/data=!4m15!1m8!3m7!1s0x30da25508bb2c13b:0x72e823d3d5289379!2sO'Fresh+Orance+Juice!8m2!3d18.8063616!4d99.0180232!10e5!16s%2Fg%2F11nqqm80ty!3m5!1s0x30da25508bb2c13b:0x72e823d3d5289379!8m2!3d18.8063616!4d99.0180232!16s%2Fg%2F11nqqm80ty?entry=ttu&g_ep=EgoyMDI2MDYyOC4wIKXMDSoASAFQAw%3D%3D" target="_blank" rel="noopener noreferrer" class="btn-primary">
