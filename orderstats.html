@@ -576,6 +576,12 @@ function parseCSV(text) {
 }
 
 const charts = {};
+// แปลง Date เป็น YYYY-MM-DD ตามเวลาท้องถิ่น (ห้ามใช้ toISOString ตรงๆ เพราะจะเลื่อนไปเป็น UTC ทำให้วันที่ผิดช่วงเที่ยงคืน-7โมงเช้า)
+function toLocalISODate(d) {
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
 function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
 
 const chartDefaults = {
@@ -772,8 +778,8 @@ function render(rows) {
   // รายการจัดส่งวันนี้ / พรุ่งนี้ (จับคู่จากคอลัมน์ deliveryDate)
   const today = new Date();
   const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
-  const todayStr = today.toISOString().slice(0,10);
-  const tomorrowStr = tomorrow.toISOString().slice(0,10);
+  const todayStr = toLocalISODate(today);
+  const tomorrowStr = toLocalISODate(tomorrow);
 
   window._todayDeliveries = renderDeliveryList(rows, r => r.deliveryDate === todayStr && matchesSearch(r), 'deliveryList', 'todayBadge',
     isTh?'ไม่มีรายการจัดส่งวันนี้':'No deliveries scheduled today', 'openDeliveryModal', isTh);
