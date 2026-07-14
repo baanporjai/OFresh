@@ -124,6 +124,7 @@ const translations = {
     reviews_p: 'อ่านและเขียนรีวิวจริงได้ที่ Google Maps',
     reviews_write_btn: 'เขียนรีวิวให้เรา',
     reviews_read_btn: 'อ่านรีวิวทั้งหมด',
+    reviews_source: 'รีวิวจาก Google Maps',
 
     // FAQ
     faq_tag: 'คำถามที่พบบ่อย',
@@ -313,6 +314,7 @@ const translations = {
     reviews_p: 'Read and write real reviews on Google Maps',
     reviews_write_btn: 'Write a Review',
     reviews_read_btn: 'Read All Reviews',
+    reviews_source: 'Review from Google Maps',
 
     // FAQ
     faq_tag: 'FAQ',
@@ -502,6 +504,7 @@ const translations = {
     reviews_p: '前往 Google 地图查看或撰写真实评价',
     reviews_write_btn: '给我们写评价',
     reviews_read_btn: '查看所有评价',
+    reviews_source: '来自 Google 地图的评价',
 
     // FAQ
     faq_tag: '常见问题',
@@ -691,6 +694,7 @@ const translations = {
     reviews_p: 'Google マップで本物のレビューを読む・書く',
     reviews_write_btn: 'レビューを書く',
     reviews_read_btn: 'すべてのレビューを見る',
+    reviews_source: 'Google マップのレビュー',
 
     // FAQ
     faq_tag: 'よくある質問',
@@ -879,6 +883,7 @@ const translations = {
     reviews_p: '구글 지도에서 실제 리뷰를 읽고 작성해보세요',
     reviews_write_btn: '리뷰 작성하기',
     reviews_read_btn: '모든 리뷰 보기',
+    reviews_source: 'Google 지도 리뷰',
 
     // FAQ
     faq_tag: '자주 묻는 질문',
@@ -968,6 +973,7 @@ function applyLanguage(lang) {
     btn.classList.toggle('active', btn.dataset.lang === lang);
   });
   document.documentElement.lang = lang === 'zh' ? 'zh-CN' : lang;
+  if (typeof renderReviews === 'function') renderReviews();
 }
 
 function initI18n() {

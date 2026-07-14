@@ -1220,17 +1220,65 @@ Temperature kept within 3-9°C</p>
         });
 
         // รีวิวจริงจาก Google Maps — สลับชุดที่แสดงทุกชั่วโมงโดยอิงจากเวลาจริง ไม่ต้องเก็บ state
+        // ข้อความรีวิวแปลโดยเราเองให้ตรงกับภาษาที่ลูกค้าเลือกดู (ชื่อผู้รีวิวไม่แปล)
         const REVIEWS = [
-            { name: 'GEARPAWA', stars: 5, text: 'ตู้กดน้ำส้มคั้นสดอัตโนมัติ ตั้งอยู่หน้าฟิตเนสเวอร์จิ้น ใกล้ฟู้ดคอร์ด รสชาติดี สด อร่อย ใช้งานง่ายรองรับการชำระเงินหลายรูปแบบ เจ้าของร้านบริการดีมาก รอน้ำส้มไม่นาน ราคาไม่แพง หากอยากทานน้ำส้มคั้นอร่อยๆ รับรองไม่ผิดหวังครับ' },
-            { name: 'Natnicha Aom', stars: 5, text: 'ชอบมากก กินทุกครั้งเลย ส้มคุณภาพ ตู้สะอาด' },
-            { name: 'Piyanart Saithsathainkul', stars: 5, text: 'อร่อย สดชื่นมากค่ะ' },
-            { name: 'ศศิวิมล คำมงคล', stars: 5, text: 'น้ำส้มอร่อยมาก สดชื่น ลูกชายชอบมาก เห็นเป็นไม่ได้ต้องร้องขอกดทุกครั้งค่ะ' },
-            { name: 'Chomphu Chatpaopong', stars: 5, text: 'น้ำส้มอร่อยมากกก เคยเห็นที่สิงคโปร์ แต่ตอนนี้มีที่ไทยแล้วว สดชื่นมากกก' },
+            {
+                name: 'GEARPAWA', stars: 5,
+                text: {
+                    th: 'ตู้กดน้ำส้มคั้นสดอัตโนมัติ ตั้งอยู่หน้าฟิตเนสเวอร์จิ้น ใกล้ฟู้ดคอร์ด รสชาติดี สด อร่อย ใช้งานง่ายรองรับการชำระเงินหลายรูปแบบ เจ้าของร้านบริการดีมาก รอน้ำส้มไม่นาน ราคาไม่แพง หากอยากทานน้ำส้มคั้นอร่อยๆ รับรองไม่ผิดหวังครับ',
+                    en: 'An automatic fresh orange juice vending machine, located in front of Virgin Fitness, near the food court. Great taste, fresh, and delicious. Easy to use with multiple payment options. The owner\'s service is excellent — the juice doesn\'t take long. Affordable price. If you want tasty fresh orange juice, you won\'t be disappointed!',
+                    zh: '自动鲜榨橙汁机，位于Virgin Fitness健身房前，靠近美食广场。味道好，新鲜，好喝。操作简单，支持多种付款方式。老板服务很好，等橙汁不用太久，价格不贵。如果想喝好喝的鲜榨橙汁，保证不会失望！',
+                    ja: '自動フレッシュオレンジジュース販売機。Virgin Fitnessの前、フードコート近くにあります。味が良くて新鮮、美味しいです。操作も簡単で、複数の支払い方法に対応しています。オーナーのサービスもとても良く、待ち時間も短いです。価格も手頃。美味しいフレッシュオレンジジュースを飲みたいなら、きっと満足できますよ！',
+                    ko: '자동 신선 착즙 오렌지 주스 자판기, Virgin Fitness 앞, 푸드코트 근처에 있어요. 맛도 좋고 신선하고 맛있어요. 사용하기 쉽고 다양한 결제 방법을 지원해요. 사장님 서비스도 정말 좋고 오래 기다리지 않아도 돼요. 가격도 저렴해요. 맛있는 착즙 오렌지주스를 원한다면 실망하지 않을 거예요!',
+                },
+            },
+            {
+                name: 'Natnicha Aom', stars: 5,
+                text: {
+                    th: 'ชอบมากก กินทุกครั้งเลย ส้มคุณภาพ ตู้สะอาด',
+                    en: 'Love it so much! I have it every time. Quality oranges, clean machine.',
+                    zh: '超喜欢！每次都会买。橙子品质好，机器很干净。',
+                    ja: 'すごく好きです！毎回飲んでます。オレンジの品質も良く、機械もきれいです。',
+                    ko: '너무 좋아해요! 매번 마셔요. 오렌지 품질도 좋고 기계도 깨끗해요.',
+                },
+            },
+            {
+                name: 'Piyanart Saithsathainkul', stars: 5,
+                text: {
+                    th: 'อร่อย สดชื่นมากค่ะ',
+                    en: 'Delicious, very refreshing!',
+                    zh: '好喝，非常清爽！',
+                    ja: '美味しくて、とても爽やかです！',
+                    ko: '맛있고 아주 상쾌해요!',
+                },
+            },
+            {
+                name: 'ศศิวิมล คำมงคล', stars: 5,
+                text: {
+                    th: 'น้ำส้มอร่อยมาก สดชื่น ลูกชายชอบมาก เห็นเป็นไม่ได้ต้องร้องขอกดทุกครั้งค่ะ',
+                    en: 'The orange juice is really delicious and refreshing. My son loves it so much — every time he sees the machine, he begs me to buy him one!',
+                    zh: '橙汁超好喝，很清爽。我儿子超喜欢，每次看到机器都吵着要买！',
+                    ja: 'オレンジジュースがとても美味しくて爽やかです。息子が大好きで、機械を見るたびに買ってとせがまれます！',
+                    ko: '오렌지 주스가 정말 맛있고 상쾌해요. 아들이 너무 좋아해서 기계만 보면 매번 사달라고 졸라요!',
+                },
+            },
+            {
+                name: 'Chomphu Chatpaopong', stars: 5,
+                text: {
+                    th: 'น้ำส้มอร่อยมากกก เคยเห็นที่สิงคโปร์ แต่ตอนนี้มีที่ไทยแล้วว สดชื่นมากกก',
+                    en: 'The orange juice is soooo delicious! I\'ve seen this kind of machine in Singapore before, but now it\'s here in Thailand too — so refreshing!',
+                    zh: '橙汁超级好喝！之前在新加坡见过这种机器，现在泰国也有了，非常清爽！',
+                    ja: 'オレンジジュースがめちゃくちゃ美味しい！シンガポールで見たことがあったけど、今はタイにもあるんですね。とても爽やかです！',
+                    ko: '오렌지 주스가 진짜 너무 맛있어요! 싱가포르에서 본 적 있는데 이제 태국에도 생겼네요. 정말 상쾌해요!',
+                },
+            },
         ];
 
         function renderReviews() {
             const grid = document.getElementById('reviewsGrid');
             if (!grid) return;
+            const lang = localStorage.getItem('ofresh_lang') || 'th';
+            const sourceLabel = (translations[lang] && translations[lang].reviews_source) || translations.th.reviews_source;
             const windowSize = Math.min(3, REVIEWS.length);
             const hourIndex = Math.floor(Date.now() / 3600000);
             const start = hourIndex % REVIEWS.length;
@@ -1238,12 +1286,12 @@ Temperature kept within 3-9°C</p>
             grid.innerHTML = shown.map(r => `
                 <div class="review-card">
                     <div class="review-stars">${'★'.repeat(r.stars)}</div>
-                    <p class="review-text">"${r.text}"</p>
+                    <p class="review-text">"${r.text[lang] || r.text.th}"</p>
                     <div class="review-author">
                         <div class="review-avatar">${r.name.charAt(0)}</div>
                         <div>
                             <div class="review-name">${r.name}</div>
-                            <div class="review-source"><i class="fab fa-google"></i> รีวิวจาก Google Maps</div>
+                            <div class="review-source"><i class="fab fa-google"></i> ${sourceLabel}</div>
                         </div>
                     </div>
                 </div>
