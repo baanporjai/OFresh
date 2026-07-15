@@ -84,6 +84,13 @@
             -webkit-animation-play-state: paused;
             animation-play-state: paused;
         }
+        /* DIAGNOSTIC — temporarily kills the scroll animation to test whether the
+           kiosk still resets every ~10s on its own with nothing animating at all.
+           Remove this rule (or flip to disabled) once the test is done. */
+        .scroll-track {
+            -webkit-animation: none !important;
+            animation: none !important;
+        }
         @-webkit-keyframes kiosk-marquee {
             from { -webkit-transform: translateY(0); transform: translateY(0); }
             to   { -webkit-transform: translateY(-50%); transform: translateY(-50%); }
