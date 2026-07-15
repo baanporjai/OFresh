@@ -16,6 +16,9 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<!-- flatpickr — บังคับช่องวันที่ในฟอร์มแก้ไขให้แสดง DD/MM/YYYY (input type=date แสดงตาม locale เครื่อง ควบคุมไม่ได้) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <style>
 :root {
   --orange: #FF6B00;
@@ -234,6 +237,29 @@ body { font-family: 'Prompt', sans-serif; background: var(--off-white); color: v
 .modal-row:last-child { border-bottom: none; }
 .modal-row .k { color: var(--muted); flex-shrink: 0; }
 .modal-row .v { color: var(--text); font-weight: 600; text-align: right; word-break: break-word; }
+
+/* ฟอร์มแก้ไขรายละเอียดออเดอร์ใน modal */
+.edit-btn {
+  display: inline-flex; align-items: center; gap: 6px; margin-top: 16px;
+  background: var(--orange); color: #fff; border: none; border-radius: 10px;
+  padding: 10px 18px; font-family: inherit; font-size: .85rem; font-weight: 700; cursor: pointer;
+  transition: background .2s;
+}
+.edit-btn:hover { background: var(--orange-dark); }
+.edit-btn.secondary { background: var(--gray); color: var(--text); }
+.edit-btn.secondary:hover { background: #E8E8E8; }
+.edit-field { margin-bottom: 12px; }
+.edit-field label { display: block; font-size: .75rem; font-weight: 600; color: var(--muted); margin-bottom: 4px; }
+.edit-field input, .edit-field textarea {
+  width: 100%; box-sizing: border-box; padding: 9px 12px;
+  border: 1px solid var(--border); border-radius: 10px;
+  font-family: inherit; font-size: .85rem; color: var(--text); background: #fff;
+}
+.edit-field input:focus, .edit-field textarea:focus { outline: none; border-color: var(--orange); }
+.edit-field textarea { resize: vertical; min-height: 56px; }
+.edit-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.edit-actions { display: flex; gap: 10px; margin-top: 16px; }
+.edit-actions .edit-btn { margin-top: 0; flex: 1; justify-content: center; }
 
 #loading {
   position: fixed; inset: 0;
@@ -921,9 +947,100 @@ function showOrderDetail(r) {
 
   document.getElementById('modalBody').innerHTML = rows.map(([k,v]) =>
     `<div class="modal-row"><span class="k">${k}</span><span class="v">${v}</span></div>`
-  ).join('');
+  ).join('')
+  // แก้ไขได้เฉพาะออเดอร์ที่มี id (ออเดอร์เก่าก่อนมีระบบ id จะหาแถวในชีตไม่เจอ)
+  + (r.id ? `<button class="edit-btn" onclick="openOrderEdit('${r.id}')">✏️ ${isTh?'แก้ไขรายละเอียด':'Edit Details'}</button>` : '');
 
   document.getElementById('orderModal').classList.add('show');
+}
+
+// ═══ แก้ไขรายละเอียดออเดอร์ ═══
+const escAttr = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+let editDatePicker = null;
+
+function openOrderEdit(id) {
+  const r = window._rows.find(x => x.id === id);
+  if (!r) return;
+  if (editDatePicker) { try { editDatePicker.destroy(); } catch(_){} editDatePicker = null; }
+  const isTh = currentLang==='th';
+  document.getElementById('modalTitle').textContent = (isTh?'แก้ไข — ':'Edit — ') + r.name;
+
+  document.getElementById('modalBody').innerHTML = `
+    <div class="edit-field"><label>${isTh?'ชื่อ-นามสกุล':'Full Name'}</label><input id="editName" value="${escAttr(r.name)}"></div>
+    <div class="edit-row2">
+      <div class="edit-field"><label>${isTh?'เบอร์โทร':'Phone'}</label><input id="editPhone" value="${escAttr(r.phone)}"></div>
+      <div class="edit-field"><label>LINE ID</label><input id="editLine" value="${escAttr(r.line)}"></div>
+    </div>
+    <div class="edit-row2">
+      <div class="edit-field"><label>${isTh?'จำนวน (กก.)':'Quantity (kg)'}</label><input id="editQty" type="number" min="0" step="0.5" value="${escAttr(r.qty)}"></div>
+      <div class="edit-field"><label>${isTh?'ยอดรวม (บาท)':'Total (THB)'}</label><input id="editTotal" type="number" min="0" step="1" value="${escAttr(r.total)}"></div>
+    </div>
+    <div class="edit-field"><label>${isTh?'ที่อยู่จัดส่ง':'Delivery Address'}</label><textarea id="editAddress">${escAttr(r.address)}</textarea></div>
+    <div class="edit-field"><label>${isTh?'วันที่ต้องการของ':'Desired Delivery Date'}</label><input id="editDeliveryDate" placeholder="DD/MM/YYYY" autocomplete="off"></div>
+    <div class="edit-field"><label>${isTh?'หมายเหตุ':'Note'}</label><textarea id="editNote">${escAttr(r.note)}</textarea></div>
+    <div class="edit-actions">
+      <button class="edit-btn secondary" onclick="cancelOrderEdit('${escAttr(id)}')">${isTh?'ยกเลิก':'Cancel'}</button>
+      <button class="edit-btn" id="editSaveBtn" onclick="saveOrderEdit('${escAttr(id)}')">💾 ${isTh?'บันทึก':'Save'}</button>
+    </div>`;
+
+  // flatpickr: แสดง DD/MM/YYYY แต่ค่าจริงเก็บเป็น YYYY-MM-DD ตรงกับรูปแบบในชีต
+  editDatePicker = flatpickr('#editDeliveryDate', {
+    dateFormat: 'Y-m-d', altInput: true, altFormat: 'd/m/Y', allowInput: false,
+    defaultDate: r.deliveryDate || null,
+  });
+}
+
+function cancelOrderEdit(id) {
+  const r = window._rows.find(x => x.id === id);
+  if (r) showOrderDetail(r); else closeOrderModal();
+}
+
+async function saveOrderEdit(id) {
+  const isTh = currentLang==='th';
+  const r = window._rows.find(x => x.id === id);
+  if (!r) return;
+
+  const name = document.getElementById('editName').value.trim();
+  if (!name) { alert(isTh?'กรุณากรอกชื่อ':'Please enter a name'); return; }
+  const fields = {
+    name,
+    phone: document.getElementById('editPhone').value.trim(),
+    line: document.getElementById('editLine').value.trim(),
+    qty: parseFloat(document.getElementById('editQty').value) || 0,
+    total: parseFloat(document.getElementById('editTotal').value) || 0,
+    address: document.getElementById('editAddress').value.trim(),
+    deliveryDate: document.getElementById('editDeliveryDate').value || '',
+    note: document.getElementById('editNote').value.trim(),
+  };
+
+  const btn = document.getElementById('editSaveBtn');
+  btn.disabled = true; btn.textContent = isTh?'กำลังบันทึก...':'Saving...';
+  try {
+    // text/plain เลี่ยง CORS preflight เช่นเดียวกับ updateOrderStatus
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'updateOrder', id, ...fields }),
+    });
+    let ok = true;
+    try { const j = await res.json(); ok = j.success !== false; } catch (_) { /* อ่าน response ไม่ได้ ถือว่าสำเร็จตาม pattern เดิม */ }
+    if (!ok) throw new Error('sheet update failed');
+
+    // อัปเดตข้อมูลในหน้า + cache ทันที ไม่ต้องรอ fetch รอบใหม่
+    Object.assign(r, fields);
+    const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
+    if (cached) {
+      const cr = cached.rows.find(x => x.id === id);
+      if (cr) Object.assign(cr, fields);
+      localStorage.setItem(CACHE_KEY, JSON.stringify(cached));
+    }
+    render(window._rows);
+    showOrderDetail(r);
+  } catch (e) {
+    console.error(e);
+    alert(isTh?'บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง':'Save failed, please try again');
+    btn.disabled = false; btn.textContent = '💾 ' + (isTh?'บันทึก':'Save');
+  }
 }
 
 function openOrderModal(i) {

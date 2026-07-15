@@ -23,6 +23,10 @@ function doPost(e) {
     return updateStatus(sheet, headers, data);
   }
 
+  if (data.action === 'updateOrder') {
+    return updateOrder(sheet, headers, data);
+  }
+
   const values = {
     timestamp: new Date(),
     id: data.id || '',
@@ -73,6 +77,34 @@ function updateStatus(sheet, headers, data) {
   return ContentService
     .createTextOutput(JSON.stringify({ success: false, error: 'Order id not found' }))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+// แก้ไขรายละเอียดออเดอร์ (จากหน้า /admin/orders) — ตามหาแถวด้วย id แล้วแก้เฉพาะฟิลด์ที่ส่งมา
+function updateOrder(sheet, headers, data) {
+  const colId = headers.indexOf('id') + 1;
+  if (!colId) return jsonOut({ success: false, error: 'id column not found' });
+
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return jsonOut({ success: false, error: 'No data rows' });
+
+  // ชื่อคีย์ที่หน้าเว็บส่งมา (camelCase) → ชื่อหัวคอลัมน์ในชีต (lowercase)
+  const fieldMap = {
+    name: 'name', phone: 'phone', line: 'line', qty: 'qty', total: 'total',
+    address: 'address', deliveryDate: 'deliverydate', note: 'note',
+  };
+
+  const ids = sheet.getRange(2, colId, lastRow - 1, 1).getValues();
+  for (let i = 0; i < ids.length; i++) {
+    if (String(ids[i][0]) === String(data.id)) {
+      Object.keys(fieldMap).forEach(function(key) {
+        if (!(key in data)) return; // แก้เฉพาะฟิลด์ที่ส่งมา ฟิลด์อื่นไม่แตะ
+        const col = headers.indexOf(fieldMap[key]) + 1;
+        if (col) sheet.getRange(i + 2, col).setValue(data[key]);
+      });
+      return jsonOut({ success: true });
+    }
+  }
+  return jsonOut({ success: false, error: 'Order id not found' });
 }
 
 // ═══════════════ ต้นทุน / ค่าใช้จ่าย (หน้า /admin/accounting) ═══════════════
