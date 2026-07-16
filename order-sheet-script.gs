@@ -27,6 +27,18 @@ function doPost(e) {
     return updateOrder(sheet, headers, data);
   }
 
+  // ใช้เช็คว่า deployment ที่รันอยู่เป็นโค้ดเวอร์ชันไหน (ยิง POST {"action":"ping"} มาดูได้)
+  if (data.action === 'ping') {
+    return jsonOut({ success: true, version: 2, actions: ['updateStatus', 'updateOrder'] });
+  }
+
+  // กันพลาด: ถ้าระบุ action มาแต่ไม่รู้จัก ให้ตอบ error ทันที
+  // ห้ามตกลงไปเพิ่มแถวใหม่เด็ดขาด (เคยเกิดเคสหน้าเว็บส่ง action ใหม่มาก่อนที่สคริปต์จะถูก deploy ตาม
+  // แล้วกลายเป็นออเดอร์ซ้ำในชีต) — ฟอร์มสั่งซื้อจริงไม่ส่ง action มาอยู่แล้ว
+  if (data.action) {
+    return jsonOut({ success: false, error: 'Unknown action: ' + data.action });
+  }
+
   const values = {
     timestamp: new Date(),
     id: data.id || '',
