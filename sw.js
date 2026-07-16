@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ofresh-v2';
+const CACHE_NAME = 'ofresh-v3';
 // ต้องเป็น URL ปลายทางจริง (ไม่ใช่ URL ที่ Cloudflare Pages 307-redirect ต่อ)
 // เพราะ Cache API ห้าม cache response ที่มาจาก redirect — ถ้าใส่ URL ที่ redirect ไป install จะ fail ทั้งหมด
 const APP_SHELL = [
