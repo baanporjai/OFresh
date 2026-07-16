@@ -926,15 +926,21 @@ function renderDeliveryList(rows, filterFn, listElId, badgeElId, emptyMsg, modal
 async function updateOrderStatus(id, selectEl) {
   const isTh = currentLang==='th';
   const newStatus = selectEl.value;
+  const prevCls = selectEl.className.replace('status-select', '').trim();
   selectEl.disabled = true;
   try {
     // ใช้ Content-Type: text/plain แทน application/json เพื่อเลี่ยง CORS preflight
     // (เบราว์เซอร์จะยิง OPTIONS ก่อนถ้าใช้ application/json แต่ Apps Script ไม่รองรับ preflight)
-    await fetch(APPS_SCRIPT_URL, {
+    const res = await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({ action: 'updateStatus', id, status: newStatus }),
     });
+    // ต้องเช็คผลลัพธ์จริงจาก server เสมอ — fetch() ไม่ throw ถ้า server ตอบ {success:false} มาแบบ HTTP 200
+    // (เคยพลาดจุดนี้มาก่อน: หน้าเว็บเข้าใจว่าสำเร็จทั้งที่ชีตไม่ได้ถูกแก้เลย จนมากดรีเฟรชถึงเห็นค่าเดิม)
+    const j = await res.json();
+    if (j.success === false) throw new Error(j.error || 'update failed');
+
     selectEl.className = `status-select ${newStatus}`;
     const row = window._rows.find(r => r.id === id);
     if (row) row.status = newStatus;
@@ -948,6 +954,8 @@ async function updateOrderStatus(id, selectEl) {
   } catch (e) {
     alert(isTh ? 'อัปเดตสถานะไม่สำเร็จ ลองใหม่อีกครั้ง' : 'Failed to update status, please try again');
     console.error(e);
+    selectEl.className = `status-select ${prevCls}`.trim();
+    selectEl.value = prevCls || 'pending';
   } finally {
     selectEl.disabled = false;
   }
