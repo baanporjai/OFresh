@@ -71,6 +71,9 @@
     <link rel="icon" type="image/png" href="favicon.png">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- flatpickr — บังคับช่องวันที่ให้แสดง DD/MM/YYYY (input type=date แสดงตาม locale เครื่อง ควบคุมไม่ได้) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <style>
         :root {
             --orange: #FF6B00;
@@ -442,7 +445,7 @@
                     <span data-i18n="order_date_label">วันที่ต้องการของ</span>
                     <span style="color:var(--text-muted);font-weight:400"> (<span data-i18n="order_date_optional">ถ้ามี</span>)</span>
                 </label>
-                <input type="date" id="deliveryDate">
+                <input type="text" id="deliveryDate" placeholder="DD/MM/YYYY" autocomplete="off">
             </div>
 
             <div class="form-group">
@@ -507,11 +510,13 @@
     qtyInput.addEventListener('input', updatePrice);
     updatePrice();
 
-    const deliveryDateInput = document.getElementById('deliveryDate');
-    deliveryDateInput.min = new Date().toISOString().split('T')[0];
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
-    deliveryDateInput.value = tomorrow.toISOString().split('T')[0];
+    // dateFormat เก็บค่าจริงเป็น ISO (โค้ดส่วนอื่นที่อ่าน .value ไม่ต้องแก้อะไรต่อ) ส่วน altFormat คือที่ผู้ใช้เห็น
+    const deliveryDatePicker = flatpickr('#deliveryDate', {
+        dateFormat: 'Y-m-d', altInput: true, altFormat: 'd/m/Y', allowInput: false,
+        minDate: 'today', defaultDate: tomorrow,
+    });
 
     function getLang() {
         return localStorage.getItem('ofresh_lang') || 'th';
@@ -593,7 +598,7 @@
         document.getElementById('qty').value = 2;
         const resetTomorrow = new Date();
         resetTomorrow.setDate(resetTomorrow.getDate() + 1);
-        document.getElementById('deliveryDate').value = resetTomorrow.toISOString().split('T')[0];
+        deliveryDatePicker.setDate(resetTomorrow, true);
         updatePrice();
         document.getElementById('formCard').style.display = 'block';
         document.getElementById('successCard').classList.remove('show');
