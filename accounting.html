@@ -592,14 +592,50 @@ function parseNayaxCSV(text) {
   }).filter(r => r.datetime && !isNaN(r.datetime) && r.price > 0);
 }
 
+// แยก CSV ทั้งก้อนเป็นรายการ record โดยเคารพเครื่องหมายคำพูด — ห้ามใช้ text.split('\n')
+// เพราะ field ที่ครอบด้วย "..." อาจมีขึ้นบรรทัดใหม่อยู่ข้างใน (เช่น หมายเหตุหลายบรรทัดจาก textarea)
+function parseCSVRecords(text) {
+  const records = []; let fields = []; let cur = ''; let inQuotes = false; let sawData = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i+1] === '"') { cur += '"'; i++; } else { inQuotes = false; }
+      } else { cur += c; }
+    } else if (c === '"') { inQuotes = true; sawData = true; }
+    else if (c === ',') { fields.push(cur); cur = ''; sawData = true; }
+    else if (c === '\n' || c === '\r') {
+      if (c === '\r' && text[i+1] === '\n') i++;
+      if (sawData || cur !== '') { fields.push(cur); records.push(fields); }
+      fields = []; cur = ''; sawData = false;
+    }
+    else cur += c;
+  }
+  if (sawData || cur !== '') { fields.push(cur); records.push(fields); }
+  return records;
+}
+
+// ชีตอาจเก็บ date เป็นข้อความ "2026-07-13" หรือถูก Google Sheets แปลงเป็นเซลล์วันที่
+// แล้วพ่นออกมาใน CSV เป็น "13/7/2026" (locale ไทย วัน/เดือน/ปี) — normalize ให้เป็น ISO เสมอ
+function normalizeDateStr(s) {
+  s = (s || '').trim();
+  if (!s) return '';
+  const pad = n => String(n).padStart(2, '0');
+  let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (m) return `${m[1]}-${pad(+m[2])}-${pad(+m[3])}`;
+  m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (m) return `${m[3]}-${pad(+m[2])}-${pad(+m[1])}`;
+  return s;
+}
+
 // รายได้จากยอดสั่งซื้อส้ม
 function parseOrdersCSV(text) {
-  const lines = text.trim().split('\n');
-  if (lines.length < 2) return [];
-  const h = splitCSVLine(lines[0]).map(s => s.trim().toLowerCase().replace(/\r/g,''));
+  const rows = parseCSVRecords(text);
+  if (rows.length < 2) return [];
+  const h = rows[0].map(s => s.trim().toLowerCase().replace(/\r/g,''));
   const iTs = h.indexOf('timestamp'), iTotal = h.indexOf('total');
-  return lines.slice(1).map(line => {
-    const v = splitCSVLine(line); const g = i => (v[i]||'').trim().replace(/\r/g,'');
+  return rows.slice(1).map(v => {
+    const g = i => (v[i]||'').trim().replace(/\r/g,'');
     const datetime = parseTimestamp(g(iTs));
     const total = parseFloat(g(iTotal)) || 0;
     return { datetime, total };
@@ -608,14 +644,14 @@ function parseOrdersCSV(text) {
 
 // รายการต้นทุน/ค่าใช้จ่าย
 function parseExpensesCSV(text) {
-  const lines = text.trim().split('\n');
-  if (lines.length < 2) return [];
-  const h = splitCSVLine(lines[0]).map(s => s.trim().toLowerCase().replace(/\r/g,''));
+  const rows = parseCSVRecords(text);
+  if (rows.length < 2) return [];
+  const h = rows[0].map(s => s.trim().toLowerCase().replace(/\r/g,''));
   const iId = h.indexOf('id'), iType = h.indexOf('type'), iCat = h.indexOf('category'),
         iDesc = h.indexOf('description'), iAmount = h.indexOf('amount'), iDate = h.indexOf('date'), iNote = h.indexOf('note');
-  return lines.slice(1).map(line => {
-    const v = splitCSVLine(line); const g = i => (v[i]||'').trim().replace(/\r/g,'');
-    const dateStr = g(iDate);
+  return rows.slice(1).map(v => {
+    const g = i => (v[i]||'').trim().replace(/\r/g,'');
+    const dateStr = normalizeDateStr(g(iDate));
     const date = dateStr ? new Date(dateStr + 'T00:00:00') : null;
     const amount = parseFloat(g(iAmount)) || 0;
     return {

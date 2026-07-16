@@ -418,13 +418,36 @@ function formatPhone(raw) {
   return s && /^[1-9]\d{8}$/.test(s) ? '0' + s : s;
 }
 
+// แยก CSV ทั้งก้อนเป็นรายการ record โดยเคารพเครื่องหมายคำพูด — ห้ามใช้ text.split('\n')
+// เพราะ field ที่ครอบด้วย "..." อาจมีขึ้นบรรทัดใหม่อยู่ข้างใน (เช่น ที่อยู่หลายบรรทัดจาก textarea)
+function parseCSVRecords(text) {
+  const records = []; let fields = []; let cur = ''; let inQuotes = false; let sawData = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i+1] === '"') { cur += '"'; i++; } else { inQuotes = false; }
+      } else { cur += c; }
+    } else if (c === '"') { inQuotes = true; sawData = true; }
+    else if (c === ',') { fields.push(cur); cur = ''; sawData = true; }
+    else if (c === '\n' || c === '\r') {
+      if (c === '\r' && text[i+1] === '\n') i++;
+      if (sawData || cur !== '') { fields.push(cur); records.push(fields); }
+      fields = []; cur = ''; sawData = false;
+    }
+    else cur += c;
+  }
+  if (sawData || cur !== '') { fields.push(cur); records.push(fields); }
+  return records;
+}
+
 function parseCSV(text) {
-  const lines = text.trim().split('\n');
-  const h = splitCSVLine(lines[0]).map(s => s.trim().toLowerCase().replace(/\r/g,''));
+  const rows = parseCSVRecords(text);
+  const h = rows[0].map(s => s.trim().toLowerCase().replace(/\r/g,''));
   const iTs = h.indexOf('timestamp'), iName = h.indexOf('name'), iPhone = h.indexOf('phone'),
         iQty = h.indexOf('qty'), iTotal = h.indexOf('total'), iAddress = h.indexOf('address');
-  return lines.slice(1).map(line => {
-    const v = splitCSVLine(line); const g = i => (v[i]||'').trim().replace(/\r/g,'');
+  return rows.slice(1).map(v => {
+    const g = i => (v[i]||'').trim().replace(/\r/g,'');
     const dt = parseTimestamp(g(iTs));
     const qty = parseFloat(g(iQty))||0;
     const total = parseFloat(g(iTotal))||0;

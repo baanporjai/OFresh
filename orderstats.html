@@ -581,22 +581,59 @@ function formatPhone(raw) {
   return s && /^[1-9]\d{8}$/.test(s) ? '0' + s : s;
 }
 
+// แยก CSV ทั้งก้อนเป็นรายการ record โดยเคารพเครื่องหมายคำพูด — ห้ามใช้ text.split('\n')
+// เพราะ field ที่ครอบด้วย "..." อาจมีขึ้นบรรทัดใหม่อยู่ข้างใน (เช่น ที่อยู่หลายบรรทัดจาก textarea)
+// ถ้าแยกด้วย \n ตรงๆ แถวนั้นจะโดนหั่นครึ่งแล้วหายไปจากรายการจัดส่งทั้งหมด
+function parseCSVRecords(text) {
+  const records = []; let fields = []; let cur = ''; let inQuotes = false; let sawData = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i+1] === '"') { cur += '"'; i++; } else { inQuotes = false; }
+      } else { cur += c; }
+    } else if (c === '"') { inQuotes = true; sawData = true; }
+    else if (c === ',') { fields.push(cur); cur = ''; sawData = true; }
+    else if (c === '\n' || c === '\r') {
+      if (c === '\r' && text[i+1] === '\n') i++;
+      if (sawData || cur !== '') { fields.push(cur); records.push(fields); }
+      fields = []; cur = ''; sawData = false;
+    }
+    else cur += c;
+  }
+  if (sawData || cur !== '') { fields.push(cur); records.push(fields); }
+  return records;
+}
+
+// ชีตอาจเก็บ deliveryDate เป็นข้อความ "2026-07-20" หรือถูก Google Sheets แปลงเป็นเซลล์วันที่
+// แล้วพ่นออกมาใน CSV เป็น "20/7/2026" (locale ไทย วัน/เดือน/ปี) — normalize ให้เป็น ISO เสมอ
+function normalizeDateStr(s) {
+  s = (s || '').trim();
+  if (!s) return '';
+  const pad = n => String(n).padStart(2, '0');
+  let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (m) return `${m[1]}-${pad(+m[2])}-${pad(+m[3])}`;
+  m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (m) return `${m[3]}-${pad(+m[2])}-${pad(+m[1])}`;
+  return s;
+}
+
 function parseCSV(text) {
-  const lines = text.trim().split('\n');
-  const h = splitCSVLine(lines[0]).map(s => s.trim().toLowerCase().replace(/\r/g,''));
+  const rows = parseCSVRecords(text);
+  const h = rows[0].map(s => s.trim().toLowerCase().replace(/\r/g,''));
   const iTs = h.indexOf('timestamp'), iId = h.indexOf('id'), iName = h.indexOf('name'), iPhone = h.indexOf('phone'),
         iLine = h.indexOf('line'), iQty = h.indexOf('qty'), iTotal = h.indexOf('total'),
         iAddress = h.indexOf('address'), iDate = h.indexOf('deliverydate'), iNote = h.indexOf('note'),
         iStatus = h.indexOf('status');
-  return lines.slice(1).map(line => {
-    const v = splitCSVLine(line); const g = i => (v[i]||'').trim().replace(/\r/g,'');
+  return rows.slice(1).map(v => {
+    const g = i => (v[i]||'').trim().replace(/\r/g,'');
     const dt = parseTimestamp(g(iTs));
     const qty = parseFloat(g(iQty))||0;
     const total = parseFloat(g(iTotal))||0;
     return {
       datetime: dt, id: g(iId), name: g(iName)||'—', qty, total,
       phone: formatPhone(g(iPhone)), line: g(iLine), address: g(iAddress),
-      deliveryDate: g(iDate), note: g(iNote), status: g(iStatus),
+      deliveryDate: normalizeDateStr(g(iDate)), note: g(iNote), status: g(iStatus),
     };
   }).filter(r => r.datetime && !isNaN(r.datetime) && r.qty > 0);
 }
