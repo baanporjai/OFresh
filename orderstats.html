@@ -1130,7 +1130,8 @@ async function load(force) {
       rows = cached.rows.map(r => ({ ...r, datetime: new Date(r.datetime) }));
     } else {
       const token = sessionStorage.getItem('ofresh_admin_token');
-      const res = await fetch(API_BASE + '/api/admin/orders', {
+      // force (กดปุ่มรีเฟรสข้อมูลเอง) ต้องได้ข้อมูลสดจริงๆ เลยข้าม cache 15 วิ ที่ฝั่ง Worker ไปเลย
+      const res = await fetch(API_BASE + '/api/admin/orders' + (force ? '?fresh=1' : ''), {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.status === 401) {

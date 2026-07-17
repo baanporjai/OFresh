@@ -26,7 +26,7 @@ const CORS_HEADERS = {
 };
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
     if (request.method === 'OPTIONS') {
@@ -42,15 +42,15 @@ export default {
     }
 
     if (request.method === 'GET' && url.pathname === '/api/admin/orders') {
-      return handleAdminSheetProxy(request, env, env.ORDERS_SHEET_CSV_URL);
+      return handleAdminSheetProxy(request, env, env.ORDERS_SHEET_CSV_URL, ctx, url.searchParams.has('fresh'));
     }
 
     if (request.method === 'GET' && url.pathname === '/api/admin/nayax-stats') {
-      return handleAdminSheetProxy(request, env, env.NAYAX_SHEET_CSV_URL);
+      return handleAdminSheetProxy(request, env, env.NAYAX_SHEET_CSV_URL, ctx, url.searchParams.has('fresh'));
     }
 
     if (request.method === 'GET' && url.pathname === '/api/admin/expenses') {
-      return handleAdminSheetProxy(request, env, env.EXPENSES_SHEET_CSV_URL);
+      return handleAdminSheetProxy(request, env, env.EXPENSES_SHEET_CSV_URL, ctx, url.searchParams.has('fresh'));
     }
 
     if (request.method === 'POST' && url.pathname === '/api/admin/expenses') {
@@ -165,15 +165,36 @@ async function handleAdminLogin(request, env) {
   return jsonResponse({ success: true, token });
 }
 
-async function handleAdminSheetProxy(request, env, sheetUrl) {
+// Google Sheets export เป็น CSV ช้าโดยธรรมชาติ (render ทั้งชีตใหม่ทุกครั้ง ยิ่งมีแถวเยอะยิ่งช้า)
+// เดิมยิงตรงไป Google ทุกครั้งพร้อม cache-buster ทำให้ทุกคลิก "รีเฟรสข้อมูล" หรือแอดมินหลายคนที่เปิดพร้อมกัน
+// ต้องรอ round-trip เต็มๆ ไปหา Google ใหม่หมด — ใส่ cache ที่ edge ของ Cloudflare (Cache API) TTL สั้นแค่ 15 วิ
+// เพื่อลดเวลารอในเคสที่มีคนโหลดซ้ำถี่ๆ โดยข้อมูลยังถือว่าสดพอสำหรับแดชบอร์ดแอดมิน
+// allowStale=false (ส่ง ?fresh=1 มา เช่นตอนกดปุ่มรีเฟรสข้อมูลเอง) จะข้าม cache ไปดึงสดเสมอ
+async function handleAdminSheetProxy(request, env, sheetUrl, ctx, forceFresh) {
   const ok = await verifyAuthHeader(request, env);
   if (!ok) return jsonResponse({ error: 'Unauthorized' }, 401);
 
   if (!sheetUrl) return jsonResponse({ error: 'Not configured' }, 500);
 
+  const cache = caches.default;
+  const cacheKey = new Request(sheetUrl, { method: 'GET' });
+
   try {
-    const res = await fetch(sheetUrl + (sheetUrl.includes('?') ? '&' : '?') + 't=' + Date.now());
+    if (!forceFresh) {
+      const cached = await cache.match(cacheKey);
+      if (cached) {
+        return new Response(cached.body, { headers: { ...CORS_HEADERS, 'Content-Type': 'text/csv; charset=utf-8' } });
+      }
+    }
+
+    const res = await fetch(sheetUrl);
     const text = await res.text();
+
+    const toCache = new Response(text, {
+      headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Cache-Control': 'public, max-age=15' },
+    });
+    if (ctx) ctx.waitUntil(cache.put(cacheKey, toCache));
+
     return new Response(text, {
       headers: { ...CORS_HEADERS, 'Content-Type': 'text/csv; charset=utf-8' },
     });
