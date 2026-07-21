@@ -18,7 +18,7 @@
  *                                จะ fallback ไปใช้ SHEET_WEBHOOK_URL แทนอัตโนมัติ>
  *
  * ต้องเพิ่ม KV namespace binding ชื่อ OFRESH_KV ด้วย (Settings → Bindings → KV Namespace บน dashboard)
- * ใช้เก็บ cache ประวัติลูกค้า + draft ออเดอร์ที่รอแอดมินกดยืนยัน
+ * ใช้เก็บ cache ประวัติลูกค้าสำหรับให้ AI จับคู่ลูกค้าเดิม
  *
  * และต้องเปิด "Use webhook" ในหน้า LINE Developers Console ของ channel เดิม แล้วตั้ง Webhook URL
  * เป็น https://<worker-domain>/api/line/webhook (บอทถูกเพิ่มเข้ากลุ่ม O'Fresh_admin อยู่แล้วจากการ push
@@ -30,13 +30,10 @@
 const ADMIN_GROUP_ID = 'C6cb7cc0124997383e2066d971d5d0819'; // LINE group: O'Fresh_admin
 const SESSION_TTL_MS = 12 * 60 * 60 * 1000; // 12 ชั่วโมง
 
-// ── AI order-draft assistant (กลุ่มไลน์แอดมิน) ──
-// นโยบายเวอร์ชันแรก: ไม่มี auto-save เด็ดขาด ไม่ว่า AI จะมั่นใจแค่ไหน — ทุกออเดอร์ต้องให้แอดมินกด
-// "ยืนยัน" เองก่อนจึงจะเขียนลงชีตจริง เพราะถ้า AI จับคู่ลูกค้าผิดคนหรือ parse ผิดแบบมั่นใจสูงโดยไม่รู้ตัว
-// ออเดอร์ที่ผิดอาจถูกแพ็ค/จัดส่งจริงก่อนแอดมินทันเห็น ต่างจากงานแก้ไขในแดชบอร์ดที่ reverse ได้ง่าย
+// ── AI order assistant (กลุ่มไลน์แอดมิน) ──
+// บันทึกออเดอร์ลงชีตทันทีที่ parse ได้ ไม่มีขั้นตอนยืนยัน — ถ้า AI จับคู่ลูกค้าผิดคนหรือ parse ผิด
+// แก้ไขได้ทันทีด้วยปุ่ม "ยกเลิกออเดอร์นี้" ที่แนบมาด้วยทุกครั้ง หรือแก้รายละเอียดในแดชบอร์ด (orderstats.html)
 const CUSTOMER_HISTORY_TTL_SECONDS = 5 * 60;
-const DRAFT_TTL_SECONDS = 30 * 60;
-const EDITING_FLAG_TTL_SECONDS = 10 * 60;
 const ORDER_PRICE_PER_KG = 60;
 
 const CORS_HEADERS = {
@@ -454,7 +451,7 @@ function timingSafeEqual(a, b) {
 }
 
 // ══════════════════════════════════════════════════════════════════════
-// AI order-draft assistant — อ่านข้อความในกลุ่มไลน์แอดมิน แปลงเป็นออเดอร์ร่าง
+// AI order assistant — อ่านข้อความในกลุ่มไลน์แอดมิน แปลงเป็นออเดอร์แล้วบันทึกลงชีตทันที
 // รอแอดมินกดยืนยันก่อนเขียนลงชีตจริงเสมอ (ไม่มี auto-save)
 // ══════════════════════════════════════════════════════════════════════
 
@@ -680,7 +677,7 @@ function buildOrderSummaryText(order) {
     ? new Date(order.deliveryDate + 'T00:00:00').toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' })
     : null;
   return [
-    '🍊 ร่างออเดอร์จากข้อความ',
+    '🍊 บันทึกออเดอร์จากข้อความ',
     '─────────────────',
     `👤 ชื่อ: ${order.name || '(ไม่ระบุ)'}`,
     order.phone ? `📞 เบอร์: ${order.phone}` : null,
@@ -694,12 +691,12 @@ function buildOrderSummaryText(order) {
   ].filter(Boolean).join('\n');
 }
 
-// ปุ่ม "ยืนยัน"/"แก้ไข" แนบไปกับข้อความสรุป draft — ไม่มีทาง auto-save เด็ดขาดตามนโยบายเวอร์ชันแรก
-function confirmQuickReply(draftId) {
+// ปุ่มเดียวแนบไปกับข้อความสรุปหลังบันทึกทุกครั้ง — ทางแก้เร็วสุดถ้า AI จับคู่ผิดคนหรือ parse ผิด
+// (แก้รายละเอียดอื่นๆ นอกจากยกเลิก ทำในแดชบอร์ด orderstats.html แทน)
+function cancelQuickReply(orderId) {
   return {
     items: [
-      { type: 'action', action: { type: 'postback', label: '✅ ยืนยัน', data: `confirm:${draftId}`, displayText: 'ยืนยัน' } },
-      { type: 'action', action: { type: 'postback', label: '✏️ แก้ไข', data: `edit:${draftId}`, displayText: 'แก้ไข' } },
+      { type: 'action', action: { type: 'postback', label: '↩️ ยกเลิกออเดอร์นี้', data: `cancel:${orderId}`, displayText: 'ยกเลิกออเดอร์นี้' } },
     ],
   };
 }
@@ -727,15 +724,10 @@ async function cancelOrderInSheet(env, id) {
   });
 }
 
-// รับข้อความใหม่จากกลุ่ม — ถ้ากำลังรอแอดมินพิมพ์แก้ไข draft เดิมอยู่ ให้ parse ใหม่แล้ว merge
-// กับของเดิม (ฟิลด์ไหนที่รอบใหม่ไม่ได้พูดถึง ให้คงค่าเดิมไว้) ไม่งั้นถือเป็นออเดอร์ใหม่ทั้งหมด
+// รับข้อความใหม่จากกลุ่ม — parse แล้วบันทึกลงชีตทันที ไม่มีขั้นตอนยืนยัน
 async function handleIncomingText(event, env) {
   const text = event.message.text;
-  const groupId = event.source.groupId;
   const replyToken = event.replyToken;
-
-  const editingKey = `editing:${groupId}`;
-  const editingDraftId = env.OFRESH_KV ? await env.OFRESH_KV.get(editingKey) : null;
 
   const customers = await getCustomerHistory(env);
   let parsed;
@@ -747,48 +739,20 @@ async function handleIncomingText(event, env) {
     return;
   }
 
-  if (editingDraftId) {
-    const oldDraft = await env.OFRESH_KV.get(`draft:${editingDraftId}`, { type: 'json' });
-    await env.OFRESH_KV.delete(editingKey);
-
-    if (!oldDraft) {
-      await replyToLine(env, replyToken, [{ type: 'text', text: '⚠️ ร่างออเดอร์เดิมหมดอายุแล้ว ถือว่านี่เป็นออเดอร์ใหม่นะครับ' }]);
-    } else if (!parsed.isOrder) {
-      // ข้อความแก้ไขไม่ได้พูดถึงออเดอร์เลย — คงร่างเดิมไว้เฉยๆ ให้พิมพ์ใหม่อีกที
-      await env.OFRESH_KV.put(editingKey, editingDraftId, { expirationTtl: EDITING_FLAG_TTL_SECONDS });
-      await replyToLine(env, replyToken, [{ type: 'text', text: 'ไม่เห็นรายละเอียดออเดอร์ในข้อความนี้เลยครับ ลองพิมพ์ใหม่อีกครั้ง' }]);
-      return;
-    } else {
-      // merge เฉพาะฟิลด์ข้อมูลออเดอร์จริง (ค่าว่าง/0 แปลว่า "รอบนี้ไม่ได้พูดถึง" เลยคงค่าเดิมไว้)
-      // ส่วน confidence/missingFields เป็น "ผลประเมินข้อความล่าสุด" ต้องเอาค่าใหม่เสมอ ไม่ใช่ merge
-      // (ไม่งั้นถ้ารอบใหม่ parse ครบแล้ว missingFields ว่างเปล่า แต่ดันถูกมองว่า "ไม่ได้พูดถึง" แล้วคงของเก่าไว้)
-      const MERGEABLE_FIELDS = ['name', 'phone', 'line', 'qty', 'address', 'deliveryDate', 'note', 'matchedCustomer'];
-      const merged = { ...oldDraft };
-      for (const key of MERGEABLE_FIELDS) {
-        const v = parsed[key];
-        if (v !== '' && v !== 0 && v != null) merged[key] = v;
-      }
-      merged.confidence = parsed.confidence;
-      merged.missingFields = parsed.missingFields;
-      await env.OFRESH_KV.put(`draft:${editingDraftId}`, JSON.stringify(merged), { expirationTtl: DRAFT_TTL_SECONDS });
-      await replyToLine(env, replyToken, [
-        { type: 'text', text: buildOrderSummaryText(merged) },
-        { type: 'text', text: 'แก้ไขแล้วถูกไหมครับ?', quickReply: confirmQuickReply(editingDraftId) },
-      ]);
-    }
-    return;
-  }
-
   if (!parsed.isOrder) return; // ข้อความคุยเล่นทั่วไป ไม่ใช่ออเดอร์ — เงียบไว้ ไม่ตอบกลับ
 
-  const draftId = generateOrderId();
-  if (env.OFRESH_KV) {
-    await env.OFRESH_KV.put(`draft:${draftId}`, JSON.stringify(parsed), { expirationTtl: DRAFT_TTL_SECONDS });
+  const orderId = generateOrderId();
+  try {
+    await saveOrderToSheet(env, parsed, orderId);
+  } catch (err) {
+    console.error('saveOrderToSheet failed:', err);
+    await replyToLine(env, replyToken, [{ type: 'text', text: '⚠️ บันทึกออเดอร์ไม่สำเร็จ รบกวนกรอกในแดชบอร์ดเองหรือลองพิมพ์ใหม่อีกครั้งครับ' }]);
+    return;
   }
 
   await replyToLine(env, replyToken, [
     { type: 'text', text: buildOrderSummaryText(parsed) },
-    { type: 'text', text: 'ยืนยันบันทึกออเดอร์นี้ไหมครับ?', quickReply: confirmQuickReply(draftId) },
+    { type: 'text', text: '✅ บันทึกออเดอร์นี้แล้วครับ', quickReply: cancelQuickReply(orderId) },
   ]);
 }
 
@@ -797,34 +761,12 @@ async function handlePostback(event, env) {
   const sep = data.indexOf(':');
   if (sep === -1) return;
   const action = data.slice(0, sep);
-  const draftId = data.slice(sep + 1);
+  const orderId = data.slice(sep + 1);
   const replyToken = event.replyToken;
-  const groupId = event.source.groupId;
 
-  if (action === 'confirm') {
-    const draft = env.OFRESH_KV ? await env.OFRESH_KV.get(`draft:${draftId}`, { type: 'json' }) : null;
-    if (!draft) {
-      await replyToLine(env, replyToken, [{ type: 'text', text: '⚠️ ร่างออเดอร์นี้หมดอายุแล้ว (เกิน 30 นาที) กรุณาพิมพ์รายละเอียดออเดอร์ใหม่อีกครั้งครับ' }]);
-      return;
-    }
+  if (action === 'cancel') {
     try {
-      await saveOrderToSheet(env, draft, draftId);
-      await env.OFRESH_KV.delete(`draft:${draftId}`);
-      await replyToLine(env, replyToken, [{
-        type: 'text',
-        text: `✅ บันทึกออเดอร์ของ "${draft.name}" แล้วครับ`,
-        quickReply: { items: [{ type: 'action', action: { type: 'postback', label: '↩️ ยกเลิกออเดอร์นี้', data: `cancel:${draftId}`, displayText: 'ยกเลิกออเดอร์นี้' } }] },
-      }]);
-    } catch (err) {
-      console.error('saveOrderToSheet failed:', err);
-      await replyToLine(env, replyToken, [{ type: 'text', text: '⚠️ บันทึกออเดอร์ไม่สำเร็จ ลองกดยืนยันอีกครั้ง หรือแจ้งแอดมินระบบครับ' }]);
-    }
-  } else if (action === 'edit') {
-    if (env.OFRESH_KV) await env.OFRESH_KV.put(`editing:${groupId}`, draftId, { expirationTtl: EDITING_FLAG_TTL_SECONDS });
-    await replyToLine(env, replyToken, [{ type: 'text', text: '✏️ พิมพ์รายละเอียดที่ถูกต้องมาได้เลยครับ (พิมพ์เฉพาะส่วนที่ผิด ส่วนที่ไม่พูดถึงจะคงค่าเดิมไว้)' }]);
-  } else if (action === 'cancel') {
-    try {
-      await cancelOrderInSheet(env, draftId);
+      await cancelOrderInSheet(env, orderId);
       await replyToLine(env, replyToken, [{ type: 'text', text: '↩️ ยกเลิกออเดอร์นี้แล้วครับ' }]);
     } catch (err) {
       console.error('cancelOrderInSheet failed:', err);
