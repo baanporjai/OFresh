@@ -56,6 +56,27 @@ body { font-family: 'Prompt', sans-serif; background: var(--off-white); color: v
   .page-tab { padding: 6px 11px; font-size: .72rem; }
 }
 
+/* ── BOTTOM NAV (มือถือ) ── */
+.bottom-nav { display: none; }
+@media (max-width: 768px) {
+  .navbar .page-tabs { display: none; }
+  .bottom-nav {
+    display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 150;
+    background: var(--white); border-top: 1px solid var(--border);
+    box-shadow: 0 -4px 20px rgba(0,0,0,.06);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .bn-item {
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 2px; padding: 8px 4px 10px; text-decoration: none; color: var(--muted);
+    font-family: 'Prompt', sans-serif;
+  }
+  .bn-icon { font-size: 1.25rem; line-height: 1; }
+  .bn-label { font-size: .66rem; font-weight: 700; }
+  .bn-item.active { color: var(--orange); }
+  body { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
+}
+
 .hero {
   background: linear-gradient(135deg, var(--dark) 0%, #2D1B00 50%, #1A0E00 100%);
   padding: 56px 24px 52px; text-align: center; position: relative; overflow: hidden;
@@ -304,6 +325,14 @@ footer a { color: var(--orange); text-decoration: none; }
     <span class="page-tab active" data-th="ประวัติลูกค้า" data-en="Customers">ประวัติลูกค้า</span>
     <a href="/admin/accounting" class="page-tab" data-th="บัญชี" data-en="Accounting">บัญชี</a>
   </div>
+</nav>
+
+<!-- BOTTOM NAV (มือถือ) -->
+<nav class="bottom-nav">
+  <a href="/admin" class="bn-item"><span class="bn-icon">📊</span><span class="bn-label" data-th="ยอดขายตู้" data-en="Machine Sales">ยอดขายตู้</span></a>
+  <a href="/admin/orders" class="bn-item"><span class="bn-icon">🍊</span><span class="bn-label" data-th="ยอดสั่งซื้อส้ม" data-en="Order Sales">ยอดสั่งซื้อส้ม</span></a>
+  <span class="bn-item active"><span class="bn-icon">👥</span><span class="bn-label" data-th="ประวัติลูกค้า" data-en="Customers">ประวัติลูกค้า</span></span>
+  <a href="/admin/accounting" class="bn-item"><span class="bn-icon">💰</span><span class="bn-label" data-th="บัญชี" data-en="Accounting">บัญชี</span></a>
 </nav>
 
 <div class="hero">
