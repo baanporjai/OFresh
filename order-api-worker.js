@@ -5,7 +5,7 @@
  *   LINE_CHANNEL_TOKEN     = <Channel Access Token จาก LINE Developers>
  *   LINE_CHANNEL_SECRET    = <Channel Secret จาก LINE Developers — คนละค่ากับ LINE_CHANNEL_TOKEN
  *                             ใช้ตรวจลายเซ็น webhook ที่ยิงเข้ามา (ป้องกันคนปลอม request มาสร้าง/ยืนยันออเดอร์)>
- *   ANTHROPIC_API_KEY      = <API key จาก console.anthropic.com — ใช้ให้ Claude Haiku ช่วยอ่าน/แปลง
+ *   GEMINI_API_KEY         = <API key จาก aistudio.google.com/apikey — ใช้ให้ Gemini ช่วยอ่าน/แปลง
  *                             ข้อความแอดมินในกลุ่มเป็นออเดอร์ที่มีโครงสร้าง>
  *   SHEET_WEBHOOK_URL      = <Apps Script webhook สำหรับบันทึกออเดอร์>
  *   ADMIN_PIN              = <PIN สำหรับเข้าหน้าแดชบอร์ด>
@@ -479,7 +479,7 @@ async function handleLineWebhook(request, env, ctx) {
     if (!isAdminGroup) continue;
 
     // ตอบ LINE ให้เร็วที่สุด (200 ทันที) แล้วประมวลผลจริงต่อเบื้องหลังผ่าน waitUntil
-    // เพราะเรียก Claude + อ่านชีตอาจใช้เวลาหลายวินาที ไม่ควรให้ LINE รอ
+    // เพราะเรียก Gemini + อ่านชีตอาจใช้เวลาหลายวินาที ไม่ควรให้ LINE รอ
     if (event.type === 'message' && event.message && event.message.type === 'text') {
       ctx.waitUntil(handleIncomingText(event, env).catch(err => console.error('handleIncomingText error:', err)));
     } else if (event.type === 'postback') {
@@ -561,8 +561,8 @@ function parseOrdersCSVFull(text) {
   }).filter(r => r.datetime && !isNaN(r.datetime) && r.name);
 }
 
-// เลือกเฉพาะลูกค้าที่มีแนวโน้มเกี่ยวข้องกับข้อความนี้ (ชื่อ/เบอร์ปรากฏในข้อความ) ส่งให้ Claude
-// แทนที่จะส่งประวัติทั้งหมด — ประหยัด token และลดโอกาส Claude สับสนจับคู่ผิดคนจากลูกค้าที่ไม่เกี่ยวข้อง
+// เลือกเฉพาะลูกค้าที่มีแนวโน้มเกี่ยวข้องกับข้อความนี้ (ชื่อ/เบอร์ปรากฏในข้อความ) ส่งให้ Gemini
+// แทนที่จะส่งประวัติทั้งหมด — ประหยัด token และลดโอกาส Gemini สับสนจับคู่ผิดคนจากลูกค้าที่ไม่เกี่ยวข้อง
 function prefilterCustomers(text, customers, limit = 8) {
   const lower = text.toLowerCase();
   // ดึงเฉพาะ "กลุ่มตัวเลขติดกัน 4 หลักขึ้นไป" แทนการรวมตัวเลขทั้งข้อความเป็นก้อนเดียว
@@ -589,7 +589,7 @@ function prefilterCustomers(text, customers, limit = 8) {
   });
   const matched = scored.filter(s => s.score > 0).sort((a, b) => b.score - a.score).map(s => s.c);
   if (matched.length > 0) return matched.slice(0, limit);
-  // ไม่เจอใครตรงเลย — ส่งลูกค้าที่สั่งบ่อยสุด 2-3 คนไปเป็น context กว้างๆ เผื่อ Claude ช่วยจับคู่ชื่อคล้ายได้
+  // ไม่เจอใครตรงเลย — ส่งลูกค้าที่สั่งบ่อยสุด 2-3 คนไปเป็น context กว้างๆ เผื่อ Gemini ช่วยจับคู่ชื่อคล้ายได้
   return customers.slice().sort((a, b) => b.orderCount - a.orderCount).slice(0, 3);
 }
 
@@ -615,31 +615,31 @@ async function parseOrderFromMessage(text, customers, env) {
     customerHistory: knownCustomers,
   });
 
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent', {
     method: 'POST',
     headers: {
-      'x-api-key': env.ANTHROPIC_API_KEY,
-      'anthropic-version': '2023-06-01',
+      'x-goog-api-key': env.GEMINI_API_KEY,
       'content-type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 600,
-      system: systemPrompt,
-      messages: [{ role: 'user', content: userContent }],
+      system_instruction: { parts: [{ text: systemPrompt }] },
+      contents: [{ role: 'user', parts: [{ text: userContent }] }],
+      // บังคับให้ตอบเป็น JSON ล้วนๆ ที่ฝั่ง API เลย กันปัญหาโมเดลพันด้วย markdown fence หรือพูดนำ/พูดต่อท้าย
+      generationConfig: { responseMimeType: 'application/json' },
     }),
   });
 
   if (!res.ok) {
     const errText = await res.text();
-    throw new Error(`Anthropic API error ${res.status}: ${errText}`);
+    throw new Error(`Gemini API error ${res.status}: ${errText}`);
   }
 
   const data = await res.json();
-  const raw = (data.content && data.content[0] && data.content[0].text) || '';
-  // เผื่อ Claude ห่อ JSON ด้วย markdown fence หรือมีข้อความแวดล้อมหลุดมาบ้าง ดึงเฉพาะ { ... } ตัวแรกที่สมบูรณ์
+  const candidate = data.candidates && data.candidates[0];
+  const raw = (candidate && candidate.content && candidate.content.parts && candidate.content.parts[0] && candidate.content.parts[0].text) || '';
+  // responseMimeType บังคับ JSON ไว้แล้ว แต่ยังกันเผื่อมีอะไรแวดล้อมหลุดมาบ้าง ดึงเฉพาะ { ... } ตัวแรกที่สมบูรณ์
   const match = raw.match(/\{[\s\S]*\}/);
-  if (!match) throw new Error('Claude response did not contain JSON: ' + raw.slice(0, 200));
+  if (!match) throw new Error('Gemini response did not contain JSON: ' + raw.slice(0, 200));
 
   const parsed = JSON.parse(match[0]);
   return {
