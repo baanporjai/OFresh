@@ -3,6 +3,10 @@
  *
  * Deploy เป็น Worker ใหม่แยกต่างหาก แล้วตั้ง Environment Secret:
  *   LINE_CHANNEL_TOKEN     = <Channel Access Token จาก LINE Developers>
+ *   LINE_CHANNEL_SECRET    = <Channel Secret จาก LINE Developers — คนละค่ากับ LINE_CHANNEL_TOKEN
+ *                             ใช้ตรวจลายเซ็น webhook ที่ยิงเข้ามา (ป้องกันคนปลอม request มาสร้าง/ยืนยันออเดอร์)>
+ *   ANTHROPIC_API_KEY      = <API key จาก console.anthropic.com — ใช้ให้ Claude Haiku ช่วยอ่าน/แปลง
+ *                             ข้อความแอดมินในกลุ่มเป็นออเดอร์ที่มีโครงสร้าง>
  *   SHEET_WEBHOOK_URL      = <Apps Script webhook สำหรับบันทึกออเดอร์>
  *   ADMIN_PIN              = <PIN สำหรับเข้าหน้าแดชบอร์ด>
  *   SESSION_SECRET         = <ค่าสุ่มยาวๆ ใช้เซ็นชื่อ session token>
@@ -13,11 +17,27 @@
  *                                ไม่ตั้งก็ได้ ถ้าใช้ Apps Script/สเปรดชีตตัวเดียวกับออเดอร์ส้ม (แค่คนละแท็บ)
  *                                จะ fallback ไปใช้ SHEET_WEBHOOK_URL แทนอัตโนมัติ>
  *
+ * ต้องเพิ่ม KV namespace binding ชื่อ OFRESH_KV ด้วย (Settings → Bindings → KV Namespace บน dashboard)
+ * ใช้เก็บ cache ประวัติลูกค้า + draft ออเดอร์ที่รอแอดมินกดยืนยัน
+ *
+ * และต้องเปิด "Use webhook" ในหน้า LINE Developers Console ของ channel เดิม แล้วตั้ง Webhook URL
+ * เป็น https://<worker-domain>/api/line/webhook (บอทถูกเพิ่มเข้ากลุ่ม O'Fresh_admin อยู่แล้วจากการ push
+ * แจ้งเตือนเดิม ไม่ต้องเชิญใหม่)
+ *
  * ADMIN_GROUP_ID ตั้งค่าไว้ใน code ด้านล่างได้เลย (ไม่ใช่ข้อมูลลับ)
  */
 
 const ADMIN_GROUP_ID = 'C6cb7cc0124997383e2066d971d5d0819'; // LINE group: O'Fresh_admin
 const SESSION_TTL_MS = 12 * 60 * 60 * 1000; // 12 ชั่วโมง
+
+// ── AI order-draft assistant (กลุ่มไลน์แอดมิน) ──
+// นโยบายเวอร์ชันแรก: ไม่มี auto-save เด็ดขาด ไม่ว่า AI จะมั่นใจแค่ไหน — ทุกออเดอร์ต้องให้แอดมินกด
+// "ยืนยัน" เองก่อนจึงจะเขียนลงชีตจริง เพราะถ้า AI จับคู่ลูกค้าผิดคนหรือ parse ผิดแบบมั่นใจสูงโดยไม่รู้ตัว
+// ออเดอร์ที่ผิดอาจถูกแพ็ค/จัดส่งจริงก่อนแอดมินทันเห็น ต่างจากงานแก้ไขในแดชบอร์ดที่ reverse ได้ง่าย
+const CUSTOMER_HISTORY_TTL_SECONDS = 5 * 60;
+const DRAFT_TTL_SECONDS = 30 * 60;
+const EDITING_FLAG_TTL_SECONDS = 10 * 60;
+const ORDER_PRICE_PER_KG = 60;
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -63,6 +83,10 @@ export default {
 
     if (request.method === 'GET' && url.pathname === '/api/public/order-highlights') {
       return handlePublicOrderHighlights(request, env);
+    }
+
+    if (request.method === 'POST' && url.pathname === '/api/line/webhook') {
+      return handleLineWebhook(request, env, ctx);
     }
 
     return jsonResponse({ error: 'Not found' }, 404);
@@ -427,6 +451,386 @@ function timingSafeEqual(a, b) {
   let diff = 0;
   for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
   return diff === 0;
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// AI order-draft assistant — อ่านข้อความในกลุ่มไลน์แอดมิน แปลงเป็นออเดอร์ร่าง
+// รอแอดมินกดยืนยันก่อนเขียนลงชีตจริงเสมอ (ไม่มี auto-save)
+// ══════════════════════════════════════════════════════════════════════
+
+async function handleLineWebhook(request, env, ctx) {
+  // ต้องอ่านเป็น text ดิบก่อน (ไม่ใช่ .json()) เพราะลายเซ็นคำนวณจาก raw body bytes
+  const bodyText = await request.text();
+  const signature = request.headers.get('X-Line-Signature') || '';
+
+  const validSig = await verifyLineSignature(bodyText, signature, env.LINE_CHANNEL_SECRET);
+  if (!validSig) return new Response('Invalid signature', { status: 401 });
+
+  let payload;
+  try {
+    payload = JSON.parse(bodyText);
+  } catch {
+    return new Response('Invalid JSON', { status: 400 });
+  }
+
+  const events = Array.isArray(payload.events) ? payload.events : [];
+  for (const event of events) {
+    const isAdminGroup = event.source && event.source.type === 'group' && event.source.groupId === ADMIN_GROUP_ID;
+    if (!isAdminGroup) continue;
+
+    // ตอบ LINE ให้เร็วที่สุด (200 ทันที) แล้วประมวลผลจริงต่อเบื้องหลังผ่าน waitUntil
+    // เพราะเรียก Claude + อ่านชีตอาจใช้เวลาหลายวินาที ไม่ควรให้ LINE รอ
+    if (event.type === 'message' && event.message && event.message.type === 'text') {
+      ctx.waitUntil(handleIncomingText(event, env).catch(err => console.error('handleIncomingText error:', err)));
+    } else if (event.type === 'postback') {
+      ctx.waitUntil(handlePostback(event, env).catch(err => console.error('handlePostback error:', err)));
+    }
+  }
+
+  return new Response('OK', { status: 200 });
+}
+
+// LINE เซ็นลายเซ็นเป็น base64(HMAC-SHA256(channelSecret, rawBody)) มาตรฐาน (ไม่ใช่ base64url)
+async function verifyLineSignature(bodyText, signatureB64, channelSecret) {
+  if (!channelSecret || !signatureB64) return false;
+  const key = await crypto.subtle.importKey(
+    'raw', new TextEncoder().encode(channelSecret),
+    { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+  );
+  const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(bodyText));
+  const expected = btoa(String.fromCharCode(...new Uint8Array(sig)));
+  return timingSafeEqual(expected, signatureB64);
+}
+
+// ประวัติลูกค้า group ตามชื่อ (ตรรกะเดียวกับ customers.html: groupByCustomer) แคชไว้ใน KV
+// 5 นาที กันยิงไป Google Sheets ซ้ำทุกข้อความที่พิมพ์เข้ามาในกลุ่ม
+async function getCustomerHistory(env) {
+  const cacheKey = 'customer_history';
+  if (env.OFRESH_KV) {
+    const cached = await env.OFRESH_KV.get(cacheKey, { type: 'json' });
+    if (cached) return cached;
+  }
+
+  if (!env.ORDERS_SHEET_CSV_URL) return [];
+
+  const res = await fetch(env.ORDERS_SHEET_CSV_URL);
+  const text = await res.text();
+  const rows = parseOrdersCSVFull(text);
+
+  const map = new Map();
+  rows.forEach(r => {
+    if (!r.name) return;
+    if (!map.has(r.name)) map.set(r.name, []);
+    map.get(r.name).push(r);
+  });
+
+  const customers = Array.from(map.values()).map(orders => {
+    orders.sort((a, b) => b.datetime - a.datetime);
+    const latest = orders[0];
+    return {
+      name: latest.name,
+      phone: latest.phone,
+      line: latest.line,
+      address: latest.address,
+      typicalQty: latest.qty,
+      orderCount: orders.length,
+      lastOrderDate: latest.datetime.toISOString().slice(0, 10),
+    };
+  });
+
+  if (env.OFRESH_KV) {
+    await env.OFRESH_KV.put(cacheKey, JSON.stringify(customers), { expirationTtl: CUSTOMER_HISTORY_TTL_SECONDS });
+  }
+  return customers;
+}
+
+// เหมือน parseOrdersCSV ที่มีอยู่แล้ว แต่ดึงฟิลด์ครบสำหรับจับคู่ประวัติลูกค้า (ไม่ใช่แค่ datetime/qty)
+function parseOrdersCSVFull(text) {
+  const lines = text.trim().split('\n');
+  if (lines.length < 2) return [];
+  const h = splitCSVLine(lines[0]).map(s => s.trim().toLowerCase().replace(/\r/g, ''));
+  const iTs = h.indexOf('timestamp'), iName = h.indexOf('name'), iPhone = h.indexOf('phone'),
+        iLine = h.indexOf('line'), iQty = h.indexOf('qty'), iAddress = h.indexOf('address');
+
+  return lines.slice(1).map(line => {
+    const v = splitCSVLine(line);
+    const g = i => (v[i] || '').trim().replace(/\r/g, '');
+    const datetime = parseTimestamp(g(iTs));
+    const qty = parseFloat(g(iQty)) || 0;
+    return { datetime, name: g(iName), phone: g(iPhone), line: g(iLine), qty, address: g(iAddress) };
+  }).filter(r => r.datetime && !isNaN(r.datetime) && r.name);
+}
+
+// เลือกเฉพาะลูกค้าที่มีแนวโน้มเกี่ยวข้องกับข้อความนี้ (ชื่อ/เบอร์ปรากฏในข้อความ) ส่งให้ Claude
+// แทนที่จะส่งประวัติทั้งหมด — ประหยัด token และลดโอกาส Claude สับสนจับคู่ผิดคนจากลูกค้าที่ไม่เกี่ยวข้อง
+function prefilterCustomers(text, customers, limit = 8) {
+  const lower = text.toLowerCase();
+  // ดึงเฉพาะ "กลุ่มตัวเลขติดกัน 4 หลักขึ้นไป" แทนการรวมตัวเลขทั้งข้อความเป็นก้อนเดียว
+  // เพราะถ้ารวมทั้งหมด ตัวเลขปลีกย่อยอื่น (เช่น จำนวนกิโล, วันที่) จะไปปนกับเบอร์โทรจนจับคู่ผิด
+  const digitRuns = text.match(/\d{4,}/g) || [];
+  const scored = customers.map(c => {
+    let score = 0;
+    const nameLower = (c.name || '').toLowerCase();
+    if (nameLower && lower.includes(nameLower)) score += 3;
+    else if (nameLower) {
+      // เผื่อแอดมินพิมพ์แค่ชื่อจริงหรือนามสกุล ไม่ใช่ชื่อเต็ม (เช่น "พี่สมชาย" ไม่ใช่ "สมชาย ใจดี")
+      const parts = nameLower.split(/\s+/).filter(p => p.length >= 2);
+      if (parts.some(p => lower.includes(p))) score += 2;
+    }
+    if (c.phone) {
+      const tail = c.phone.slice(-4);
+      if (digitRuns.some(run => run.includes(tail))) score += 3;
+    }
+    if (c.address) {
+      const addrWords = c.address.split(/\s+/).filter(w => w.length >= 3);
+      if (addrWords.some(w => lower.includes(w.toLowerCase()))) score += 1;
+    }
+    return { c, score };
+  });
+  const matched = scored.filter(s => s.score > 0).sort((a, b) => b.score - a.score).map(s => s.c);
+  if (matched.length > 0) return matched.slice(0, limit);
+  // ไม่เจอใครตรงเลย — ส่งลูกค้าที่สั่งบ่อยสุด 2-3 คนไปเป็น context กว้างๆ เผื่อ Claude ช่วยจับคู่ชื่อคล้ายได้
+  return customers.slice().sort((a, b) => b.orderCount - a.orderCount).slice(0, 3);
+}
+
+async function parseOrderFromMessage(text, customers, env) {
+  const knownCustomers = prefilterCustomers(text, customers);
+
+  const systemPrompt = [
+    'คุณคือผู้ช่วยแปลงข้อความแจ้งออเดอร์ส้มที่แอดมินพิมพ์ในแชทกลุ่ม ให้เป็นออเดอร์แบบมีโครงสร้าง',
+    'ตอบกลับเป็น JSON ล้วนๆ เท่านั้น ห้ามมีข้อความอื่นนอก JSON และห้ามใช้ markdown code fence',
+    'รูปแบบ JSON ที่ต้องตอบ:',
+    '{"isOrder":boolean,"name":string,"phone":string,"line":string,"qty":number,"address":string,"deliveryDate":string|null,"note":string,"confidence":number,"missingFields":string[],"matchedCustomer":string|null}',
+    '- isOrder: false ถ้าข้อความนี้ไม่ได้พูดถึงการสั่งซื้อส้มเลย (เช่น ทักทาย คุยเรื่องอื่น) — ฟิลด์อื่นใส่ค่าว่าง/0 ได้',
+    '- ราคาส้ม 60 บาทต่อกิโลกรัม ถ้าไม่ได้ระบุจำนวนเงินในข้อความ ไม่ต้องคำนวณ total เอง (ไม่มีฟิลด์ total ในผลลัพธ์)',
+    '- deliveryDate: แปลงเป็น YYYY-MM-DD ถ้าระบุมา (เช่น "พรุ่งนี้" ให้คำนวณจากวันที่ปัจจุบันที่ให้ไว้) ไม่งั้นใส่ null',
+    '- confidence (0-1): มั่นใจแค่ไหนว่า parse ถูกต้องครบถ้วนและจับคู่ลูกค้าถูกคน ถ้าชื่อ/เบอร์กำกวมหรือจับคู่ได้หลายคน ให้ confidence ต่ำ',
+    '- missingFields: รายชื่อฟิลด์ที่จำเป็น (name, phone, qty, address) ที่ยังขาดหรือไม่ชัดเจน',
+    '- matchedCustomer: ชื่อลูกค้าจากประวัติที่ตรงกับข้อความนี้ (ถ้ามี) ใส่ตามชื่อในประวัติเป๊ะๆ ไม่งั้นใส่ null',
+    `วันที่ปัจจุบัน (เวลาไทย): ${new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Bangkok' })}`,
+  ].join('\n');
+
+  const userContent = JSON.stringify({
+    message: text,
+    customerHistory: knownCustomers,
+  });
+
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'x-api-key': env.ANTHROPIC_API_KEY,
+      'anthropic-version': '2023-06-01',
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 600,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userContent }],
+    }),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Anthropic API error ${res.status}: ${errText}`);
+  }
+
+  const data = await res.json();
+  const raw = (data.content && data.content[0] && data.content[0].text) || '';
+  // เผื่อ Claude ห่อ JSON ด้วย markdown fence หรือมีข้อความแวดล้อมหลุดมาบ้าง ดึงเฉพาะ { ... } ตัวแรกที่สมบูรณ์
+  const match = raw.match(/\{[\s\S]*\}/);
+  if (!match) throw new Error('Claude response did not contain JSON: ' + raw.slice(0, 200));
+
+  const parsed = JSON.parse(match[0]);
+  return {
+    isOrder: !!parsed.isOrder,
+    name: parsed.name || '',
+    phone: parsed.phone || '',
+    line: parsed.line || '',
+    qty: Number(parsed.qty) || 0,
+    address: parsed.address || '',
+    deliveryDate: parsed.deliveryDate || '',
+    note: parsed.note || '',
+    confidence: typeof parsed.confidence === 'number' ? parsed.confidence : 0,
+    missingFields: Array.isArray(parsed.missingFields) ? parsed.missingFields : [],
+    matchedCustomer: parsed.matchedCustomer || null,
+  };
+}
+
+function generateOrderId() {
+  return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+}
+
+async function replyToLine(env, replyToken, messages) {
+  const res = await fetch('https://api.line.me/v2/bot/message/reply', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${env.LINE_CHANNEL_TOKEN}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ replyToken, messages }),
+  });
+  if (!res.ok) {
+    console.error('LINE reply error:', await res.text());
+  }
+}
+
+function buildOrderSummaryText(order) {
+  const deliveryDateText = order.deliveryDate
+    ? new Date(order.deliveryDate + 'T00:00:00').toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' })
+    : null;
+  return [
+    '🍊 ร่างออเดอร์จากข้อความ',
+    '─────────────────',
+    `👤 ชื่อ: ${order.name || '(ไม่ระบุ)'}`,
+    order.phone ? `📞 เบอร์: ${order.phone}` : null,
+    order.line ? `💬 LINE: ${order.line}` : null,
+    `⚖️ จำนวน: ${order.qty || '(ไม่ระบุ)'} กก.`,
+    order.address ? `📍 ที่อยู่: ${order.address}` : `📍 ที่อยู่: (ไม่ระบุ)`,
+    deliveryDateText ? `📅 วันที่ต้องการของ: ${deliveryDateText}` : null,
+    order.note ? `📝 หมายเหตุ: ${order.note}` : null,
+    order.matchedCustomer ? `✅ จับคู่กับลูกค้าเดิม: ${order.matchedCustomer}` : null,
+    order.missingFields && order.missingFields.length ? `⚠️ ข้อมูลที่ยังขาด: ${order.missingFields.join(', ')}` : null,
+  ].filter(Boolean).join('\n');
+}
+
+// ปุ่ม "ยืนยัน"/"แก้ไข" แนบไปกับข้อความสรุป draft — ไม่มีทาง auto-save เด็ดขาดตามนโยบายเวอร์ชันแรก
+function confirmQuickReply(draftId) {
+  return {
+    items: [
+      { type: 'action', action: { type: 'postback', label: '✅ ยืนยัน', data: `confirm:${draftId}`, displayText: 'ยืนยัน' } },
+      { type: 'action', action: { type: 'postback', label: '✏️ แก้ไข', data: `edit:${draftId}`, displayText: 'แก้ไข' } },
+    ],
+  };
+}
+
+async function saveOrderToSheet(env, order, id) {
+  if (!env.SHEET_WEBHOOK_URL) throw new Error('SHEET_WEBHOOK_URL not configured');
+  const total = (order.qty || 0) * ORDER_PRICE_PER_KG;
+  await fetch(env.SHEET_WEBHOOK_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      id, name: order.name, phone: order.phone, line: order.line,
+      qty: order.qty, total, address: order.address,
+      deliveryDate: order.deliveryDate, note: order.note,
+    }),
+  });
+}
+
+async function cancelOrderInSheet(env, id) {
+  if (!env.SHEET_WEBHOOK_URL) throw new Error('SHEET_WEBHOOK_URL not configured');
+  await fetch(env.SHEET_WEBHOOK_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({ action: 'updateStatus', id, status: 'cancelled' }),
+  });
+}
+
+// รับข้อความใหม่จากกลุ่ม — ถ้ากำลังรอแอดมินพิมพ์แก้ไข draft เดิมอยู่ ให้ parse ใหม่แล้ว merge
+// กับของเดิม (ฟิลด์ไหนที่รอบใหม่ไม่ได้พูดถึง ให้คงค่าเดิมไว้) ไม่งั้นถือเป็นออเดอร์ใหม่ทั้งหมด
+async function handleIncomingText(event, env) {
+  const text = event.message.text;
+  const groupId = event.source.groupId;
+  const replyToken = event.replyToken;
+
+  const editingKey = `editing:${groupId}`;
+  const editingDraftId = env.OFRESH_KV ? await env.OFRESH_KV.get(editingKey) : null;
+
+  const customers = await getCustomerHistory(env);
+  let parsed;
+  try {
+    parsed = await parseOrderFromMessage(text, customers, env);
+  } catch (err) {
+    console.error('parseOrderFromMessage failed:', err);
+    await replyToLine(env, replyToken, [{ type: 'text', text: '⚠️ บอทอ่านข้อความนี้ไม่สำเร็จ รบกวนพิมพ์รายละเอียดออเดอร์อีกครั้งครับ' }]);
+    return;
+  }
+
+  if (editingDraftId) {
+    const oldDraft = await env.OFRESH_KV.get(`draft:${editingDraftId}`, { type: 'json' });
+    await env.OFRESH_KV.delete(editingKey);
+
+    if (!oldDraft) {
+      await replyToLine(env, replyToken, [{ type: 'text', text: '⚠️ ร่างออเดอร์เดิมหมดอายุแล้ว ถือว่านี่เป็นออเดอร์ใหม่นะครับ' }]);
+    } else if (!parsed.isOrder) {
+      // ข้อความแก้ไขไม่ได้พูดถึงออเดอร์เลย — คงร่างเดิมไว้เฉยๆ ให้พิมพ์ใหม่อีกที
+      await env.OFRESH_KV.put(editingKey, editingDraftId, { expirationTtl: EDITING_FLAG_TTL_SECONDS });
+      await replyToLine(env, replyToken, [{ type: 'text', text: 'ไม่เห็นรายละเอียดออเดอร์ในข้อความนี้เลยครับ ลองพิมพ์ใหม่อีกครั้ง' }]);
+      return;
+    } else {
+      // merge เฉพาะฟิลด์ข้อมูลออเดอร์จริง (ค่าว่าง/0 แปลว่า "รอบนี้ไม่ได้พูดถึง" เลยคงค่าเดิมไว้)
+      // ส่วน confidence/missingFields เป็น "ผลประเมินข้อความล่าสุด" ต้องเอาค่าใหม่เสมอ ไม่ใช่ merge
+      // (ไม่งั้นถ้ารอบใหม่ parse ครบแล้ว missingFields ว่างเปล่า แต่ดันถูกมองว่า "ไม่ได้พูดถึง" แล้วคงของเก่าไว้)
+      const MERGEABLE_FIELDS = ['name', 'phone', 'line', 'qty', 'address', 'deliveryDate', 'note', 'matchedCustomer'];
+      const merged = { ...oldDraft };
+      for (const key of MERGEABLE_FIELDS) {
+        const v = parsed[key];
+        if (v !== '' && v !== 0 && v != null) merged[key] = v;
+      }
+      merged.confidence = parsed.confidence;
+      merged.missingFields = parsed.missingFields;
+      await env.OFRESH_KV.put(`draft:${editingDraftId}`, JSON.stringify(merged), { expirationTtl: DRAFT_TTL_SECONDS });
+      await replyToLine(env, replyToken, [
+        { type: 'text', text: buildOrderSummaryText(merged) },
+        { type: 'text', text: 'แก้ไขแล้วถูกไหมครับ?', quickReply: confirmQuickReply(editingDraftId) },
+      ]);
+    }
+    return;
+  }
+
+  if (!parsed.isOrder) return; // ข้อความคุยเล่นทั่วไป ไม่ใช่ออเดอร์ — เงียบไว้ ไม่ตอบกลับ
+
+  const draftId = generateOrderId();
+  if (env.OFRESH_KV) {
+    await env.OFRESH_KV.put(`draft:${draftId}`, JSON.stringify(parsed), { expirationTtl: DRAFT_TTL_SECONDS });
+  }
+
+  await replyToLine(env, replyToken, [
+    { type: 'text', text: buildOrderSummaryText(parsed) },
+    { type: 'text', text: 'ยืนยันบันทึกออเดอร์นี้ไหมครับ?', quickReply: confirmQuickReply(draftId) },
+  ]);
+}
+
+async function handlePostback(event, env) {
+  const data = event.postback.data || '';
+  const sep = data.indexOf(':');
+  if (sep === -1) return;
+  const action = data.slice(0, sep);
+  const draftId = data.slice(sep + 1);
+  const replyToken = event.replyToken;
+  const groupId = event.source.groupId;
+
+  if (action === 'confirm') {
+    const draft = env.OFRESH_KV ? await env.OFRESH_KV.get(`draft:${draftId}`, { type: 'json' }) : null;
+    if (!draft) {
+      await replyToLine(env, replyToken, [{ type: 'text', text: '⚠️ ร่างออเดอร์นี้หมดอายุแล้ว (เกิน 30 นาที) กรุณาพิมพ์รายละเอียดออเดอร์ใหม่อีกครั้งครับ' }]);
+      return;
+    }
+    try {
+      await saveOrderToSheet(env, draft, draftId);
+      await env.OFRESH_KV.delete(`draft:${draftId}`);
+      await replyToLine(env, replyToken, [{
+        type: 'text',
+        text: `✅ บันทึกออเดอร์ของ "${draft.name}" แล้วครับ`,
+        quickReply: { items: [{ type: 'action', action: { type: 'postback', label: '↩️ ยกเลิกออเดอร์นี้', data: `cancel:${draftId}`, displayText: 'ยกเลิกออเดอร์นี้' } }] },
+      }]);
+    } catch (err) {
+      console.error('saveOrderToSheet failed:', err);
+      await replyToLine(env, replyToken, [{ type: 'text', text: '⚠️ บันทึกออเดอร์ไม่สำเร็จ ลองกดยืนยันอีกครั้ง หรือแจ้งแอดมินระบบครับ' }]);
+    }
+  } else if (action === 'edit') {
+    if (env.OFRESH_KV) await env.OFRESH_KV.put(`editing:${groupId}`, draftId, { expirationTtl: EDITING_FLAG_TTL_SECONDS });
+    await replyToLine(env, replyToken, [{ type: 'text', text: '✏️ พิมพ์รายละเอียดที่ถูกต้องมาได้เลยครับ (พิมพ์เฉพาะส่วนที่ผิด ส่วนที่ไม่พูดถึงจะคงค่าเดิมไว้)' }]);
+  } else if (action === 'cancel') {
+    try {
+      await cancelOrderInSheet(env, draftId);
+      await replyToLine(env, replyToken, [{ type: 'text', text: '↩️ ยกเลิกออเดอร์นี้แล้วครับ' }]);
+    } catch (err) {
+      console.error('cancelOrderInSheet failed:', err);
+      await replyToLine(env, replyToken, [{ type: 'text', text: '⚠️ ยกเลิกไม่สำเร็จ รบกวนแก้สถานะในแดชบอร์ดแทนครับ' }]);
+    }
+  }
 }
 
 function jsonResponse(data, status = 200, extraHeaders = {}) {
