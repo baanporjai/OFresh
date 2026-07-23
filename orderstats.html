@@ -878,17 +878,17 @@ function render(rows) {
   window._tomorrowDeliveries = renderDeliveryList(rows, r => r.deliveryDate === tomorrowStr && matchesSearch(r), 'tomorrowList', 'tomorrowBadge',
     isTh?'ไม่มีรายการรอจัดส่งพรุ่งนี้':'No deliveries scheduled tomorrow', 'openTomorrowModal', isTh);
 
-  // รายการค้าง — deliveryDate ผ่านมาแล้ว (เลยกำหนด) หรือสั่งล่วงหน้าเกินพรุ่งนี้ (ยังไม่ถึงคิววันนี้/พรุ่งนี้)
+  // รายการค้าง — deliveryDate ผ่านมาแล้ว (เลยกำหนด), สั่งล่วงหน้าเกินพรุ่งนี้ (ยังไม่ถึงคิววันนี้/พรุ่งนี้),
+  // หรือยังไม่มี deliveryDate เลย (ลูกค้าจองไว้แต่ยังไม่กำหนดวันส่ง — ก็ยังถือว่าค้างรอจัดส่งอยู่)
   // แต่สถานะยังไม่ใช่ delivered/cancelled — วันนี้/พรุ่งนี้ไม่เอามาซ้ำเพราะมี section ของตัวเองแล้ว
   const isOverdue = r => {
-    if (!r.deliveryDate) return false;
-    if (r.deliveryDate >= todayStr && r.deliveryDate <= tomorrowStr) return false;
+    if (r.deliveryDate && r.deliveryDate >= todayStr && r.deliveryDate <= tomorrowStr) return false;
     const cls = getStatusInfo(r.status, isTh).cls;
     return cls !== 'delivered' && cls !== 'cancelled' && matchesSearch(r);
   };
   window._overdueDeliveries = renderDeliveryList(rows, isOverdue, 'overdueList', 'overdueBadge',
     isTh?'ไม่มีรายการค้าง':'No overdue deliveries', 'openOverdueModal', isTh,
-    (a,b) => a.deliveryDate.localeCompare(b.deliveryDate), true);
+    (a,b) => (a.deliveryDate||'').localeCompare(b.deliveryDate||''), true);
 
   if (N) {
     const latest = rows.reduce((a,b)=>a.datetime>b.datetime?a:b);
