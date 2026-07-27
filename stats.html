@@ -156,6 +156,7 @@ body { font-family: 'Prompt', sans-serif; background: var(--off-white); color: v
 .kpi-accent.green { background: linear-gradient(90deg, var(--green), #5cb85c); }
 .kpi-accent.blue  { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
 .kpi-accent.purple{ background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
+.kpi-accent.gold  { background: linear-gradient(90deg, #d97706, #fbbf24); }
 .kpi-icon { font-size: 1.8rem; margin-bottom: 8px; }
 .kpi-cup { margin-bottom: 8px; }
 .cup-img { height: 72px; width: auto; display: block; }
@@ -276,6 +277,33 @@ body { font-family: 'Prompt', sans-serif; background: var(--off-white); color: v
 .compare-delta.up { background: rgba(16,185,129,.15); color: #047857; }
 .compare-delta.down { background: rgba(239,68,68,.15); color: #b91c1c; }
 .compare-delta.flat { background: rgba(107,114,128,.15); color: #6b7280; }
+.compare-row.clickable { cursor: pointer; transition: background .15s; border-radius: 12px; }
+.compare-row.clickable:hover { background: rgba(255,107,0,.06); }
+
+/* ── CARD HISTORY MODAL ── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.5);
+  display: none; align-items: center; justify-content: center; z-index: 300; padding: 20px;
+}
+.modal-overlay.show { display: flex; }
+.modal-card {
+  background: var(--white); border-radius: 20px; padding: 28px;
+  max-width: 420px; width: 100%; max-height: 82vh; overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,.25);
+  position: relative;
+}
+.modal-close {
+  position: absolute; top: 16px; right: 16px; width: 32px; height: 32px;
+  border-radius: 50%; border: none; background: var(--gray); cursor: pointer;
+  font-size: 1rem; color: var(--muted); display: flex; align-items: center; justify-content: center;
+}
+.modal-close:hover { background: rgba(255,107,0,.15); color: var(--orange); }
+.modal-title { font-size: 1.1rem; font-weight: 800; color: var(--text); margin-bottom: 4px; padding-right: 30px; }
+.modal-sub { font-size: .8rem; color: var(--muted); margin-bottom: 18px; }
+.modal-row { display: flex; justify-content: space-between; gap: 14px; padding: 9px 0; border-bottom: 1px solid var(--gray); font-size: .85rem; }
+.modal-row:last-child { border-bottom: none; }
+.modal-row .k { color: var(--muted); flex-shrink: 0; }
+.modal-row .v { color: var(--text); font-weight: 600; text-align: right; word-break: break-word; }
 
 /* ── SPOTLIGHT ── */
 .spotlight {
@@ -483,6 +511,13 @@ footer a { color: var(--orange); text-decoration: none; }
       <div class="kpi-value" id="kpiPeakHour">—</div>
       <div class="kpi-sub" data-th="สั่งมากที่สุดช่วงนี้" data-en="Most orders at this hour">สั่งมากที่สุดช่วงนี้</div>
     </div>
+    <div class="kpi" id="kpiProfitCard" style="display:none">
+      <div class="kpi-accent gold"></div>
+      <div class="kpi-icon">🧡</div>
+      <div class="kpi-label" data-th="กำไรต่อแก้ว" data-en="Profit per Cup">กำไรต่อแก้ว</div>
+      <div class="kpi-value" id="kpiProfitPerCup">—</div>
+      <div class="kpi-sub" data-th="ประมาณการ (ต้นทุนรวมทุกช่องทาง)" data-en="Estimate (cost pooled across all channels)">ประมาณการ (ต้นทุนรวมทุกช่องทาง)</div>
+    </div>
   </div>
 
   <!-- SPOTLIGHT -->
@@ -532,6 +567,10 @@ footer a { color: var(--orange); text-decoration: none; }
     <div class="chart-card">
       <div class="chart-header">
         <div class="chart-title">🗓️ <span data-th="ยอดขายตามวันในสัปดาห์" data-en="Sales by Day of Week">ยอดขายตามวันในสัปดาห์</span></div>
+        <div class="metric-toggle" id="weekdayMetricToggle">
+          <button type="button" data-metric="total" onclick="onWeekdayMetricChange('total')" data-th="รวม" data-en="Total">รวม</button>
+          <button type="button" data-metric="avg" onclick="onWeekdayMetricChange('avg')" data-th="เฉลี่ย" data-en="Average">เฉลี่ย</button>
+        </div>
         <select class="month-select" id="weekdayMonthFilter" onchange="onWeekdayMonthChange(this.value)"></select>
       </div>
       <canvas id="chartWeekday" height="160"></canvas>
@@ -556,6 +595,36 @@ footer a { color: var(--orange); text-decoration: none; }
         <div class="chart-title">💳 <span data-th="วิธีชำระเงิน" data-en="Payment Methods">วิธีชำระเงิน</span></div>
       </div>
       <div class="pay-pills" id="payPills"></div>
+    </div>
+  </div>
+
+  <!-- กำไรต่อแก้วรายเดือน (ประมาณการ) -->
+  <div class="charts-1col" id="profitChartWrap" style="display:none">
+    <div class="chart-card">
+      <div class="chart-header">
+        <div class="chart-title">🧡 <span data-th="กำไรต่อแก้วรายเดือน (ประมาณการ)" data-en="Monthly Profit per Cup (Estimate)">กำไรต่อแก้วรายเดือน (ประมาณการ)</span></div>
+      </div>
+      <canvas id="chartProfitPerCup" height="160"></canvas>
+    </div>
+  </div>
+
+  <!-- ลูกค้าบัตร (จัดกลุ่มตามเลขบัตรบางส่วน — Nayax ไม่มีชื่อ/เบอร์โทรลูกค้า) -->
+  <div class="charts-1col">
+    <div class="chart-card">
+      <div class="chart-header">
+        <div class="chart-title">🃏 <span data-th="ลูกค้าบัตร (Top 10)" data-en="Top Card Customers">ลูกค้าบัตร (Top 10)</span></div>
+      </div>
+      <div class="compare-list" id="cardLeaderboard"></div>
+    </div>
+  </div>
+
+  <!-- แนวโน้มสัดส่วนวิธีชำระเงินรายเดือน -->
+  <div class="charts-1col">
+    <div class="chart-card">
+      <div class="chart-header">
+        <div class="chart-title">📶 <span data-th="แนวโน้มวิธีชำระเงินรายเดือน" data-en="Monthly Payment Method Trend">แนวโน้มวิธีชำระเงินรายเดือน</span></div>
+      </div>
+      <canvas id="chartPaymentTrend" height="160"></canvas>
     </div>
   </div>
 
@@ -588,6 +657,15 @@ footer a { color: var(--orange); text-decoration: none; }
 
 </div>
 
+<div class="modal-overlay" id="cardModal" onclick="if(event.target===this) closeCardModal()">
+  <div class="modal-card">
+    <button class="modal-close" onclick="closeCardModal()">✕</button>
+    <div class="modal-title" id="cardModalTitle">—</div>
+    <div class="modal-sub" id="cardModalSub"></div>
+    <div id="cardModalBody"></div>
+  </div>
+</div>
+
 <footer>
   <p>🍊 O'Fresh · <a href="https://ofresh.baanporjai.com">ofresh.baanporjai.com</a><br>
   <span data-th="ข้อมูล ณ " data-en="Data as of ">ข้อมูล ณ </span><span id="footerDate">—</span></p>
@@ -605,6 +683,7 @@ function parseCSV(text) {
   const lines = text.trim().split('\n');
   const h = lines[0].split(',').map(s => s.trim().toLowerCase().replace(/\r/g,''));
   const iDt = h.indexOf('machineautime'), iPrice = h.indexOf('auvalue'), iPay = h.indexOf('card_type_desc');
+  const iFirst4 = h.indexOf('card_first4digits'), iLast4 = h.indexOf('card_last4digits');
   function pd(s) {
     if (!s) return null;
     const [dp,tp] = s.trim().split(' ');
@@ -617,8 +696,66 @@ function parseCSV(text) {
   return lines.slice(1).map(line => {
     const v = line.split(','); const g = i => (v[i]||'').trim().replace(/\r/g,'');
     const dt = pd(g(iDt)); const price = parseFloat(g(iPrice))||0;
-    return { datetime: dt, price, payment: g(iPay)||'Other' };
+    return { datetime: dt, price, payment: g(iPay)||'Other', first4: g(iFirst4), last4: g(iLast4) };
   }).filter(r => r.datetime && !isNaN(r.datetime) && r.price > 0);
+}
+
+// ── EXPENSES PARSE (port มาจาก accounting.html — ใช้คำนวณกำไรต่อแก้ว) ──
+function parseCSVRecords(text) {
+  const records = []; let fields = []; let cur = ''; let inQuotes = false; let sawData = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i+1] === '"') { cur += '"'; i++; } else { inQuotes = false; }
+      } else { cur += c; }
+    } else if (c === '"') { inQuotes = true; sawData = true; }
+    else if (c === ',') { fields.push(cur); cur = ''; sawData = true; }
+    else if (c === '\n' || c === '\r') {
+      if (c === '\r' && text[i+1] === '\n') i++;
+      if (sawData || cur !== '') { fields.push(cur); records.push(fields); }
+      fields = []; cur = ''; sawData = false;
+    }
+    else cur += c;
+  }
+  if (sawData || cur !== '') { fields.push(cur); records.push(fields); }
+  return records;
+}
+
+// ชีตอาจเก็บ date เป็นข้อความ "2026-07-13" หรือถูก Google Sheets แปลงเป็นเซลล์วันที่
+// แล้วพ่นออกมาใน CSV เป็น "13/7/2026" (locale ไทย วัน/เดือน/ปี) — normalize ให้เป็น ISO เสมอ
+function normalizeDateStr(s) {
+  s = (s || '').trim();
+  if (!s) return '';
+  const pad = n => String(n).padStart(2, '0');
+  let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (m) return `${m[1]}-${pad(+m[2])}-${pad(+m[3])}`;
+  m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (m) return `${m[3]}-${pad(+m[2])}-${pad(+m[1])}`;
+  return s;
+}
+
+function parseExpensesCSV(text) {
+  const rows = parseCSVRecords(text);
+  if (rows.length < 2) return [];
+  const h = rows[0].map(s => s.trim().toLowerCase().replace(/\r/g,''));
+  const iId = h.indexOf('id'), iType = h.indexOf('type'), iCat = h.indexOf('category'),
+        iDesc = h.indexOf('description'), iAmount = h.indexOf('amount'), iDate = h.indexOf('date'), iNote = h.indexOf('note');
+  return rows.slice(1).map(v => {
+    const g = i => (v[i]||'').trim().replace(/\r/g,'');
+    const dateStr = normalizeDateStr(g(iDate));
+    const date = dateStr ? new Date(dateStr + 'T00:00:00') : null;
+    const amount = parseFloat(g(iAmount)) || 0;
+    return {
+      id: g(iId),
+      type: g(iType) === 'cogs' ? 'cogs' : 'opex',
+      category: g(iCat),
+      description: g(iDesc),
+      amount,
+      date,
+      note: g(iNote),
+    };
+  }).filter(r => r.id && r.date && !isNaN(r.date));
 }
 
 // ── PAYMENT CONFIG ──
@@ -795,8 +932,13 @@ function renderMonthlyChart(rows) {
 }
 
 let weekdayMonthFilter = 'all';
+let weekdayMetric = 'total';
 function onWeekdayMonthChange(val) {
   weekdayMonthFilter = val;
+  renderWeekdayChart(window._rows);
+}
+function onWeekdayMetricChange(metric) {
+  weekdayMetric = metric;
   renderWeekdayChart(window._rows);
 }
 
@@ -824,7 +966,31 @@ function renderWeekdayChart(rows) {
   const dayNames = isTh ? ['อา','จ','อ','พ','พฤ','ศ','ส'] : ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   const counts = Array(7).fill(0);
   filtered.forEach(r => counts[r.datetime.getDay()]++);
-  const max = Math.max(...counts);
+
+  // นับจำนวนครั้งที่แต่ละวันในสัปดาห์เกิดขึ้นจริงในช่วงที่เลือก เพื่อใช้หารหาค่าเฉลี่ย
+  const today = new Date(); today.setHours(0,0,0,0);
+  let occStart, occEnd;
+  if (weekdayMonthFilter === 'all') {
+    if (!filtered.length) { occStart = new Date(today); occEnd = new Date(today); }
+    else {
+      occStart = new Date(Math.min(...filtered.map(r => r.datetime.getTime())));
+      occEnd = new Date(Math.min(Math.max(...filtered.map(r => r.datetime.getTime())), today.getTime()));
+    }
+  } else {
+    const [y, mo] = weekdayMonthFilter.split('-').map(Number);
+    occStart = new Date(y, mo - 1, 1);
+    occEnd = new Date(Math.min(new Date(y, mo, 0).getTime(), today.getTime()));
+  }
+  occStart.setHours(0,0,0,0); occEnd.setHours(0,0,0,0);
+  const occCounts = Array(7).fill(0);
+  for (let d = new Date(occStart); d <= occEnd; d.setDate(d.getDate() + 1)) occCounts[d.getDay()]++;
+  const averages = counts.map((c,i) => occCounts[i] ? c / occCounts[i] : 0);
+
+  const isAvg = weekdayMetric === 'avg';
+  const data = isAvg ? averages.map(v => Math.round(v * 10) / 10) : counts;
+  const max = Math.max(...data);
+
+  document.querySelectorAll('#weekdayMetricToggle button').forEach(b => b.classList.toggle('active', b.dataset.metric === weekdayMetric));
 
   const ctx = document.getElementById('chartWeekday').getContext('2d');
   charts.weekday = new Chart(ctx, {
@@ -832,17 +998,149 @@ function renderWeekdayChart(rows) {
     data: {
       labels: dayNames,
       datasets: [{
-        data: counts, backgroundColor: counts.map(v => v===max ? '#FF6B00' : 'rgba(255,107,0,.45)'),
+        data, backgroundColor: data.map(v => v===max ? '#FF6B00' : 'rgba(255,107,0,.45)'),
         borderRadius: 8, borderSkipped: false,
       }]
     },
     options: { ...chartDefaults, plugins: { legend:{display:false}, tooltip: {
-      callbacks: { label: ctx => ` ${ctx.raw} ${isTh?'แก้ว':'cups'}` }
+      callbacks: { label: ctx => {
+        const i = ctx.dataIndex;
+        return isAvg
+          ? ` ${isTh?'เฉลี่ย':'avg'} ${averages[i].toFixed(1)} ${isTh?'แก้ว/วัน':'cups/day'} (${isTh?'จาก':'from'} ${occCounts[i]} ${isTh?'วัน':'days'}, ${isTh?'รวม':'total'} ${counts[i]} ${isTh?'แก้ว':'cups'})`
+          : ` ${ctx.raw} ${isTh?'แก้ว':'cups'}`;
+      } }
     }, datalabels: {
       display: v => v.dataset.data[v.dataIndex] > 0,
       anchor: 'end', align: 'top', offset: 2, clamp: true,
       color: '#8a5a2a', font: { family: 'Prompt', size: 10, weight: 700 },
     }}}
+  });
+}
+
+// ── PAYMENT METHOD TREND (stacked bar % ต่อเดือน) ──
+function renderPaymentTrendChart(rows) {
+  destroyChart('paymentTrend');
+  const isTh = currentLang === 'th';
+  const pay = PAY[isTh ? 'th' : 'en'];
+  const knownCats = Object.keys(pay);
+
+  const monthTotals = {};
+  rows.forEach(r => {
+    const mk = monthKey(r.datetime);
+    if (!monthTotals[mk]) monthTotals[mk] = {};
+    const raw = (r.payment || 'Other').toLowerCase();
+    const key = knownCats.includes(raw) ? raw : 'other';
+    monthTotals[mk][key] = (monthTotals[mk][key] || 0) + 1;
+  });
+
+  const sortedMonths = Object.keys(monthTotals).sort();
+  const hasOther = sortedMonths.some(mk => monthTotals[mk].other > 0);
+  const categories = hasOther ? [...knownCats, 'other'] : knownCats;
+
+  const labels = sortedMonths.map(mk => {
+    const [y, m] = mk.split('-');
+    return new Date(+y, +m - 1, 1).toLocaleDateString(isTh ? 'th-TH' : 'en-US', { month: 'short', year: '2-digit' });
+  });
+
+  const datasets = categories.map(cat => {
+    const info = cat === 'other' ? { label: isTh ? 'อื่นๆ' : 'Other', color: '#9ca3af' } : pay[cat];
+    return {
+      label: info.label,
+      backgroundColor: info.color,
+      data: sortedMonths.map(mk => {
+        const total = Object.values(monthTotals[mk]).reduce((a, b) => a + b, 0);
+        const cnt = monthTotals[mk][cat] || 0;
+        return total ? +(cnt / total * 100).toFixed(1) : 0;
+      }),
+    };
+  });
+
+  const ctx = document.getElementById('chartPaymentTrend').getContext('2d');
+  charts.paymentTrend = new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      layout: { padding: { top: 22 } },
+      scales: {
+        x: { stacked: true, grid: { display: false }, ticks: { color: '#6B7280', font: { family: 'Prompt', size: 11 } } },
+        y: { stacked: true, beginAtZero: true, max: 100, grid: { color: 'rgba(0,0,0,.05)' },
+             ticks: { color: '#6B7280', font: { family: 'Prompt', size: 11 }, callback: v => v + '%' } },
+      },
+      plugins: {
+        legend: { display: true, position: 'bottom', labels: { font: { family: 'Prompt', size: 11 }, boxWidth: 12, padding: 12 } },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.raw}%` } },
+        datalabels: {
+          // ซ่อน label ของสัดส่วนเล็กเกินไป (<8%) กันตัวเลขทับกันในแท่งแคบๆ
+          display: v => v.dataset.data[v.dataIndex] >= 8,
+          color: '#fff', font: { family: 'Prompt', size: 9, weight: 700 },
+          formatter: v => v + '%',
+        }
+      }
+    }
+  });
+}
+
+// ── PROFIT PER CUP (ประมาณการ — COGS ทั้งก้อนหารด้วยแก้วทั้งหมด ไม่แยกช่องทางน้ำส้มตู้/ส้มขายกิโล) ──
+function computeProfitPerCup(nayaxRows, expenseRows) {
+  const monthly = {};
+  nayaxRows.forEach(r => {
+    const mk = monthKey(r.datetime);
+    if (!monthly[mk]) monthly[mk] = { cupsSold: 0, machineRevenue: 0, cogs: 0 };
+    monthly[mk].cupsSold += 1;
+    monthly[mk].machineRevenue += r.price;
+  });
+  expenseRows.forEach(e => {
+    if (e.type !== 'cogs' || !e.date) return;
+    const mk = monthKey(e.date);
+    if (monthly[mk]) monthly[mk].cogs += e.amount;
+  });
+  return Object.keys(monthly).sort().map(mk => {
+    const m = monthly[mk];
+    const revenuePerCup = m.cupsSold ? m.machineRevenue / m.cupsSold : 0;
+    const costPerCup = m.cupsSold ? m.cogs / m.cupsSold : 0;
+    return { month: mk, cupsSold: m.cupsSold, revenuePerCup, costPerCup, profitPerCup: revenuePerCup - costPerCup };
+  });
+}
+
+function updateProfitPerCupKPI(monthlyProfit) {
+  const latest = monthlyProfit[monthlyProfit.length - 1];
+  document.getElementById('kpiProfitCard').style.display = '';
+  document.getElementById('kpiProfitPerCup').textContent = `฿${latest.profitPerCup.toFixed(2)}`;
+}
+
+function renderProfitPerCupChart(monthlyProfit) {
+  destroyChart('profitPerCup');
+  const isTh = currentLang === 'th';
+  document.getElementById('profitChartWrap').style.display = '';
+  const labels = monthlyProfit.map(m => {
+    const [y, mo] = m.month.split('-');
+    return new Date(+y, +mo - 1, 1).toLocaleDateString(isTh ? 'th-TH' : 'en-US', { month: 'short', year: '2-digit' });
+  });
+  const ctx = document.getElementById('chartProfitPerCup').getContext('2d');
+  charts.profitPerCup = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: isTh ? 'รายได้/แก้ว' : 'Revenue/cup', data: monthlyProfit.map(m => +m.revenuePerCup.toFixed(2)), borderColor: '#3b82f6', backgroundColor: '#3b82f6', tension: .3 },
+        { label: isTh ? 'ต้นทุน/แก้ว' : 'Cost/cup', data: monthlyProfit.map(m => +m.costPerCup.toFixed(2)), borderColor: '#ef4444', backgroundColor: '#ef4444', tension: .3 },
+        { label: isTh ? 'กำไร/แก้ว' : 'Profit/cup', data: monthlyProfit.map(m => +m.profitPerCup.toFixed(2)), borderColor: '#d97706', backgroundColor: '#d97706', tension: .3, borderWidth: 3 },
+      ]
+    },
+    options: {
+      responsive: true,
+      layout: { padding: { top: 22 } },
+      scales: {
+        y: { grid: { color: 'rgba(0,0,0,.05)' }, ticks: { color: '#6B7280', font: { family: 'Prompt', size: 11 }, callback: v => '฿' + v } },
+        x: { grid: { display: false }, ticks: { color: '#6B7280', font: { family: 'Prompt', size: 11 } } },
+      },
+      plugins: {
+        legend: { display: true, position: 'bottom', labels: { font: { family: 'Prompt', size: 11 }, boxWidth: 12, padding: 12 } },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ฿${ctx.raw.toFixed(2)}` } },
+        datalabels: { display: false },
+      }
+    }
   });
 }
 
@@ -948,6 +1246,59 @@ function renderHeatmap(rows) {
     : (isTh ? `🔥 ยอดฮิต ${peakH}:00–${peakH+1}:00` : `🔥 Peak ${peakH}:00–${peakH+1}:00`);
 }
 
+// ── CARD LEADERBOARD ──
+// Nayax ไม่มีชื่อ/เบอร์โทรลูกค้า มีแค่เลขบัตรบางส่วน (4 หลักแรก+ท้าย) เลยใช้เลขบัตรแทนตัวลูกค้า
+// จ่ายด้วย "บัตร" = ทุกประเภทเครื่องอ่านบัตร ไม่รวม mobile phone (QR/มือถือ)
+function renderCardLeaderboard(rows) {
+  const isTh = currentLang === 'th';
+  const cardRows = rows.filter(r => r.payment.toLowerCase() !== 'mobile phone' && r.first4 && r.last4);
+  const groups = {};
+  cardRows.forEach(r => {
+    const key = `${r.first4}••••${r.last4}`;
+    if (!groups[key]) groups[key] = { card: key, count: 0, revenue: 0, lastSeen: r.datetime };
+    const g = groups[key];
+    g.count++; g.revenue += r.price;
+    if (r.datetime > g.lastSeen) g.lastSeen = r.datetime;
+  });
+  const top = Object.values(groups).sort((a,b) => b.count - a.count).slice(0, 10);
+  window._cardGroups = top;
+  const locale = isTh ? 'th-TH' : 'en-US';
+  document.getElementById('cardLeaderboard').innerHTML = top.length ? top.map((g,i) => `
+    <div class="compare-row clickable" onclick="showCardHistory(${i})">
+      <div>
+        <div class="compare-label">💳 ${g.card}</div>
+        <div class="compare-values">${g.count} ${isTh?'ครั้ง':'visits'} · ฿${g.revenue.toLocaleString()} · ${isTh?'ใช้ล่าสุด':'Last used'} ${g.lastSeen.toLocaleString(locale,{dateStyle:'short',timeStyle:'short'})}</div>
+      </div>
+      <div class="compare-delta flat">${g.lastSeen.toLocaleDateString(locale,{day:'numeric',month:'short'})}</div>
+    </div>`).join('') : `<p style="color:var(--muted);font-size:.85rem">${isTh?'ยังไม่มีข้อมูลบัตร':'No card data yet'}</p>`;
+}
+
+// เปิด modal แสดงประวัติการใช้บัตรใบนั้นทั้งหมด (คลิกจากตาราง "ลูกค้าบัตร")
+function showCardHistory(i) {
+  const g = window._cardGroups && window._cardGroups[i];
+  if (!g) return;
+  const isTh = currentLang === 'th';
+  const locale = isTh ? 'th-TH' : 'en-US';
+  const visits = (window._rows || [])
+    .filter(r => r.payment.toLowerCase() !== 'mobile phone' && r.first4 && r.last4 && `${r.first4}••••${r.last4}` === g.card)
+    .sort((a,b) => b.datetime - a.datetime);
+
+  document.getElementById('cardModalTitle').textContent = '💳 ' + g.card;
+  document.getElementById('cardModalSub').textContent =
+    `${g.count} ${isTh?'ครั้ง':'visits'} · ฿${g.revenue.toLocaleString()} · ${isTh?'ใช้ล่าสุด':'Last used'} ${g.lastSeen.toLocaleString(locale,{dateStyle:'medium',timeStyle:'short'})}`;
+
+  document.getElementById('cardModalBody').innerHTML = visits.map(r => `
+    <div class="modal-row">
+      <span class="k">${r.datetime.toLocaleString(locale,{dateStyle:'medium',timeStyle:'short'})}</span>
+      <span class="v">฿${r.price.toLocaleString()} · ${payInfo(r.payment).label}</span>
+    </div>`).join('');
+
+  document.getElementById('cardModal').classList.add('show');
+}
+function closeCardModal() {
+  document.getElementById('cardModal').classList.remove('show');
+}
+
 // ── RENDER ──
 function render(rows) {
   window._rows = rows;
@@ -1001,6 +1352,20 @@ function render(rows) {
   renderMonthlyChart(rows);
   populateWeekdayMonthFilter(rows);
   renderWeekdayChart(rows);
+  renderPaymentTrendChart(rows);
+
+  // กำไรต่อแก้ว — โชว์เฉพาะตอนมีข้อมูล COGS จริง (ไม่งั้นจะกลายเป็น "กำไร" ที่จริงๆ คือรายได้ล้วนๆ)
+  const expenseRows = window._expenseRows || [];
+  const hasCogsData = expenseRows.some(e => e.type === 'cogs');
+  if (hasCogsData) {
+    const monthlyProfit = computeProfitPerCup(rows, expenseRows);
+    updateProfitPerCupKPI(monthlyProfit);
+    renderProfitPerCupChart(monthlyProfit);
+  } else {
+    document.getElementById('kpiProfitCard').style.display = 'none';
+    document.getElementById('profitChartWrap').style.display = 'none';
+    destroyChart('profitPerCup');
+  }
 
   // Heatmap
   populateHeatmapMonthFilter(rows);
@@ -1030,6 +1395,8 @@ function render(rows) {
       <div class="pay-pct">${(cnt/N*100).toFixed(0)}%</div>
     </div>`;
   }).join('');
+
+  renderCardLeaderboard(rows);
 
   // Timestamps — ใช้วันเวลาของแก้วล่าสุด
   const latestRow = rows.reduce((a,b) => a.datetime > b.datetime ? a : b);
@@ -1070,23 +1437,34 @@ async function load(force) {
   try {
     const today=new Date().toDateString();
     const cached=JSON.parse(localStorage.getItem(CACHE_KEY)||'null');
-    let rows;
-    if(!force && cached&&cached.date===today){
+    let rows, expenseRows;
+    // cache เก่าก่อนมีฟีเจอร์กำไรต่อแก้วจะไม่มี expenseRows — เช็คแยกไว้เพื่อบังคับ fetch ใหม่ครั้งเดียวให้ครบ
+    if(!force && cached&&cached.date===today && cached.expenseRows){
       rows=cached.rows.map(r=>({...r,datetime:new Date(r.datetime)}));
+      expenseRows=cached.expenseRows.map(r=>({...r,date:r.date?new Date(r.date):null}));
     } else {
       const token = sessionStorage.getItem('ofresh_admin_token');
-      const res = await fetch(API_BASE + '/api/admin/nayax-stats', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.status === 401) {
+      const [nayaxRes, expensesRes] = await Promise.allSettled([
+        fetch(API_BASE + '/api/admin/nayax-stats', { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(API_BASE + '/api/admin/expenses', { headers: { Authorization: `Bearer ${token}` } }),
+      ]);
+      if (nayaxRes.status !== 'fulfilled') throw new Error('nayax-stats fetch failed');
+      if (nayaxRes.value.status === 401) {
         sessionStorage.removeItem('ofresh_admin_token');
         document.getElementById('pinGate').classList.remove('hidden');
         return;
       }
-      const text=await res.text();
+      const text=await nayaxRes.value.text();
       rows=parseCSV(text);
-      localStorage.setItem(CACHE_KEY,JSON.stringify({date:today,rows}));
+      // ต้นทุน (COGS) เป็น nice-to-have สำหรับ "กำไรต่อแก้ว" เท่านั้น — ถ้าดึงไม่สำเร็จ (secret ยังไม่ตั้ง ฯลฯ)
+      // ไม่ให้พังทั้งหน้า แค่ไม่มีค่ากำไรต่อแก้วให้ดูเฉยๆ
+      expenseRows = [];
+      if (expensesRes.status === 'fulfilled' && expensesRes.value.ok) {
+        try { expenseRows = parseExpensesCSV(await expensesRes.value.text()); } catch(e) { console.error('parseExpensesCSV failed:', e); }
+      }
+      localStorage.setItem(CACHE_KEY,JSON.stringify({date:today,rows,expenseRows}));
     }
+    window._expenseRows = expenseRows;
     render(rows);
   } catch(e) {
     document.getElementById('lastUpdate').textContent=currentLang==='th'?'โหลดไม่สำเร็จ':'Load failed';
