@@ -20,11 +20,13 @@
  *                             (สร้างแคมเปญเองที่ Home > บัตรสะสมแต้ม ใน manager.line.biz แล้วคัดลอก URL การ์ดมาใส่ที่นี่
  *                             — เราไม่ได้สร้าง/เก็บสถานะสแตมป์เอง แค่ส่ง URL นี้กลับให้ลูกค้า LINE จัดการที่เหลือให้ทั้งหมด
  *                             ต้องรันเอง: wrangler secret put LINE_REWARD_CARD_URL>
- *   VISIT_SHEET_API_URL    = <Apps Script Web App URL ของ visit-photo-sheet-script.gs (เก็บรูป+ผลวิเคราะห์)>
- *                             — การวิเคราะห์รูป (จำนวนคน/มีเด็กมาด้วยไหม) ใช้ GEMINI_API_KEY ตัวเดียวกับ
- *                             ผู้ช่วย AI แปลงออเดอร์ในกลุ่มไลน์ด้านบน ไม่ต้องเพิ่ม secret ใหม่
- *   VISIT_SHEET_ADMIN_KEY  = <ADMIN_KEY ที่ตั้งไว้ใน Script Properties ของ Apps Script ตัวนั้น — คนละค่ากับ
- *                             ADMIN_PIN ด้านบน ไม่ส่งให้ client เห็นเด็ดขาด>
+ *   VISIT_SHEET_CSV_URL    = <ลิงก์ CSV ของแท็บ "Visits" ในสเปรดชีตออเดอร์ส้มเดียวกัน (Publish to web) —
+ *                             เก็บรูป+ผลวิเคราะห์ลูกค้าหน้าตู้ ใช้ order-sheet-script.gs ตัวเดียวกับออเดอร์
+ *                             ส้ม/ต้นทุน (คนละแท็บ) — การวิเคราะห์รูป (จำนวนคน/มีเด็กมาด้วยไหม) ใช้
+ *                             GEMINI_API_KEY ตัวเดียวกับผู้ช่วย AI แปลงออเดอร์ในกลุ่มไลน์ด้านบน ไม่ต้องเพิ่ม
+ *                             secret ใหม่
+ *   VISIT_SHEET_WEBHOOK_URL = <ไม่ตั้งก็ได้ ถ้าใช้ Apps Script/สเปรดชีตตัวเดียวกับออเดอร์ส้ม จะ fallback ไปใช้
+ *                              SHEET_WEBHOOK_URL แทนอัตโนมัติ เหมือน EXPENSE_SHEET_WEBHOOK_URL ด้านบน>
  *
  * ต้องเพิ่ม KV namespace binding ชื่อ OFRESH_KV ด้วย (Settings → Bindings → KV Namespace บน dashboard)
  * ใช้เก็บ cache ประวัติลูกค้าสำหรับให้ AI จับคู่ลูกค้าเดิม
@@ -100,7 +102,7 @@ export default {
     }
 
     if (request.method === 'GET' && url.pathname === '/api/admin/visit-history') {
-      return handleVisitHistory(request, env);
+      return handleAdminSheetProxy(request, env, env.VISIT_SHEET_CSV_URL, ctx, url.searchParams.has('fresh'));
     }
 
     return jsonResponse({ error: 'Not found' }, 404);
@@ -418,7 +420,9 @@ const VISIT_MATCH_WINDOW_MS = 5 * 60 * 1000;
 async function handleVisitUpload(request, env) {
   const ok = await verifyAuthHeader(request, env);
   if (!ok) return jsonResponse({ error: 'Unauthorized' }, 401);
-  if (!env.VISIT_SHEET_API_URL || !env.VISIT_SHEET_ADMIN_KEY) {
+  // เหมือน expense — ไม่ตั้ง VISIT_SHEET_WEBHOOK_URL แยกก็ได้ ใช้ webhook เดียวกับออเดอร์ส้มแทน
+  const webhookUrl = env.VISIT_SHEET_WEBHOOK_URL || env.SHEET_WEBHOOK_URL;
+  if (!webhookUrl) {
     return jsonResponse({ error: 'Not configured' }, 500);
   }
 
@@ -465,11 +469,11 @@ async function handleVisitUpload(request, env) {
   }
 
   try {
-    const res = await fetch(env.VISIT_SHEET_API_URL, {
+    const res = await fetch(webhookUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        key: env.VISIT_SHEET_ADMIN_KEY,
+        target: 'visit',
         action: 'saveVisit',
         imageBase64: data.imageBase64,
         mimeType,
@@ -482,7 +486,7 @@ async function handleVisitUpload(request, env) {
       }),
     });
     const result = await res.json();
-    if (result.error) return jsonResponse({ error: result.error }, 502);
+    if (!result.success) return jsonResponse({ error: result.error || 'Failed to save visit' }, 502);
     return jsonResponse({
       success: true,
       photoUrl: result.photoUrl,
@@ -497,25 +501,6 @@ async function handleVisitUpload(request, env) {
   } catch (err) {
     console.error('Visit save failed:', err);
     return jsonResponse({ error: 'Failed to save visit' }, 502);
-  }
-}
-
-async function handleVisitHistory(request, env) {
-  const ok = await verifyAuthHeader(request, env);
-  if (!ok) return jsonResponse({ error: 'Unauthorized' }, 401);
-  if (!env.VISIT_SHEET_API_URL || !env.VISIT_SHEET_ADMIN_KEY) {
-    return jsonResponse({ error: 'Not configured' }, 500);
-  }
-  try {
-    const target = new URL(env.VISIT_SHEET_API_URL);
-    target.searchParams.set('action', 'list');
-    target.searchParams.set('key', env.VISIT_SHEET_ADMIN_KEY);
-    const res = await fetch(target.toString());
-    const text = await res.text();
-    return new Response(text, { headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } });
-  } catch (err) {
-    console.error('Visit history proxy error:', err);
-    return jsonResponse({ error: 'Failed to fetch visit history' }, 502);
   }
 }
 

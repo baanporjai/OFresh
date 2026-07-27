@@ -1,5 +1,7 @@
 const SHEET_ID = '1gM9mwHPeLoggthOBpwi6GXPlFntYvHFYzTqKRQIhNYg';
 const EXPENSE_SHEET_NAME = 'Expenses'; // ชื่อแท็บที่เก็บข้อมูลต้นทุน/ค่าใช้จ่าย (คนละแท็บกับออเดอร์ส้ม)
+const VISITS_SHEET_NAME = 'Visits';    // ชื่อแท็บที่เก็บรูปลูกค้าหน้าตู้ + ผลวิเคราะห์ (คนละแท็บ เช่นกัน)
+const VISIT_PHOTO_FOLDER_NAME = "O'Fresh Customer Visit Photos";
 
 function doPost(e) {
   const data = JSON.parse(e.postData.contents);
@@ -8,6 +10,11 @@ function doPost(e) {
   // ไม่ปนกับโค้ดออเดอร์ส้มด้านล่าง — ใช้ Apps Script ตัวเดียวกัน คนละแท็บในสเปรดชีตเดียวกัน
   if (data.target === 'expense') {
     return handleExpenseRequest(data);
+  }
+
+  // คำขอเกี่ยวกับรูปลูกค้าหน้าตู้ (จากหน้า /admin/visits) — แยกเส้นทางแบบเดียวกับ expense ด้านบน
+  if (data.target === 'visit') {
+    return handleVisitRequest(data);
   }
 
   // เปิดสเปรดชีตด้วย ID ตรงๆ แทน getActiveSpreadsheet() เพราะทำงานได้แน่นอนไม่ว่า
@@ -183,6 +190,50 @@ function deleteExpense(sheet, headers, data) {
     }
   }
   return jsonOut({ success: false, error: 'Expense id not found' });
+}
+
+// ═══════════════ รูปลูกค้าหน้าตู้ (หน้า /admin/visits) ═══════════════
+// อ่านประวัติทำผ่าน "Publish to web" เป็น CSV ของแท็บ Visits (เหมือนออเดอร์ส้ม/ต้นทุน/nayax) —
+// เขียนแค่ทางเดียวที่นี่ ผ่าน target: 'visit' ด้านบน ไม่ต้องมี doGet เพิ่ม
+
+function handleVisitRequest(data) {
+  if (data.action === 'saveVisit') return saveVisit(data);
+  return jsonOut({ success: false, error: 'Unknown visit action: ' + data.action });
+}
+
+function saveVisit(data) {
+  if (!data.imageBase64) return jsonOut({ success: false, error: 'Missing image' });
+
+  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(VISITS_SHEET_NAME);
+  if (!sheet) return jsonOut({ success: false, error: 'Visits tab not found' });
+
+  const mimeType = data.mimeType || 'image/jpeg';
+  const bytes = Utilities.base64Decode(data.imageBase64);
+  const blob = Utilities.newBlob(bytes, mimeType, 'visit_' + Date.now() + '.jpg');
+
+  const file = getVisitPhotoFolder_().createFile(blob);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  // แปลง URL แบบ "เปิดดูตรงๆ" แทนหน้า preview ของ Drive เพื่อใช้เป็น <img src> ได้เลย
+  const photoUrl = 'https://drive.google.com/uc?export=view&id=' + file.getId();
+
+  const timestamp = data.timestamp ? new Date(data.timestamp) : new Date();
+  sheet.appendRow([
+    timestamp,
+    photoUrl,
+    Number(data.peopleCount) || 0,
+    !!data.hasChildren,
+    data.matchedTxnTime || '',
+    data.matchedAmount != null ? data.matchedAmount : '',
+    data.notes || '',
+  ]);
+
+  return jsonOut({ success: true, photoUrl: photoUrl });
+}
+
+function getVisitPhotoFolder_() {
+  const folders = DriveApp.getFoldersByName(VISIT_PHOTO_FOLDER_NAME);
+  if (folders.hasNext()) return folders.next();
+  return DriveApp.createFolder(VISIT_PHOTO_FOLDER_NAME);
 }
 
 function jsonOut(obj) {

@@ -493,15 +493,58 @@ function showResult(r) {
   document.getElementById('resultCard').classList.add('show');
 }
 
+// Quote-aware CSV parser (เหมือน orderstats.html) — จำเป็นเพราะ notes เป็นข้อความอิสระจาก AI
+// อาจมีจุลภาคอยู่ในนั้น (เช่น "two adults, one child") ถ้า split(',') เฉยๆ คอลัมน์จะเลื่อนผิด
+function parseVisitsCSVRecords(text) {
+  const records = []; let fields = []; let cur = ''; let inQuotes = false; let sawData = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i+1] === '"') { cur += '"'; i++; } else { inQuotes = false; }
+      } else { cur += c; }
+    } else if (c === '"') { inQuotes = true; sawData = true; }
+    else if (c === ',') { fields.push(cur); cur = ''; sawData = true; }
+    else if (c === '\n' || c === '\r') {
+      if (c === '\r' && text[i+1] === '\n') i++;
+      if (sawData || cur !== '') { fields.push(cur); records.push(fields); }
+      fields = []; cur = ''; sawData = false;
+    }
+    else cur += c;
+  }
+  if (sawData || cur !== '') { fields.push(cur); records.push(fields); }
+  return records;
+}
+
+function parseVisitsCSV(text) {
+  const rows = parseVisitsCSVRecords(text);
+  if (rows.length < 2) return [];
+  const h = rows[0].map(s => s.trim().toLowerCase());
+  const iTs = h.indexOf('timestamp'), iPhoto = h.indexOf('photourl'), iCount = h.indexOf('peoplecount'),
+        iChildren = h.indexOf('haschildren'), iMatchTime = h.indexOf('matchedtxntime'),
+        iMatchAmt = h.indexOf('matchedamount'), iNotes = h.indexOf('notes');
+  return rows.slice(1).map(v => {
+    const g = i => (v[i] || '').trim();
+    return {
+      timestamp: g(iTs),
+      photoUrl: g(iPhoto),
+      peopleCount: parseInt(g(iCount)) || 0,
+      hasChildren: g(iChildren).toLowerCase() === 'true',
+      matchedAmount: g(iMatchAmt),
+      notes: g(iNotes),
+    };
+  }).filter(v => v.timestamp).reverse(); // ใหม่สุดขึ้นก่อน
+}
+
 async function loadHistory() {
   try {
     const res = await fetch(API_BASE + '/api/admin/visit-history', { headers: authHeaders() });
-    const data = await res.json();
-    if (data.error) {
+    if (!res.ok) {
       document.getElementById('historyList').innerHTML = `<div class="empty-state">โหลดประวัติไม่ได้</div>`;
       return;
     }
-    const visits = (data.visits || []).slice(0, 30);
+    const text = await res.text();
+    const visits = parseVisitsCSV(text).slice(0, 30);
     document.getElementById('historyList').innerHTML = visits.length ? visits.map(v => {
       const d = new Date(v.timestamp);
       const timeStr = d.toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' });
