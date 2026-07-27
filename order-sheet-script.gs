@@ -213,8 +213,9 @@ function saveVisit(data) {
 
   const file = getVisitPhotoFolder_().createFile(blob);
   file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-  // แปลง URL แบบ "เปิดดูตรงๆ" แทนหน้า preview ของ Drive เพื่อใช้เป็น <img src> ได้เลย
-  const photoUrl = 'https://drive.google.com/uc?export=view&id=' + file.getId();
+  // ใช้ endpoint "thumbnail" แทน "uc?export=view" — แบบเดิมมักโดน Google บล็อกไม่ให้ hotlink เป็น
+  // <img src> ตรงๆ (โชว์ไอคอนรูปพังแทน) endpoint นี้เสถียรกว่าสำหรับฝังรูปในหน้าเว็บ
+  const photoUrl = 'https://drive.google.com/thumbnail?id=' + file.getId() + '&sz=w1000';
 
   const timestamp = data.timestamp ? new Date(data.timestamp) : new Date();
   sheet.appendRow([

@@ -100,6 +100,17 @@ body { font-family: 'Prompt', sans-serif; background: var(--off-white); color: v
 }
 .hero h1 span { color: var(--orange-light); }
 .hero p { position: relative; z-index: 1; color: rgba(255,255,255,.5); font-size: .9rem; }
+.refresh-btn {
+  display: inline-flex; align-items: center; gap: 6px; margin-top: 14px;
+  background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14);
+  border-radius: 30px; padding: 7px 18px; font-size: .78rem; color: rgba(255,255,255,.75);
+  font-family: 'Prompt', sans-serif; cursor: pointer; transition: background .2s;
+  position: relative; z-index: 1;
+}
+.refresh-btn:hover { background: rgba(255,255,255,.16); }
+.refresh-btn:disabled { opacity: .5; cursor: wait; }
+.refresh-btn.spinning #refreshIcon { display: inline-block; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 
 /* ── PAGE ── */
 .page { max-width: 800px; margin: 0 auto; padding: 32px 20px 60px; }
@@ -302,6 +313,9 @@ footer a { color: var(--orange); text-decoration: none; }
   <img src="/OFresh_Logo_transparent.png" alt="O'Fresh" class="hero-logo">
   <h1>ประวัติลูกค้า<span>หน้าตู้</span></h1>
   <p>อัปโหลดรูปจากกล้องหน้าตู้ ให้ AI ช่วยดูว่ามากันกี่คน มีเด็กมาด้วยไหม</p>
+  <button id="refreshBtn" onclick="loadHistory(true)" class="refresh-btn">
+    <span id="refreshIcon">🔄</span> รีเฟรชข้อมูล
+  </button>
 </div>
 
 <div class="page">
@@ -523,9 +537,28 @@ function parseVisitsCSV(text) {
   }).filter(v => v.timestamp).reverse(); // ใหม่สุดขึ้นก่อน
 }
 
-async function loadHistory() {
+// Google Sheets export คอลัมน์ที่เป็น Date จริงออกมาเป็น locale ไทย "D/M/YYYY H:mm:ss" (วัน/เดือน/ปี) —
+// new Date(...) ตรงๆ พังเป็น "Invalid Date" ทันทีที่วัน > 12 เพราะ JS เดา M/D/YYYY (สไตล์อเมริกัน) แทน
+// ต้องแยกพาร์สรูปแบบนี้เองก่อน ถ้าไม่ตรงค่อย fallback ไปแบบ ISO 8601 ปกติ
+function parseSheetTimestamp(raw) {
+  if (!raw) return null;
+  const s = raw.trim();
+  const dmy = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s+(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+  if (dmy) {
+    const [, d, mo, y, hr, mi, se] = dmy.map(Number);
+    const dt = new Date(y, mo - 1, d, hr, mi, se || 0);
+    return isNaN(dt) ? null : dt;
+  }
+  const dt = new Date(s);
+  return isNaN(dt) ? null : dt;
+}
+
+async function loadHistory(force) {
+  const btn = document.getElementById('refreshBtn');
+  if (btn) { btn.disabled = true; btn.classList.add('spinning'); }
   try {
-    const res = await fetch(API_BASE + '/api/admin/visit-history', { headers: authHeaders() });
+    const url = API_BASE + '/api/admin/visit-history' + (force ? '?fresh=1' : '');
+    const res = await fetch(url, { headers: authHeaders() });
     if (!res.ok) {
       document.getElementById('historyList').innerHTML = `<div class="empty-state">โหลดประวัติไม่ได้</div>`;
       return;
@@ -533,8 +566,8 @@ async function loadHistory() {
     const text = await res.text();
     const visits = parseVisitsCSV(text).slice(0, 30);
     document.getElementById('historyList').innerHTML = visits.length ? visits.map(v => {
-      const d = new Date(v.timestamp);
-      const timeStr = d.toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' });
+      const d = parseSheetTimestamp(v.timestamp);
+      const timeStr = d ? d.toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
       const count = v.peopleCount || 0;
       const badgeCls = v.hasChildren ? 'children' : (count > 1 ? 'group' : 'solo');
       const badgeText = v.hasChildren ? '👶 มีเด็ก' : (count > 1 ? `👥 ${count} คน` : (count === 1 ? '🧍 คนเดียว' : '—'));
@@ -552,6 +585,8 @@ async function loadHistory() {
     }).join('') : `<div class="empty-state">ยังไม่มีข้อมูล</div>`;
   } catch (e) {
     document.getElementById('historyList').innerHTML = `<div class="empty-state">โหลดประวัติไม่ได้</div>`;
+  } finally {
+    if (btn) { btn.disabled = false; btn.classList.remove('spinning'); }
   }
 }
 
