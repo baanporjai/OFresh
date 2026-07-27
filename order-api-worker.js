@@ -20,9 +20,9 @@
  *                             (สร้างแคมเปญเองที่ Home > บัตรสะสมแต้ม ใน manager.line.biz แล้วคัดลอก URL การ์ดมาใส่ที่นี่
  *                             — เราไม่ได้สร้าง/เก็บสถานะสแตมป์เอง แค่ส่ง URL นี้กลับให้ลูกค้า LINE จัดการที่เหลือให้ทั้งหมด
  *                             ต้องรันเอง: wrangler secret put LINE_REWARD_CARD_URL>
- *   ANTHROPIC_API_KEY      = <API key จาก console.anthropic.com — ใช้ให้ Claude ดูรูปจากกล้องหน้าตู้
- *                             แล้วประเมินจำนวนคน/มีเด็กมาด้วยไหม สำหรับหน้า visits.html>
  *   VISIT_SHEET_API_URL    = <Apps Script Web App URL ของ visit-photo-sheet-script.gs (เก็บรูป+ผลวิเคราะห์)>
+ *                             — การวิเคราะห์รูป (จำนวนคน/มีเด็กมาด้วยไหม) ใช้ GEMINI_API_KEY ตัวเดียวกับ
+ *                             ผู้ช่วย AI แปลงออเดอร์ในกลุ่มไลน์ด้านบน ไม่ต้องเพิ่ม secret ใหม่
  *   VISIT_SHEET_ADMIN_KEY  = <ADMIN_KEY ที่ตั้งไว้ใน Script Properties ของ Apps Script ตัวนั้น — คนละค่ากับ
  *                             ADMIN_PIN ด้านบน ไม่ส่งให้ client เห็นเด็ดขาด>
  *
@@ -509,50 +509,56 @@ async function handleVisitHistory(request, env) {
   }
 }
 
-// เรียก Claude ดูรูปแล้วประเมินจำนวนคน/มีเด็กมาด้วยไหม — ถ้าวิเคราะห์ไม่สำเร็จก็ยังบันทึกรูปได้ปกติ
-// แค่ปล่อยให้ค่าพวกนี้เป็น null ไม่ทำให้การอัปโหลดทั้งหมดล้มเหลวไปด้วย
+// เรียก Gemini ดูรูปแล้วประเมินจำนวนคน/มีเด็กมาด้วยไหม — ใช้ GEMINI_API_KEY ตัวเดียวกับที่ผู้ช่วย
+// AI แปลงข้อความออเดอร์ในกลุ่มไลน์ใช้อยู่แล้ว (ดู parseOrderWithAI ด้านบน) ไม่ต้องเพิ่ม secret ใหม่
+// ถ้าวิเคราะห์ไม่สำเร็จก็ยังบันทึกรูปได้ปกติ แค่ปล่อยให้ค่าพวกนี้เป็น null ไม่ทำให้การอัปโหลดทั้งหมดล้มเหลวไปด้วย
 async function analyzeVisitPhoto_(env, imageBase64, mimeType) {
-  if (!env.ANTHROPIC_API_KEY) {
-    return { peopleCount: null, hasChildren: null, notes: 'ANTHROPIC_API_KEY not configured' };
+  if (!env.GEMINI_API_KEY) {
+    return { peopleCount: null, hasChildren: null, notes: 'GEMINI_API_KEY not configured' };
   }
   const prompt = 'This photo was taken by a vending machine\'s front-facing camera at the moment of a purchase. ' +
     'Count how many people are visible who appear to be customers at the machine (ignore anyone clearly just ' +
     'passing by in the background). Note whether any of them appear to be children (roughly under 12 years old). ' +
-    'Respond with ONLY a JSON object, no markdown formatting, no explanation: ' +
-    '{"peopleCount": <integer>, "hasChildren": <true or false>, "notes": "<one short phrase, e.g. \'two adults, one child\' or \'single customer\'>"}. ' +
+    'Respond with a JSON object: {"peopleCount": <integer>, "hasChildren": <true or false>, ' +
+    '"notes": "<one short phrase, e.g. \'two adults, one child\' or \'single customer\'>"}. ' +
     'If you cannot see any people clearly, use peopleCount: 0 and hasChildren: false.';
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
+        'x-goog-api-key': env.GEMINI_API_KEY,
+        'content-type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 200,
-        messages: [{
+        contents: [{
           role: 'user',
-          content: [
-            { type: 'image', source: { type: 'base64', media_type: mimeType, data: imageBase64 } },
-            { type: 'text', text: prompt },
+          parts: [
+            { inline_data: { mime_type: mimeType, data: imageBase64 } },
+            { text: prompt },
           ],
         }],
+        // บังคับให้ตอบเป็น JSON ล้วนๆ ที่ฝั่ง API เลย กันปัญหาโมเดลพันด้วย markdown fence หรือพูดนำ/พูดต่อท้าย
+        generationConfig: { responseMimeType: 'application/json' },
       }),
     });
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`Gemini API error ${res.status}: ${errText}`);
+    }
     const data = await res.json();
-    const raw = (data.content && data.content[0] && data.content[0].text) || '';
-    const cleaned = raw.replace(/```json|```/g, '').trim();
-    const parsed = JSON.parse(cleaned);
+    const candidate = data.candidates && data.candidates[0];
+    const raw = (candidate && candidate.content && candidate.content.parts && candidate.content.parts[0] && candidate.content.parts[0].text) || '';
+    const match = raw.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error('Gemini response did not contain JSON: ' + raw.slice(0, 200));
+    const parsed = JSON.parse(match[0]);
     return {
       peopleCount: Number.isFinite(parsed.peopleCount) ? parsed.peopleCount : null,
       hasChildren: typeof parsed.hasChildren === 'boolean' ? parsed.hasChildren : null,
       notes: parsed.notes || '',
     };
   } catch (err) {
-    console.error('Claude vision analysis failed (non-fatal):', err);
+    console.error('Gemini vision analysis failed (non-fatal):', err);
     return { peopleCount: null, hasChildren: null, notes: 'AI analysis failed' };
   }
 }
