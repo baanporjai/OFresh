@@ -225,6 +225,8 @@ body { font-family: 'Prompt', sans-serif; background: var(--off-white); color: v
 .cal-cell.out-of-range { opacity: .3; }
 .cal-cell .cc-date { position: absolute; top: 4px; left: 6px; font-size: .58rem; color: var(--muted); }
 .cal-cell .cc-count { font-size: .74rem; font-weight: 700; color: var(--text); margin-top: 6px; }
+.cal-cell .cc-card { position: absolute; bottom: 3px; right: 5px; font-size: .5rem; color: var(--muted); line-height: 1; }
+.cal-cell.p1 .cc-card, .cal-cell.p2 .cc-card { color: rgba(255,255,255,.85); }
 .cal-cell.p1 { background: var(--orange); box-shadow: 0 0 12px rgba(255,107,0,.3); }
 .cal-cell.p1 .cc-count, .cal-cell.p1 .cc-date { color: #fff; }
 .cal-cell.p2 { background: var(--orange-light); }
@@ -696,12 +698,18 @@ function renderDailyChart(rows) {
   const gridEnd = new Date(rangeEnd); gridEnd.setDate(gridEnd.getDate() + (6 - gridEnd.getDay()));
 
   const counts = {};
-  rows.forEach(r => { const k = r.datetime.toDateString(); counts[k] = (counts[k]||0) + valueOf(r); });
+  const cardCounts = {}; // นับทุกการจ่ายด้วยบัตร (ไม่ใช่ mobile phone/QR) — Nayax เก็บเป็น "ประเภทเครื่องอ่านบัตร" ไม่แยกเครดิต/เดบิต
+  rows.forEach(r => {
+    const k = r.datetime.toDateString();
+    counts[k] = (counts[k]||0) + valueOf(r);
+    if ((r.payment||'').toLowerCase() !== 'mobile phone') cardCounts[k] = (cardCounts[k]||0) + 1;
+  });
 
   const cells = [];
   for (let d = new Date(gridStart); d <= gridEnd; d.setDate(d.getDate() + 1)) {
     const inRange = d >= rangeStart && d <= rangeEnd;
-    cells.push({ date: new Date(d), count: inRange ? (counts[d.toDateString()] || 0) : null, inRange });
+    const key = d.toDateString();
+    cells.push({ date: new Date(d), count: inRange ? (counts[key] || 0) : null, cardCount: inRange ? (cardCounts[key] || 0) : null, inRange });
   }
 
   const inRangeCounts = cells.filter(c => c.inRange).map(c => c.count);
@@ -716,9 +724,11 @@ function renderDailyChart(rows) {
     const p = maxC > 0 ? c.count / maxC : 0;
     const cls = c.count === 0 ? '' : (p>=.85?'p1':p>=.55?'p2':p>=.25?'p3':'');
     const countLabel = c.count === 0 ? '' : (useMoney ? `฿${c.count.toLocaleString()}` : c.count);
+    const cardBadge = c.cardCount > 0 ? `<div class="cc-card" title="${isTh?'จ่ายด้วยบัตร':'Card payments'}">💳${c.cardCount}</div>` : '';
     return `<div class="cal-cell ${cls}">
       <div class="cc-date">${c.date.getDate()}</div>
       <div class="cc-count">${countLabel}</div>
+      ${cardBadge}
     </div>`;
   }).join('');
 
@@ -835,11 +845,15 @@ function renderComparison(rows, isTh) {
   const startOfToday = new Date(); startOfToday.setHours(0,0,0,0);
   const todayMs = startOfToday.getTime();
 
+  // ข้อมูลอัปเดตวันละครั้ง ทำให้ "วันนี้ถึงตอนนี้" มักจะว่างเปล่าเกือบทั้งวัน (เทียบกับเมื่อวานทั้งวัน
+  // แล้วโชว์ -100% หลอกๆ) เปรียบเทียบ "เมื่อวานทั้งวัน" กับ "ค่าเฉลี่ยต่อวันของ 30 วันก่อนหน้าเมื่อวาน" แทน
+  const yesterdayMs = todayMs - DAY;
+  const last30Avg = sumInRange(rows, yesterdayMs - 30*DAY, yesterdayMs);
   const periods = [
     {
-      label: isTh?'วันนี้ vs เมื่อวาน (ถึงตอนนี้)':'Today vs Yesterday (so far)',
-      cur: sumInRange(rows, todayMs, now),
-      prev: sumInRange(rows, todayMs - DAY, todayMs),
+      label: isTh?'เมื่อวาน vs ค่าเฉลี่ย 30 วันล่าสุด':'Yesterday vs 30-Day Average',
+      cur: sumInRange(rows, yesterdayMs, todayMs),
+      prev: { cups: Math.round(last30Avg.cups / 30), revenue: Math.round(last30Avg.revenue / 30) },
     },
     {
       label: isTh?'7 วันล่าสุด vs 7 วันก่อนหน้า':'Last 7 Days vs Previous 7 Days',
