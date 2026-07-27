@@ -871,11 +871,14 @@ function cancelQuickReply(orderId) {
 }
 
 // ══════════════════════════════════════════════════════════════════════
-// Reward-card auto-reply — ลูกค้าทัก DM ส่งรูปสลิป ไม่มีการตรวจสอบรูปใดๆ ด้วยโค้ด/AI
-// แค่แจ้งเตือนกลุ่มแอดมินพร้อมปุ่ม ให้แอดมินดูสลิปเองแล้วกดปุ่มเดียวส่งลิงก์บัตรสะสมแต้ม (ของ LINE OA เอง) ให้ลูกค้า
+// Reward-card auto-reply — ลูกค้าทัก DM ส่งรูปสลิป
+// เช็คยอดเงินอัตโนมัติด้วย Gemini vision (แค่ตัวเลขยอด ไม่เช็ควันที่/ชื่อบัญชี) ถ้ายอดตรง 69 บาทชัดเจน
+// ส่งลิงก์บัตรสะสมแต้มให้ลูกค้าทันที — ถ้าอ่านไม่ออก/ไม่ตรง/error ระหว่างทาง fallback ไปแจ้งกลุ่มแอดมิน
+// พร้อมปุ่มให้กดส่งเอง (ทางสำรองเดิม)
 // ══════════════════════════════════════════════════════════════════════
 
 // ส่งข้อความแบบ push (ต่างจาก replyToLine ตรงที่ยิงหา groupId/userId ตรงๆ ได้ ไม่ต้องมี replyToken สดๆ)
+// return ค่าสำเร็จ/ไม่สำเร็จ ให้ผู้เรียกตัดสินใจต่อได้ (เช่น handleSlipImage เช็คว่า push ลิงก์อัตโนมัติสำเร็จจริงไหม)
 async function pushToLine(env, to, messages) {
   const res = await fetch('https://api.line.me/v2/bot/message/push', {
     method: 'POST',
@@ -887,7 +890,9 @@ async function pushToLine(env, to, messages) {
   });
   if (!res.ok) {
     console.error('LINE push error:', await res.text());
+    return false;
   }
+  return true;
 }
 
 function sendRewardQuickReply(shortId) {
@@ -898,28 +903,130 @@ function sendRewardQuickReply(shortId) {
   };
 }
 
+// ข้อความขอบคุณ + ลิงก์บัตรสะสมแต้ม — ใช้ร่วมกันทั้งเส้นทางอัตโนมัติ (handleSlipImage) และเส้นทางกดปุ่มเอง (handlePostback)
+function buildRewardText(env) {
+  return `ขอบคุณสำหรับการอุดหนุนกดน้ำส้มคั้นสดนะคะ 🎉🍊\nนี่คือบัตรสะสมแต้มของคุณค่ะ:\n${env.LINE_REWARD_CARD_URL}`;
+}
+
+// ดึงรูปจริงจาก LINE Content API ด้วย message id
+async function fetchLineImageContent(env, messageId) {
+  const res = await fetch(`https://api-data.line.me/v2/bot/message/${messageId}/content`, {
+    headers: { 'Authorization': `Bearer ${env.LINE_CHANNEL_TOKEN}` },
+  });
+  if (!res.ok) {
+    throw new Error(`LINE content API error ${res.status}: ${await res.text()}`);
+  }
+  const mimeType = res.headers.get('Content-Type') || 'image/jpeg';
+  const buffer = await res.arrayBuffer();
+  return { buffer, mimeType };
+}
+
+// เข้ารหัส ArrayBuffer เป็น base64 แบบ chunk — ห้ามใช้ btoa(String.fromCharCode(...bytes)) ตรงๆ กับ array ใหญ่ๆ
+// (รูปสลิปหลายร้อย KB) เพราะ spread จะชน argument-list limit ของ JS engine
+function arrayBufferToBase64(buffer) {
+  const bytes = new Uint8Array(buffer);
+  const CHUNK_SIZE = 8192;
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += CHUNK_SIZE) {
+    const chunk = bytes.subarray(i, i + CHUNK_SIZE);
+    binary += String.fromCharCode.apply(null, chunk);
+  }
+  return btoa(binary);
+}
+
+// เช็คแค่ตัวเลขยอดเงินจากรูปสลิปอย่างเดียว (ไม่เช็ควันที่/ชื่อบัญชี) — ใช้แพทเทิร์นเดียวกับ parseOrderFromMessage
+async function checkSlipAmount(imageBase64, mimeType, env) {
+  const systemPrompt = [
+    'คุณคือผู้ช่วยอ่านยอดเงินจากรูปสลิปโอนเงินธนาคารไทย',
+    'ตอบกลับเป็น JSON ล้วนๆ เท่านั้น ห้ามมีข้อความอื่นนอก JSON และห้ามใช้ markdown code fence',
+    'รูปแบบ JSON ที่ต้องตอบ: {"amount":number|null}',
+    '- amount: จำนวนเงินที่โอน หน่วยบาท เป็นตัวเลขล้วนๆ ไม่ใส่หน่วยหรือคอมมา ถ้าอ่านไม่ออกหรือรูปนี้ไม่ใช่สลิปโอนเงินเลยให้ null',
+  ].join('\n');
+
+  const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent', {
+    method: 'POST',
+    headers: {
+      'x-goog-api-key': env.GEMINI_API_KEY,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      system_instruction: { parts: [{ text: systemPrompt }] },
+      contents: [{ role: 'user', parts: [{ inline_data: { mime_type: mimeType, data: imageBase64 } }] }],
+      generationConfig: { responseMimeType: 'application/json' },
+    }),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Gemini API error ${res.status}: ${errText}`);
+  }
+
+  const data = await res.json();
+  const candidate = data.candidates && data.candidates[0];
+  const raw = (candidate && candidate.content && candidate.content.parts && candidate.content.parts[0] && candidate.content.parts[0].text) || '';
+  const match = raw.match(/\{[\s\S]*\}/);
+  if (!match) throw new Error('Gemini response did not contain JSON: ' + raw.slice(0, 200));
+
+  const parsed = JSON.parse(match[0]);
+  const amount = parsed.amount != null && !isNaN(Number(parsed.amount)) ? Number(parsed.amount) : null;
+  return { amount };
+}
+
+// ทางสำรอง (เดิมจาก Phase 1) — เก็บ userId ชั่วคราวรอแอดมินกดปุ่ม แล้วแจ้งกลุ่มแอดมินพร้อมปุ่ม
+async function notifyAdminForManualReview(event, env, reasonSuffix) {
+  const shortId = generateOrderId();
+  // เก็บ userId ของลูกค้าไว้ชั่วคราว รอแอดมินกดปุ่มในกลุ่ม (replyToken ตอนนี้จะหมดอายุก่อนแอดมินทันเวลา
+  // เลยต้องใช้ push API ยิงหา userId นี้ตรงๆ ทีหลัง ไม่ใช่ reply API)
+  await env.OFRESH_KV.put(
+    `slipuser:${shortId}`,
+    JSON.stringify({ userId: event.source.userId }),
+    { expirationTtl: 86400 }
+  );
+
+  await pushToLine(env, ADMIN_GROUP_ID, [{
+    type: 'text',
+    text: `📸 มีลูกค้าส่งรูปสลิปมาในแชท OA${reasonSuffix || ''} — เช็ครูปในแชทเอง แล้วกดปุ่มด้านล่างถ้าถูกต้อง`,
+    quickReply: sendRewardQuickReply(shortId),
+  }]);
+}
+
 async function handleSlipImage(event, env) {
+  // ตอบลูกค้าทันทีเป็นอย่างแรก (ใช้ replyToken ที่ยังสดอยู่) ก่อนไปทำงานที่ช้ากว่า (ดึงรูป + เรียก Gemini)
   try {
-    const shortId = generateOrderId();
-    // เก็บ userId ของลูกค้าไว้ชั่วคราว รอแอดมินกดปุ่มในกลุ่ม (replyToken ตอนนี้จะหมดอายุก่อนแอดมินทันเวลา
-    // เลยต้องใช้ push API ยิงหา userId นี้ตรงๆ ทีหลัง ไม่ใช่ reply API)
-    await env.OFRESH_KV.put(
-      `slipuser:${shortId}`,
-      JSON.stringify({ userId: event.source.userId }),
-      { expirationTtl: 86400 }
-    );
-
-    await pushToLine(env, ADMIN_GROUP_ID, [{
-      type: 'text',
-      text: '📸 มีลูกค้าส่งรูปสลิปมาในแชท OA — เช็ครูปในแชทเอง แล้วกดปุ่มด้านล่างถ้าถูกต้อง',
-      quickReply: sendRewardQuickReply(shortId),
-    }]);
-
     await replyToLine(env, event.replyToken, [
-      { type: 'text', text: 'ได้รับรูปแล้วค่ะ 🙏 รอแอดมินตรวจสอบสักครู่นะคะ' },
+      { type: 'text', text: 'ได้รับรูปแล้วค่ะ 🙏 รอสักครู่นะคะ' },
     ]);
   } catch (err) {
-    console.error('handleSlipImage failed:', err);
+    console.error('handleSlipImage ack reply failed:', err);
+  }
+
+  try {
+    const { buffer, mimeType } = await fetchLineImageContent(env, event.message.id);
+    const imageBase64 = arrayBufferToBase64(buffer);
+    const { amount } = await checkSlipAmount(imageBase64, mimeType, env);
+
+    const amountOk = typeof amount === 'number' && Math.abs(amount - 69) < 0.01;
+
+    if (amountOk && env.LINE_REWARD_CARD_URL) {
+      const sent = await pushToLine(env, event.source.userId, [{ type: 'text', text: buildRewardText(env) }]);
+      if (sent) {
+        await pushToLine(env, ADMIN_GROUP_ID, [{
+          type: 'text',
+          text: '✅ ตรวจพบยอด 69 บาท ส่งลิงก์บัตรสะสมแต้มให้ลูกค้าอัตโนมัติแล้วครับ',
+        }]);
+        return;
+      }
+    }
+
+    // ยอดไม่ตรง/อ่านไม่ออก/ยังไม่ตั้ง secret/push อัตโนมัติล้มเหลว — ตกไปทางสำรองให้แอดมินกดเอง
+    await notifyAdminForManualReview(event, env, ' (ระบบตรวจยอดอัตโนมัติไม่ผ่าน/ไม่ชัดเจน)');
+  } catch (err) {
+    console.error('handleSlipImage amount check failed:', err);
+    try {
+      await notifyAdminForManualReview(event, env, ' (ระบบตรวจยอดอัตโนมัติไม่ผ่าน/ไม่ชัดเจน)');
+    } catch (err2) {
+      console.error('handleSlipImage fallback notify also failed:', err2);
+    }
   }
 }
 
@@ -1005,10 +1112,7 @@ async function handlePostback(event, env) {
         return;
       }
 
-      await pushToLine(env, stored.userId, [{
-        type: 'text',
-        text: `ขอบคุณสำหรับการอุดหนุนกดน้ำส้มคั้นสดนะคะ 🎉🍊\nนี่คือบัตรสะสมแต้มของคุณค่ะ:\n${env.LINE_REWARD_CARD_URL}`,
-      }]);
+      await pushToLine(env, stored.userId, [{ type: 'text', text: buildRewardText(env) }]);
       await env.OFRESH_KV.delete(`slipuser:${shortId}`); // กันกดซ้ำ
 
       await replyToLine(env, replyToken, [{ type: 'text', text: '✅ ส่งลิงก์บัตรสะสมแต้มให้ลูกค้าแล้วครับ' }]);
