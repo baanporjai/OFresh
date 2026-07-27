@@ -16,6 +16,7 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
 <style>
 :root {
   --orange: #FF6B00;
@@ -641,9 +642,15 @@ function payInfo(raw) { return (PAY[currentLang]||PAY.th)[raw.toLowerCase()] || 
 const charts = {};
 function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
 
+Chart.register(ChartDataLabels);
+
 const chartDefaults = {
   responsive: true,
-  plugins: { legend: { display: false } },
+  // เผื่อพื้นที่ด้านบนไว้ให้ label ตัวเลขเหนือแท่งที่สูงสุด ไม่งั้นจะโดนตัดขอบบน canvas พอดี
+  layout: { padding: { top: 22 } },
+  // ปิด datalabels ไว้เป็นค่าเริ่มต้น (ลงทะเบียน global ไว้ทุก chart) แต่ละกราฟที่อยากโชว์ตัวเลขบนแท่ง
+  // ต้องเปิดเอง (plugins.datalabels.display:true) พร้อม formatter ของตัวเอง กันไปโผล่ในกราฟที่ไม่ต้องการ (เช่น เดี๋ยวจะมี pie/doughnut อื่นๆ)
+  plugins: { legend: { display: false }, datalabels: { display: false } },
   scales: {
     y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,.05)' }, ticks: { color: '#6B7280', font: { family: 'Prompt', size: 11 } } },
     x: { grid: { display: false }, ticks: { color: '#6B7280', font: { family: 'Prompt', size: 11 } } }
@@ -778,6 +785,11 @@ function renderMonthlyChart(rows) {
     },
     options:{ ...chartDefaults, plugins:{legend:{display:false},tooltip:{
       callbacks:{label:ctx=> useMoney ? ` ฿${ctx.raw.toLocaleString()}` : ` ${ctx.raw} ${isTh?'แก้ว':'cups'}`}
+    }, datalabels: {
+      display: v => v.dataset.data[v.dataIndex] > 0,
+      anchor: 'end', align: 'top', offset: 2, clamp: true,
+      color: '#8a5a2a', font: { family: 'Prompt', size: 10, weight: 700 },
+      formatter: v => useMoney ? `฿${v.toLocaleString()}` : v,
     }}}
   });
 }
@@ -826,6 +838,10 @@ function renderWeekdayChart(rows) {
     },
     options: { ...chartDefaults, plugins: { legend:{display:false}, tooltip: {
       callbacks: { label: ctx => ` ${ctx.raw} ${isTh?'แก้ว':'cups'}` }
+    }, datalabels: {
+      display: v => v.dataset.data[v.dataIndex] > 0,
+      anchor: 'end', align: 'top', offset: 2, clamp: true,
+      color: '#8a5a2a', font: { family: 'Prompt', size: 10, weight: 700 },
     }}}
   });
 }
