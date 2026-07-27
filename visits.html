@@ -123,12 +123,6 @@ body { font-family: 'Prompt', sans-serif; background: var(--off-white); color: v
 .upload-drop .hint { color: var(--muted); font-size: .8rem; margin-top: 4px; }
 .upload-preview { max-width: 100%; max-height: 240px; border-radius: 12px; display: none; margin: 0 auto 14px; }
 .upload-preview.show { display: block; }
-.field-row { margin-top: 14px; }
-.field-row label { display: block; font-size: .78rem; font-weight: 700; color: var(--muted); margin-bottom: 6px; }
-.field-row input[type="datetime-local"] {
-  width: 100%; padding: 11px 14px; border-radius: 12px; border: 1.5px solid var(--border);
-  font-family: 'Prompt', sans-serif; font-size: .85rem; color: var(--text); background: var(--white);
-}
 .submit-btn {
   width: 100%; margin-top: 16px; padding: 14px; border: none; border-radius: 14px; cursor: pointer;
   background: linear-gradient(135deg, var(--orange), var(--orange-light)); color: #fff;
@@ -324,10 +318,6 @@ footer a { color: var(--orange); text-decoration: none; }
       <div class="hint">รองรับ JPG/PNG</div>
       <input type="file" id="photoInput" accept="image/*">
     </label>
-    <div class="field-row">
-      <label for="captureTime">เวลาสำรอง (เผื่อ AI อ่านเวลาบนรูปไม่ได้)</label>
-      <input type="datetime-local" id="captureTime">
-    </div>
     <button class="submit-btn" id="submitBtn" onclick="uploadVisit()" disabled>วิเคราะห์และบันทึก</button>
     <div class="upload-msg" id="uploadMsg"></div>
   </div>
@@ -368,13 +358,6 @@ const API_BASE = 'https://fancy-dust-060c.yai-taweewoot.workers.dev';
 function authHeaders(extra) {
   const token = sessionStorage.getItem('ofresh_admin_token');
   return { Authorization: `Bearer ${token}`, ...(extra || {}) };
-}
-
-// ตั้งค่า default ของช่อง "เวลาที่ถ่ายรูป" เป็นตอนนี้ (ตามเขตเวลาเครื่อง)
-function setDefaultCaptureTime() {
-  const el = document.getElementById('captureTime');
-  const now = new Date(Date.now() - new Date().getTimezoneOffset() * 60000);
-  el.value = now.toISOString().slice(0, 16);
 }
 
 let selectedFile = null;
@@ -426,13 +409,11 @@ async function uploadVisit() {
 
   try {
     const imageBase64 = await resizeImage(selectedFile, 1024);
-    const captureTimeVal = document.getElementById('captureTime').value;
-    const timestamp = captureTimeVal ? new Date(captureTimeVal).toISOString() : new Date().toISOString();
 
     const res = await fetch(API_BASE + '/api/admin/visit-upload', {
       method: 'POST',
       headers: authHeaders({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ imageBase64, mimeType: 'image/jpeg', timestamp }),
+      body: JSON.stringify({ imageBase64, mimeType: 'image/jpeg' }),
     });
     const result = await res.json();
     if (result.error) {
@@ -451,7 +432,6 @@ async function uploadVisit() {
     selectedFile = null;
     document.getElementById('photoInput').value = '';
     document.getElementById('previewImg').classList.remove('show');
-    setDefaultCaptureTime();
   } catch (e) {
     msgEl.textContent = 'เชื่อมต่อไม่สำเร็จ ลองใหม่อีกครั้ง';
     msgEl.className = 'upload-msg err';
@@ -471,7 +451,7 @@ function showResult(r) {
     const timeStr = new Date(r.timestamp).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' });
     tsEl.textContent = r.timestampSource === 'photo'
       ? `📸 อ่านเวลาจากรูป: ${timeStr}`
-      : `⌨️ ใช้เวลาสำรอง (AI อ่านเวลาบนรูปไม่ได้): ${timeStr}`;
+      : `⏱️ AI อ่านเวลาบนรูปไม่ได้ ใช้เวลาที่อัปโหลดแทน: ${timeStr}`;
   } else {
     tsEl.textContent = '';
   }
@@ -576,7 +556,6 @@ async function loadHistory() {
 }
 
 async function init() {
-  setDefaultCaptureTime();
   await loadHistory();
   const el = document.getElementById('loading');
   el.style.opacity = '0'; setTimeout(() => el.style.display = 'none', 400);
