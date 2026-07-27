@@ -387,6 +387,31 @@ function splitCSVLine(line) {
   return fields;
 }
 
+// เวลาในไฟล์ Nayax/รูปกล้อง/ที่พนักงานกรอกเอง เป็น "เวลาไทย" (Bangkok, UTC+7) เสมอ — แต่ Cloudflare
+// Workers รันด้วย timezone UTC เป็นค่าเริ่มต้น ถ้าใช้ new Date(y,m,d,hr,mn) (component constructor)
+// ตรงๆ มันจะตีความตัวเลขเดิมเป็นเวลา UTC ไปเลย ทำให้ผลลัพธ์เพี้ยนไปช้า 7 ชั่วโมง (เช่น 20:06 ไทยจริง
+// กลายเป็นถูกบันทึกเป็น 20:06Z ซึ่งคือ 03:06 ของอีกวันตามเวลาไทย) — ต้องแปลงผ่าน Date.UTC() แล้วลบ 7
+// ชั่วโมงออกเองเสมอ เพื่อให้ได้ UTC instant ที่ถูกต้องจริงๆ
+const BANGKOK_OFFSET_MS = 7 * 60 * 60 * 1000;
+function bangkokTimeToUtc(y, mo, d, hr, mn, sec) {
+  return new Date(Date.UTC(y, mo, d, hr, mn, sec || 0) - BANGKOK_OFFSET_MS);
+}
+
+// รับสตริงเวลาแบบ "YYYY-MM-DDTHH:mm[:ss]" หรือ "YYYY-MM-DD HH:mm[:ss]" ที่ไม่มี timezone suffix
+// (ถือว่าเป็นเวลาไทยเสมอ) แล้วแปลงเป็น UTC ที่ถูกต้อง — ถ้ามี Z หรือ +hh:mm ต่อท้ายอยู่แล้วให้เชื่อค่านั้นตรงๆ
+function parseBangkokIsoLike(s) {
+  if (!s) return null;
+  const trimmed = String(s).trim();
+  if (/[Zz]|[+-]\d{2}:?\d{2}$/.test(trimmed)) {
+    const d = new Date(trimmed);
+    return isNaN(d) ? null : d;
+  }
+  const m = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2}))?/);
+  if (!m) return null;
+  const [, y, mo, d, hr, mi, se] = m.map(Number);
+  return bangkokTimeToUtc(y, mo - 1, d, hr, mi, se || 0);
+}
+
 function parseNayaxCSV(text) {
   const lines = text.trim().split('\n');
   if (lines.length < 2) return [];
@@ -400,7 +425,7 @@ function parseNayaxCSV(text) {
     const [hr, mn] = (tp || '0:0').split(':').map(Number);
     if (!y) return null;
     const fullYear = y < 100 ? y + 2000 : y;
-    return new Date(fullYear, m - 1, d, hr, mn || 0);
+    return bangkokTimeToUtc(fullYear, m - 1, d, hr, mn || 0);
   }
 
   return lines.slice(1).map(line => {
@@ -445,8 +470,10 @@ async function handleVisitUpload(request, env) {
   // แม่นยำกว่าเวลาที่พนักงานพิมพ์เอง/เวลาที่กดอัปโหลด ซึ่งอาจห่างจากเวลาถ่ายจริงหลายนาทีถึงหลายชั่วโมง
   let timestamp = fallbackTimestamp, timestampSource = 'manual';
   if (analysis.photoTimestamp) {
-    const parsed = new Date(analysis.photoTimestamp);
-    if (!isNaN(parsed)) { timestamp = parsed; timestampSource = 'photo'; }
+    // เวลาที่แปะบนรูป (ตู้/กล้อง) เป็นเวลาไทยเสมอ ไม่มี timezone suffix มาด้วย — ต้องแปลงผ่าน
+    // parseBangkokIsoLike ไม่ใช่ new Date() ตรงๆ (ดูคอมเมนต์อธิบายที่ bangkokTimeToUtc ด้านบน)
+    const parsed = parseBangkokIsoLike(analysis.photoTimestamp);
+    if (parsed && !isNaN(parsed)) { timestamp = parsed; timestampSource = 'photo'; }
   }
 
   let matchedTxnTime = '', matchedAmount = null;
@@ -480,6 +507,7 @@ async function handleVisitUpload(request, env) {
         timestamp: timestamp.toISOString(),
         peopleCount: analysis.peopleCount,
         hasChildren: analysis.hasChildren,
+        gender: analysis.gender,
         notes: analysis.notes,
         matchedTxnTime,
         matchedAmount,
@@ -494,6 +522,7 @@ async function handleVisitUpload(request, env) {
       timestampSource,
       peopleCount: analysis.peopleCount,
       hasChildren: analysis.hasChildren,
+      gender: analysis.gender,
       notes: analysis.notes,
       matchedTxnTime,
       matchedAmount,
@@ -509,17 +538,20 @@ async function handleVisitUpload(request, env) {
 // ถ้าวิเคราะห์ไม่สำเร็จก็ยังบันทึกรูปได้ปกติ แค่ปล่อยให้ค่าพวกนี้เป็น null ไม่ทำให้การอัปโหลดทั้งหมดล้มเหลวไปด้วย
 async function analyzeVisitPhoto_(env, imageBase64, mimeType) {
   if (!env.GEMINI_API_KEY) {
-    return { peopleCount: null, hasChildren: null, notes: 'GEMINI_API_KEY not configured' };
+    return { peopleCount: null, hasChildren: null, gender: null, notes: 'GEMINI_API_KEY not configured' };
   }
   const prompt = 'This photo was taken by a vending machine\'s front-facing camera at the moment of a purchase. ' +
     'Count how many people are visible who appear to be customers at the machine (ignore anyone clearly just ' +
     'passing by in the background). Note whether any of them appear to be children (roughly under 12 years old). ' +
+    'Also give your best guess at the apparent gender mix of the visible customers. ' +
     'The camera also burns a date/time stamp as text somewhere on the photo (usually a corner) — read it exactly ' +
-    'as printed and convert it to ISO 8601 format (YYYY-MM-DDTHH:mm:ss). ' +
+    'as printed (it is local Thailand time, do NOT add any timezone suffix) and convert it to ' +
+    'YYYY-MM-DDTHH:mm:ss format. ' +
     'Respond with a JSON object: {"peopleCount": <integer>, "hasChildren": <true or false>, ' +
+    '"gender": <one of "male", "female", "mixed" (both present), or "unknown" (cannot tell / no one visible)>, ' +
     '"notes": "<one short phrase, e.g. \'two adults, one child\' or \'single customer\'>", ' +
-    '"photoTimestamp": "<ISO 8601 datetime read from the stamp on the photo, or null if no timestamp is visible/legible>"}. ' +
-    'If you cannot see any people clearly, use peopleCount: 0 and hasChildren: false.';
+    '"photoTimestamp": "<YYYY-MM-DDTHH:mm:ss datetime read from the stamp on the photo, or null if no timestamp is visible/legible>"}. ' +
+    'If you cannot see any people clearly, use peopleCount: 0, hasChildren: false, gender: "unknown".';
 
   try {
     const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent', {
@@ -550,15 +582,17 @@ async function analyzeVisitPhoto_(env, imageBase64, mimeType) {
     const match = raw.match(/\{[\s\S]*\}/);
     if (!match) throw new Error('Gemini response did not contain JSON: ' + raw.slice(0, 200));
     const parsed = JSON.parse(match[0]);
+    const validGenders = ['male', 'female', 'mixed', 'unknown'];
     return {
       peopleCount: Number.isFinite(parsed.peopleCount) ? parsed.peopleCount : null,
       hasChildren: typeof parsed.hasChildren === 'boolean' ? parsed.hasChildren : null,
+      gender: validGenders.includes(parsed.gender) ? parsed.gender : null,
       notes: parsed.notes || '',
       photoTimestamp: parsed.photoTimestamp || null,
     };
   } catch (err) {
     console.error('Gemini vision analysis failed (non-fatal):', err);
-    return { peopleCount: null, hasChildren: null, notes: 'AI analysis failed' };
+    return { peopleCount: null, hasChildren: null, gender: null, notes: 'AI analysis failed' };
   }
 }
 

@@ -225,6 +225,7 @@ function saveVisit(data) {
     data.matchedTxnTime || '',
     data.matchedAmount != null ? data.matchedAmount : '',
     data.notes || '',
+    data.gender || '',
   ]);
 
   return jsonOut({ success: true, photoUrl: photoUrl });

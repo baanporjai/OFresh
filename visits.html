@@ -342,6 +342,7 @@ footer a { color: var(--orange); text-decoration: none; }
     <div class="result-stats">
       <div class="result-pill" id="resultCount">—</div>
       <div class="result-pill" id="resultChildren">—</div>
+      <div class="result-pill" id="resultGender">—</div>
     </div>
     <div class="result-note" id="resultNote"></div>
     <div class="result-match" id="resultMatch" style="display:none"></div>
@@ -459,6 +460,10 @@ async function uploadVisit() {
   }
 }
 
+function genderLabel(g) {
+  return { male: '🚹 ผู้ชาย', female: '🚺 ผู้หญิง', mixed: '🚹🚺 ผสม' }[g] || 'ไม่ทราบเพศ';
+}
+
 function showResult(r) {
   document.getElementById('resultPhoto').src = r.photoUrl || '';
   const tsEl = document.getElementById('resultTimestamp');
@@ -482,6 +487,7 @@ function showResult(r) {
     childrenEl.textContent = 'ไม่ทราบ';
     childrenEl.className = 'result-pill';
   }
+  document.getElementById('resultGender').textContent = genderLabel(r.gender);
   document.getElementById('resultNote').textContent = r.notes || '';
   const matchEl = document.getElementById('resultMatch');
   if (r.matchedTxnTime) {
@@ -522,7 +528,7 @@ function parseVisitsCSV(text) {
   const h = rows[0].map(s => s.trim().toLowerCase());
   const iTs = h.indexOf('timestamp'), iPhoto = h.indexOf('photourl'), iCount = h.indexOf('peoplecount'),
         iChildren = h.indexOf('haschildren'), iMatchTime = h.indexOf('matchedtxntime'),
-        iMatchAmt = h.indexOf('matchedamount'), iNotes = h.indexOf('notes');
+        iMatchAmt = h.indexOf('matchedamount'), iNotes = h.indexOf('notes'), iGender = h.indexOf('gender');
   return rows.slice(1).map(v => {
     const g = i => (v[i] || '').trim();
     return {
@@ -532,6 +538,7 @@ function parseVisitsCSV(text) {
       hasChildren: g(iChildren).toLowerCase() === 'true',
       matchedAmount: g(iMatchAmt),
       notes: g(iNotes),
+      gender: g(iGender),
     };
   }).filter(v => v.timestamp).reverse(); // ใหม่สุดขึ้นก่อน
 }
@@ -552,12 +559,13 @@ async function loadHistory() {
       const badgeCls = v.hasChildren ? 'children' : (count > 1 ? 'group' : 'solo');
       const badgeText = v.hasChildren ? '👶 มีเด็ก' : (count > 1 ? `👥 ${count} คน` : (count === 1 ? '🧍 คนเดียว' : '—'));
       const matchText = v.matchedAmount !== '' && v.matchedAmount != null ? ` · จับคู่ ฿${v.matchedAmount}` : '';
+      const genderText = v.gender ? ` · ${genderLabel(v.gender)}` : '';
       return `
       <div class="visit-row">
         <img class="visit-thumb" src="${v.photoUrl}" alt="">
         <div class="visit-info">
           <div class="visit-time">${timeStr}</div>
-          <div class="visit-meta">${v.notes || ''}${matchText}</div>
+          <div class="visit-meta">${v.notes || ''}${genderText}${matchText}</div>
         </div>
         <span class="visit-badge ${badgeCls}">${badgeText}</span>
       </div>`;
