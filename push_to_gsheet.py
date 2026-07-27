@@ -1,4 +1,8 @@
 """
+⚠️ เลิกใช้ชั่วคราว (2026-07) — SHEET_ID ด้านล่างชี้ไปสเปรดชีตเดิมที่ถูกลบไปแล้ว
+ตอนนี้ใช้ nayax-drive-import-script.gs (Apps Script อ่านจาก Google Drive) แทน
+ถ้าจะกลับมาใช้ไฟล์นี้อีก ต้องแก้ SHEET_ID ให้เป็นของสเปรดชีตใหม่ "Nayax Data" ก่อน
+
 push_to_gsheet.py
 อ่าน delta rows จาก DataNayax.xlsx แล้ว append ขึ้น Google Sheets
 รันบนเครื่อง Windows: python push_to_gsheet.py

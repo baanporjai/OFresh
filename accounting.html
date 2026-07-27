@@ -156,7 +156,11 @@ body { font-family: 'Prompt', sans-serif; background: var(--off-white); color: v
 .heatmap-grid { display: inline-grid; grid-template-columns: 46px repeat(24, minmax(20px,1fr)); gap: 3px; min-width: 680px; }
 .heatmap-hourlabel { font-size: .6rem; color: var(--muted); text-align: center; }
 .heatmap-daylabel { font-size: .72rem; color: var(--muted); font-weight: 600; display: flex; align-items: center; white-space: nowrap; padding-right: 6px; }
-.heatmap-cell { aspect-ratio: 1; border-radius: 4px; cursor: pointer; transition: outline .1s; }
+.heatmap-cell {
+  aspect-ratio: 1; border-radius: 4px; cursor: pointer; transition: outline .1s;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .58rem; font-weight: 700; line-height: 1;
+}
 .heatmap-cell:hover, .heatmap-cell.active { outline: 2px solid var(--dark); outline-offset: 1px; }
 .heatmap-tooltip {
   position: fixed; pointer-events: none; z-index: 400;
@@ -939,8 +943,9 @@ function renderHeatmap() {
     for (let h = 0; h < 24; h++) {
       const c = counts[d][h];
       const alpha = c === 0 ? 0.06 : 0.15 + 0.85 * (c / max);
+      const textColor = alpha > 0.55 ? '#fff' : '#9a6a3a';
       const label = `${dayLabels[d]} ${String(h).padStart(2,'0')}:00`;
-      html += `<div class="heatmap-cell" style="background:rgba(255,107,0,${alpha.toFixed(2)})" data-count="${c}" data-label="${escapeHtml(label)}"></div>`;
+      html += `<div class="heatmap-cell" style="background:rgba(255,107,0,${alpha.toFixed(2)});color:${textColor}" data-count="${c}" data-label="${escapeHtml(label)}">${c || ''}</div>`;
     }
   }
   html += '</div>';

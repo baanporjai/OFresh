@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 """
+⚠️ เลิกใช้ชั่วคราว (2026-07) — สเปรดชีตปลายทางเดิมถูกลบไปแล้ว ตอนนี้ใช้
+nayax-drive-import-script.gs (Apps Script อ่านจาก Google Drive) แทน
+ไฟล์นี้เก็บไว้เผื่ออยากกลับมาใช้อีกในอนาคต แต่ต้องแก้ SHEET_ID ใน
+push_to_gsheet.py ให้ตรงกับสเปรดชีตใหม่ "Nayax Data" ก่อน ไม่งั้นจะ error
+
 update_nayax.py
 อัปเดต DataNayax.xlsx จากไฟล์ source DynamicTransactionsMonitorMega ล่าสุด
 

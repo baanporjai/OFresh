@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>O'Fresh Kiosk Simulator — จำลองจอหน้าตู้</title>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700;800&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --orange: #FF6B00;
+    --orange-dark: #E55A00;
+    --dark: #1A1A2E;
+    --dark2: #16213E;
+    --muted: #6B7280;
+    --paper: #F4F1EA;
+    /* measured from OFresh/assets/S__59318322.jpg: black bezel window as % of the full product photo */
+    --win-left: 67.38%;
+    --win-top: 5.14%;
+    --win-w: 16.49%;
+    --win-h: 24.46%;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Prompt', 'Noto Sans Thai', Arial, sans-serif;
+    background: linear-gradient(180deg, #EDEAE2 0%, #E4E0D6 100%);
+    color: var(--dark);
+    min-height: 100vh;
+    padding: 28px 20px 60px;
+  }
+  header { max-width: 1100px; margin: 0 auto 24px; }
+  header h1 { font-size: 22px; font-weight: 800; }
+  header h1 span { color: var(--orange); }
+  header p { color: var(--muted); font-size: 14px; margin-top: 4px; line-height: 1.6; max-width: 640px; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto;
+    display: flex; gap: 32px; flex-wrap: wrap; align-items: flex-start;
+  }
+
+  /* ===== controls ===== */
+  .controls {
+    flex: 1 1 260px; max-width: 300px;
+    background: white; border-radius: 16px; padding: 22px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+  }
+  .field { margin-bottom: 18px; }
+  .field:last-child { margin-bottom: 0; }
+  .field label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 6px; }
+  select {
+    width: 100%; font-family: inherit; font-size: 14px; font-weight: 500;
+    padding: 10px 12px; border-radius: 10px; border: 1px solid #E5E7EB; background: #FAFAF9; color: var(--dark);
+  }
+  .toggle-row { display: flex; align-items: center; gap: 10px; }
+  .toggle-row input { width: 18px; height: 18px; accent-color: var(--orange); }
+  .toggle-row label { margin: 0; font-size: 13px; font-weight: 500; color: var(--dark); text-transform: none; letter-spacing: 0; }
+  .hint { font-size: 11px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
+
+  button.restart {
+    width: 100%; margin-top: 22px; border: none; cursor: pointer;
+    background: linear-gradient(135deg, var(--orange), var(--orange-dark));
+    color: white; font-family: inherit; font-weight: 700; font-size: 14px;
+    padding: 12px; border-radius: 10px; box-shadow: 0 6px 18px rgba(255,107,0,0.3);
+  }
+
+  .readout {
+    margin-top: 22px; padding-top: 18px; border-top: 1px solid #EEE;
+    font-size: 12px; color: var(--muted); line-height: 1.8;
+  }
+  .readout b { color: var(--dark); }
+
+  /* ===== machine mockup ===== */
+  .stage { flex: 2 1 420px; display: flex; justify-content: center; }
+  .machine {
+    position: relative;
+    width: min(100%, 380px);
+    aspect-ratio: 447 / 558; /* matches assets/S__59318322_nobg.png so the screen-window % offsets are correct before the image loads */
+    filter: drop-shadow(0 30px 40px rgba(0,0,0,0.18));
+  }
+  .machine img.body { width: 100%; height: 100%; display: block; object-fit: contain; }
+  .screen-window {
+    position: absolute;
+    left: var(--win-left); top: var(--win-top);
+    width: var(--win-w); height: var(--win-h);
+    background: #050505;
+    border-radius: 3%/2%;
+    overflow: hidden;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
+  }
+  .screen-window iframe {
+    position: absolute; top: 0; left: 0;
+    border: 0; transform-origin: top left;
+    background: white;
+  }
+  .no-js-banner {
+    position: absolute; inset: 0; display: none;
+    align-items: center; justify-content: center; text-align: center;
+    color: rgba(255,255,255,0.5); font-size: 10px; padding: 10px;
+  }
+
+  @media (max-width: 760px) {
+    .layout { flex-direction: column; align-items: center; }
+    .controls { max-width: 380px; width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>O'Fresh Kiosk <span>Simulator</span></h1>
+  <p>จำลองหน้าจอ idle/attract ของเว็บ kiosk (index.html) วางไว้ในตำแหน่งจอสัมผัสจริงบนตัวตู้ ใช้พรีวิวก่อนอัปโหลดขึ้นตู้จริง — ไม่กระทบไฟล์ที่ deploy</p>
+</header>
+
+<div class="layout">
+  <div class="controls">
+    <div class="field">
+      <label for="page">หน้า</label>
+      <select id="page">
+        <option value="index">หน้าแรก (idle screen)</option>
+        <option value="order">หน้าสั่งซื้อ (order)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="lang">ภาษา</label>
+      <select id="lang">
+        <option value="th">ไทย</option>
+        <option value="en">English</option>
+        <option value="zh">中文</option>
+        <option value="ja">日本語</option>
+        <option value="ko">한국어</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="width">ความกว้างจอจำลอง (CSS px)</label>
+      <select id="width">
+        <option value="360">360 — แคบสุด (มือถือเล็ก)</option>
+        <option value="480">480</option>
+        <option value="540" selected>540 — ค่าเริ่มต้น</option>
+        <option value="768">768 — เส้นแบ่ง breakpoint</option>
+        <option value="1080">1080 — จอ FHD แนวตั้ง</option>
+      </select>
+      <p class="hint">ยังไม่มีสเปกจอจริงจากคู่มือเครื่อง ตัวเลขนี้กะจากรูปหน้าตู้ ปรับได้เพื่อเทียบกับจอจริงเมื่อยืนยันสเปกแล้ว</p>
+    </div>
+    <div class="field">
+      <div class="toggle-row">
+        <input type="checkbox" id="nojs">
+        <label for="nojs">จำลองปิด JavaScript</label>
+      </div>
+      <p class="hint">ตู้จริงอาจรัน WebView ที่ไว้ใจ JS ไม่ได้ — หน้านี้ถูกออกแบบให้ไม่ต้องพึ่ง JS อยู่แล้ว (auto-scroll เป็น CSS ล้วน, แต่ละภาษาแยกไฟล์) ติ๊กเพื่อพิสูจน์ว่าหน้ายังใช้ได้ปกติ</p>
+    </div>
+
+    <button class="restart" id="restart">รีสตาร์ทแอนิเมชัน</button>
+
+    <div class="readout" id="readout"></div>
+  </div>
+
+  <div class="stage">
+    <div class="machine">
+      <img class="body" src="../assets/S__59318322_nobg.png" alt="ตู้ O'Fresh — มุมมองด้านหน้า">
+      <div class="screen-window">
+        <iframe id="kioskFrame" scrolling="no"></iframe>
+        <div class="no-js-banner" id="noJsBanner">JS ปิดอยู่ — หน้ายังแสดงผลปกติ</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  var BEZEL_ASPECT = 185 / 343; // measured screen-window width/height ratio from the product photo
+
+  var pageSel = document.getElementById('page');
+  var langSel = document.getElementById('lang');
+  var widthSel = document.getElementById('width');
+  var nojsBox = document.getElementById('nojs');
+  var restartBtn = document.getElementById('restart');
+  var frame = document.getElementById('kioskFrame');
+  var win = document.querySelector('.screen-window');
+  var readout = document.getElementById('readout');
+  var noJsBanner = document.getElementById('noJsBanner');
+
+  function fileName() {
+    var page = pageSel.value;
+    var lang = langSel.value;
+    return lang === 'th' ? (page + '.html') : (page + '-' + lang + '.html');
+  }
+
+  function layout() {
+    var deviceW = parseInt(widthSel.value, 10);
+    var deviceH = Math.round(deviceW / BEZEL_ASPECT);
+    var windowW = win.clientWidth;
+    var scale = windowW / deviceW;
+
+    frame.style.width = deviceW + 'px';
+    frame.style.height = deviceH + 'px';
+    frame.style.transform = 'scale(' + scale + ')';
+
+    readout.innerHTML =
+      'จำลองที่ <b>' + deviceW + '&times;' + deviceH + '</b> px' +
+      '<br>ย่อสเกล <b>' + scale.toFixed(3) + 'x</b> ให้พอดีกรอบจอ' +
+      '<br>ไฟล์: <b>' + fileName() + '</b>';
+  }
+
+  function load() {
+    var src = fileName();
+    if (nojsBox.checked) {
+      frame.setAttribute('sandbox', 'allow-same-origin');
+      noJsBanner.style.display = 'flex';
+    } else {
+      frame.removeAttribute('sandbox');
+      noJsBanner.style.display = 'none';
+    }
+    frame.src = src + '?t=' + Date.now(); // force a fresh navigation so sandbox changes apply and "restart" actually restarts the CSS animation
+    layout();
+  }
+
+  pageSel.addEventListener('change', load);
+  langSel.addEventListener('change', load);
+  widthSel.addEventListener('change', layout);
+  nojsBox.addEventListener('change', load);
+  restartBtn.addEventListener('click', load);
+  window.addEventListener('resize', layout);
+
+  load();
+</script>
+
+</body>
+</html>
