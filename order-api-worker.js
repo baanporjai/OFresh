@@ -432,10 +432,18 @@ async function handleVisitUpload(request, env) {
     return jsonResponse({ error: 'Missing image' }, 400);
   }
 
-  const timestamp = data.timestamp ? new Date(data.timestamp) : new Date();
+  const fallbackTimestamp = data.timestamp ? new Date(data.timestamp) : new Date();
   const mimeType = data.mimeType || 'image/jpeg';
 
   const analysis = await analyzeVisitPhoto_(env, data.imageBase64, mimeType);
+
+  // ใช้เวลาที่อ่านได้จากตัวรูป (ตู้แปะวัน-เวลาไว้ในรูปอยู่แล้ว) เป็นหลักเสมอถ้า AI อ่านได้ชัดเจน —
+  // แม่นยำกว่าเวลาที่พนักงานพิมพ์เอง/เวลาที่กดอัปโหลด ซึ่งอาจห่างจากเวลาถ่ายจริงหลายนาทีถึงหลายชั่วโมง
+  let timestamp = fallbackTimestamp, timestampSource = 'manual';
+  if (analysis.photoTimestamp) {
+    const parsed = new Date(analysis.photoTimestamp);
+    if (!isNaN(parsed)) { timestamp = parsed; timestampSource = 'photo'; }
+  }
 
   let matchedTxnTime = '', matchedAmount = null;
   if (env.NAYAX_SHEET_CSV_URL) {
@@ -478,6 +486,8 @@ async function handleVisitUpload(request, env) {
     return jsonResponse({
       success: true,
       photoUrl: result.photoUrl,
+      timestamp: timestamp.toISOString(),
+      timestampSource,
       peopleCount: analysis.peopleCount,
       hasChildren: analysis.hasChildren,
       notes: analysis.notes,
@@ -519,8 +529,11 @@ async function analyzeVisitPhoto_(env, imageBase64, mimeType) {
   const prompt = 'This photo was taken by a vending machine\'s front-facing camera at the moment of a purchase. ' +
     'Count how many people are visible who appear to be customers at the machine (ignore anyone clearly just ' +
     'passing by in the background). Note whether any of them appear to be children (roughly under 12 years old). ' +
+    'The camera also burns a date/time stamp as text somewhere on the photo (usually a corner) — read it exactly ' +
+    'as printed and convert it to ISO 8601 format (YYYY-MM-DDTHH:mm:ss). ' +
     'Respond with a JSON object: {"peopleCount": <integer>, "hasChildren": <true or false>, ' +
-    '"notes": "<one short phrase, e.g. \'two adults, one child\' or \'single customer\'>"}. ' +
+    '"notes": "<one short phrase, e.g. \'two adults, one child\' or \'single customer\'>", ' +
+    '"photoTimestamp": "<ISO 8601 datetime read from the stamp on the photo, or null if no timestamp is visible/legible>"}. ' +
     'If you cannot see any people clearly, use peopleCount: 0 and hasChildren: false.';
 
   try {
@@ -556,6 +569,7 @@ async function analyzeVisitPhoto_(env, imageBase64, mimeType) {
       peopleCount: Number.isFinite(parsed.peopleCount) ? parsed.peopleCount : null,
       hasChildren: typeof parsed.hasChildren === 'boolean' ? parsed.hasChildren : null,
       notes: parsed.notes || '',
+      photoTimestamp: parsed.photoTimestamp || null,
     };
   } catch (err) {
     console.error('Gemini vision analysis failed (non-fatal):', err);
@@ -914,6 +928,22 @@ function buildRewardText(env) {
   return `ขอบคุณสำหรับการอุดหนุนกดน้ำส้มคั้นสดนะคะ 🎉🍊\nนี่คือบัตรสะสมแต้มของคุณค่ะ:\n${env.LINE_REWARD_CARD_URL}`;
 }
 
+// ดึงชื่อ LINE ของลูกค้า — ใช้แค่ประกอบข้อความแจ้งกลุ่มแอดมิน ถ้าดึงไม่ได้ (เช่น ลูกค้ายังไม่ได้แอด/บล็อก OA ไปแล้ว)
+// ให้ null เฉยๆ ไม่ throw กระทบ flow หลัก
+async function getLineDisplayName(env, userId) {
+  try {
+    const res = await fetch(`https://api.line.me/v2/bot/profile/${userId}`, {
+      headers: { 'Authorization': `Bearer ${env.LINE_CHANNEL_TOKEN}` },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.displayName || null;
+  } catch (err) {
+    console.error('getLineDisplayName failed:', err);
+    return null;
+  }
+}
+
 // ดึงรูปจริงจาก LINE Content API ด้วย message id
 async function fetchLineImageContent(env, messageId) {
   const res = await fetch(`https://api-data.line.me/v2/bot/message/${messageId}/content`, {
@@ -1016,9 +1046,11 @@ async function handleSlipImage(event, env) {
     if (amountOk && env.LINE_REWARD_CARD_URL) {
       const sent = await pushToLine(env, event.source.userId, [{ type: 'text', text: buildRewardText(env) }]);
       if (sent) {
+        const displayName = await getLineDisplayName(env, event.source.userId);
+        const who = displayName ? `คุณ ${displayName} ` : 'ลูกค้า';
         await pushToLine(env, ADMIN_GROUP_ID, [{
           type: 'text',
-          text: '✅ ตรวจพบยอด 69 บาท ส่งลิงก์บัตรสะสมแต้มให้ลูกค้าอัตโนมัติแล้วครับ',
+          text: `✅ ตรวจพบยอด 69 บาท ส่งลิงก์บัตรสะสมแต้มให้${who}อัตโนมัติแล้วครับ`,
         }]);
         return;
       }
