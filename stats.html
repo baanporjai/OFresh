@@ -156,7 +156,6 @@ body { font-family: 'Prompt', sans-serif; background: var(--off-white); color: v
 .kpi-accent.green { background: linear-gradient(90deg, var(--green), #5cb85c); }
 .kpi-accent.blue  { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
 .kpi-accent.purple{ background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
-.kpi-accent.gold  { background: linear-gradient(90deg, #d97706, #fbbf24); }
 .kpi-icon { font-size: 1.8rem; margin-bottom: 8px; }
 .kpi-cup { margin-bottom: 8px; }
 .cup-img { height: 72px; width: auto; display: block; }
@@ -511,13 +510,6 @@ footer a { color: var(--orange); text-decoration: none; }
       <div class="kpi-value" id="kpiPeakHour">—</div>
       <div class="kpi-sub" data-th="สั่งมากที่สุดช่วงนี้" data-en="Most orders at this hour">สั่งมากที่สุดช่วงนี้</div>
     </div>
-    <div class="kpi" id="kpiProfitCard" style="display:none">
-      <div class="kpi-accent gold"></div>
-      <div class="kpi-icon">🧡</div>
-      <div class="kpi-label" data-th="กำไรต่อแก้ว" data-en="Profit per Cup">กำไรต่อแก้ว</div>
-      <div class="kpi-value" id="kpiProfitPerCup">—</div>
-      <div class="kpi-sub" data-th="ประมาณการ (ต้นทุนรวมทุกช่องทาง)" data-en="Estimate (cost pooled across all channels)">ประมาณการ (ต้นทุนรวมทุกช่องทาง)</div>
-    </div>
   </div>
 
   <!-- SPOTLIGHT -->
@@ -595,16 +587,6 @@ footer a { color: var(--orange); text-decoration: none; }
         <div class="chart-title">💳 <span data-th="วิธีชำระเงิน" data-en="Payment Methods">วิธีชำระเงิน</span></div>
       </div>
       <div class="pay-pills" id="payPills"></div>
-    </div>
-  </div>
-
-  <!-- กำไรต่อแก้วรายเดือน (ประมาณการ) -->
-  <div class="charts-1col" id="profitChartWrap" style="display:none">
-    <div class="chart-card">
-      <div class="chart-header">
-        <div class="chart-title">🧡 <span data-th="กำไรต่อแก้วรายเดือน (ประมาณการ)" data-en="Monthly Profit per Cup (Estimate)">กำไรต่อแก้วรายเดือน (ประมาณการ)</span></div>
-      </div>
-      <canvas id="chartProfitPerCup" height="160"></canvas>
     </div>
   </div>
 
@@ -698,64 +680,6 @@ function parseCSV(text) {
     const dt = pd(g(iDt)); const price = parseFloat(g(iPrice))||0;
     return { datetime: dt, price, payment: g(iPay)||'Other', first4: g(iFirst4), last4: g(iLast4) };
   }).filter(r => r.datetime && !isNaN(r.datetime) && r.price > 0);
-}
-
-// ── EXPENSES PARSE (port มาจาก accounting.html — ใช้คำนวณกำไรต่อแก้ว) ──
-function parseCSVRecords(text) {
-  const records = []; let fields = []; let cur = ''; let inQuotes = false; let sawData = false;
-  for (let i = 0; i < text.length; i++) {
-    const c = text[i];
-    if (inQuotes) {
-      if (c === '"') {
-        if (text[i+1] === '"') { cur += '"'; i++; } else { inQuotes = false; }
-      } else { cur += c; }
-    } else if (c === '"') { inQuotes = true; sawData = true; }
-    else if (c === ',') { fields.push(cur); cur = ''; sawData = true; }
-    else if (c === '\n' || c === '\r') {
-      if (c === '\r' && text[i+1] === '\n') i++;
-      if (sawData || cur !== '') { fields.push(cur); records.push(fields); }
-      fields = []; cur = ''; sawData = false;
-    }
-    else cur += c;
-  }
-  if (sawData || cur !== '') { fields.push(cur); records.push(fields); }
-  return records;
-}
-
-// ชีตอาจเก็บ date เป็นข้อความ "2026-07-13" หรือถูก Google Sheets แปลงเป็นเซลล์วันที่
-// แล้วพ่นออกมาใน CSV เป็น "13/7/2026" (locale ไทย วัน/เดือน/ปี) — normalize ให้เป็น ISO เสมอ
-function normalizeDateStr(s) {
-  s = (s || '').trim();
-  if (!s) return '';
-  const pad = n => String(n).padStart(2, '0');
-  let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
-  if (m) return `${m[1]}-${pad(+m[2])}-${pad(+m[3])}`;
-  m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-  if (m) return `${m[3]}-${pad(+m[2])}-${pad(+m[1])}`;
-  return s;
-}
-
-function parseExpensesCSV(text) {
-  const rows = parseCSVRecords(text);
-  if (rows.length < 2) return [];
-  const h = rows[0].map(s => s.trim().toLowerCase().replace(/\r/g,''));
-  const iId = h.indexOf('id'), iType = h.indexOf('type'), iCat = h.indexOf('category'),
-        iDesc = h.indexOf('description'), iAmount = h.indexOf('amount'), iDate = h.indexOf('date'), iNote = h.indexOf('note');
-  return rows.slice(1).map(v => {
-    const g = i => (v[i]||'').trim().replace(/\r/g,'');
-    const dateStr = normalizeDateStr(g(iDate));
-    const date = dateStr ? new Date(dateStr + 'T00:00:00') : null;
-    const amount = parseFloat(g(iAmount)) || 0;
-    return {
-      id: g(iId),
-      type: g(iType) === 'cogs' ? 'cogs' : 'opex',
-      category: g(iCat),
-      description: g(iDesc),
-      amount,
-      date,
-      note: g(iNote),
-    };
-  }).filter(r => r.id && r.date && !isNaN(r.date));
 }
 
 // ── PAYMENT CONFIG ──
@@ -1081,69 +1005,6 @@ function renderPaymentTrendChart(rows) {
   });
 }
 
-// ── PROFIT PER CUP (ประมาณการ — COGS ทั้งก้อนหารด้วยแก้วทั้งหมด ไม่แยกช่องทางน้ำส้มตู้/ส้มขายกิโล) ──
-function computeProfitPerCup(nayaxRows, expenseRows) {
-  const monthly = {};
-  nayaxRows.forEach(r => {
-    const mk = monthKey(r.datetime);
-    if (!monthly[mk]) monthly[mk] = { cupsSold: 0, machineRevenue: 0, cogs: 0 };
-    monthly[mk].cupsSold += 1;
-    monthly[mk].machineRevenue += r.price;
-  });
-  expenseRows.forEach(e => {
-    if (e.type !== 'cogs' || !e.date) return;
-    const mk = monthKey(e.date);
-    if (monthly[mk]) monthly[mk].cogs += e.amount;
-  });
-  return Object.keys(monthly).sort().map(mk => {
-    const m = monthly[mk];
-    const revenuePerCup = m.cupsSold ? m.machineRevenue / m.cupsSold : 0;
-    const costPerCup = m.cupsSold ? m.cogs / m.cupsSold : 0;
-    return { month: mk, cupsSold: m.cupsSold, revenuePerCup, costPerCup, profitPerCup: revenuePerCup - costPerCup };
-  });
-}
-
-function updateProfitPerCupKPI(monthlyProfit) {
-  const latest = monthlyProfit[monthlyProfit.length - 1];
-  document.getElementById('kpiProfitCard').style.display = '';
-  document.getElementById('kpiProfitPerCup').textContent = `฿${latest.profitPerCup.toFixed(2)}`;
-}
-
-function renderProfitPerCupChart(monthlyProfit) {
-  destroyChart('profitPerCup');
-  const isTh = currentLang === 'th';
-  document.getElementById('profitChartWrap').style.display = '';
-  const labels = monthlyProfit.map(m => {
-    const [y, mo] = m.month.split('-');
-    return new Date(+y, +mo - 1, 1).toLocaleDateString(isTh ? 'th-TH' : 'en-US', { month: 'short', year: '2-digit' });
-  });
-  const ctx = document.getElementById('chartProfitPerCup').getContext('2d');
-  charts.profitPerCup = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [
-        { label: isTh ? 'รายได้/แก้ว' : 'Revenue/cup', data: monthlyProfit.map(m => +m.revenuePerCup.toFixed(2)), borderColor: '#3b82f6', backgroundColor: '#3b82f6', tension: .3 },
-        { label: isTh ? 'ต้นทุน/แก้ว' : 'Cost/cup', data: monthlyProfit.map(m => +m.costPerCup.toFixed(2)), borderColor: '#ef4444', backgroundColor: '#ef4444', tension: .3 },
-        { label: isTh ? 'กำไร/แก้ว' : 'Profit/cup', data: monthlyProfit.map(m => +m.profitPerCup.toFixed(2)), borderColor: '#d97706', backgroundColor: '#d97706', tension: .3, borderWidth: 3 },
-      ]
-    },
-    options: {
-      responsive: true,
-      layout: { padding: { top: 22 } },
-      scales: {
-        y: { grid: { color: 'rgba(0,0,0,.05)' }, ticks: { color: '#6B7280', font: { family: 'Prompt', size: 11 }, callback: v => '฿' + v } },
-        x: { grid: { display: false }, ticks: { color: '#6B7280', font: { family: 'Prompt', size: 11 } } },
-      },
-      plugins: {
-        legend: { display: true, position: 'bottom', labels: { font: { family: 'Prompt', size: 11 }, boxWidth: 12, padding: 12 } },
-        tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ฿${ctx.raw.toFixed(2)}` } },
-        datalabels: { display: false },
-      }
-    }
-  });
-}
-
 // ── COMPARISON ──
 function sumInRange(rows, fromMs, toMs) {
   return rows.reduce((acc,r) => {
@@ -1354,19 +1215,6 @@ function render(rows) {
   renderWeekdayChart(rows);
   renderPaymentTrendChart(rows);
 
-  // กำไรต่อแก้ว — โชว์เฉพาะตอนมีข้อมูล COGS จริง (ไม่งั้นจะกลายเป็น "กำไร" ที่จริงๆ คือรายได้ล้วนๆ)
-  const expenseRows = window._expenseRows || [];
-  const hasCogsData = expenseRows.some(e => e.type === 'cogs');
-  if (hasCogsData) {
-    const monthlyProfit = computeProfitPerCup(rows, expenseRows);
-    updateProfitPerCupKPI(monthlyProfit);
-    renderProfitPerCupChart(monthlyProfit);
-  } else {
-    document.getElementById('kpiProfitCard').style.display = 'none';
-    document.getElementById('profitChartWrap').style.display = 'none';
-    destroyChart('profitPerCup');
-  }
-
   // Heatmap
   populateHeatmapMonthFilter(rows);
   renderHeatmap(rows);
@@ -1437,34 +1285,21 @@ async function load(force) {
   try {
     const today=new Date().toDateString();
     const cached=JSON.parse(localStorage.getItem(CACHE_KEY)||'null');
-    let rows, expenseRows;
-    // cache เก่าก่อนมีฟีเจอร์กำไรต่อแก้วจะไม่มี expenseRows — เช็คแยกไว้เพื่อบังคับ fetch ใหม่ครั้งเดียวให้ครบ
-    if(!force && cached&&cached.date===today && cached.expenseRows){
+    let rows;
+    if(!force && cached&&cached.date===today){
       rows=cached.rows.map(r=>({...r,datetime:new Date(r.datetime)}));
-      expenseRows=cached.expenseRows.map(r=>({...r,date:r.date?new Date(r.date):null}));
     } else {
       const token = sessionStorage.getItem('ofresh_admin_token');
-      const [nayaxRes, expensesRes] = await Promise.allSettled([
-        fetch(API_BASE + '/api/admin/nayax-stats', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(API_BASE + '/api/admin/expenses', { headers: { Authorization: `Bearer ${token}` } }),
-      ]);
-      if (nayaxRes.status !== 'fulfilled') throw new Error('nayax-stats fetch failed');
-      if (nayaxRes.value.status === 401) {
+      const res = await fetch(API_BASE + '/api/admin/nayax-stats', { headers: { Authorization: `Bearer ${token}` } });
+      if (res.status === 401) {
         sessionStorage.removeItem('ofresh_admin_token');
         document.getElementById('pinGate').classList.remove('hidden');
         return;
       }
-      const text=await nayaxRes.value.text();
+      const text=await res.text();
       rows=parseCSV(text);
-      // ต้นทุน (COGS) เป็น nice-to-have สำหรับ "กำไรต่อแก้ว" เท่านั้น — ถ้าดึงไม่สำเร็จ (secret ยังไม่ตั้ง ฯลฯ)
-      // ไม่ให้พังทั้งหน้า แค่ไม่มีค่ากำไรต่อแก้วให้ดูเฉยๆ
-      expenseRows = [];
-      if (expensesRes.status === 'fulfilled' && expensesRes.value.ok) {
-        try { expenseRows = parseExpensesCSV(await expensesRes.value.text()); } catch(e) { console.error('parseExpensesCSV failed:', e); }
-      }
-      localStorage.setItem(CACHE_KEY,JSON.stringify({date:today,rows,expenseRows}));
+      localStorage.setItem(CACHE_KEY,JSON.stringify({date:today,rows}));
     }
-    window._expenseRows = expenseRows;
     render(rows);
   } catch(e) {
     document.getElementById('lastUpdate').textContent=currentLang==='th'?'โหลดไม่สำเร็จ':'Load failed';
