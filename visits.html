@@ -325,7 +325,7 @@ footer a { color: var(--orange); text-decoration: none; }
       <input type="file" id="photoInput" accept="image/*">
     </label>
     <div class="field-row">
-      <label for="captureTime">เวลาที่ถ่ายรูป</label>
+      <label for="captureTime">เวลาสำรอง (เผื่อ AI อ่านเวลาบนรูปไม่ได้)</label>
       <input type="datetime-local" id="captureTime">
     </div>
     <button class="submit-btn" id="submitBtn" onclick="uploadVisit()" disabled>วิเคราะห์และบันทึก</button>
@@ -338,6 +338,7 @@ footer a { color: var(--orange); text-decoration: none; }
       <div class="chart-title">✅ ผลการวิเคราะห์</div>
     </div>
     <img id="resultPhoto" class="result-photo" alt="uploaded">
+    <div class="result-note" id="resultTimestamp" style="margin-bottom:10px"></div>
     <div class="result-stats">
       <div class="result-pill" id="resultCount">—</div>
       <div class="result-pill" id="resultChildren">—</div>
@@ -460,6 +461,15 @@ async function uploadVisit() {
 
 function showResult(r) {
   document.getElementById('resultPhoto').src = r.photoUrl || '';
+  const tsEl = document.getElementById('resultTimestamp');
+  if (r.timestamp) {
+    const timeStr = new Date(r.timestamp).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' });
+    tsEl.textContent = r.timestampSource === 'photo'
+      ? `📸 อ่านเวลาจากรูป: ${timeStr}`
+      : `⌨️ ใช้เวลาสำรอง (AI อ่านเวลาบนรูปไม่ได้): ${timeStr}`;
+  } else {
+    tsEl.textContent = '';
+  }
   document.getElementById('resultCount').textContent = r.peopleCount != null ? `${r.peopleCount} คน` : 'ไม่ทราบจำนวน';
   const childrenEl = document.getElementById('resultChildren');
   if (r.hasChildren === true) {
