@@ -16,6 +16,10 @@
  *   EXPENSE_SHEET_WEBHOOK_URL = <Apps Script webhook สำหรับบันทึก/แก้ไข/ลบ รายการต้นทุน-ค่าใช้จ่าย —
  *                                ไม่ตั้งก็ได้ ถ้าใช้ Apps Script/สเปรดชีตตัวเดียวกับออเดอร์ส้ม (แค่คนละแท็บ)
  *                                จะ fallback ไปใช้ SHEET_WEBHOOK_URL แทนอัตโนมัติ>
+ *   LINE_REWARD_CARD_URL   = <URL ของ "บัตรสะสมแต้ม" (Reward Card) จาก LINE Official Account Manager
+ *                             (สร้างแคมเปญเองที่ Home > บัตรสะสมแต้ม ใน manager.line.biz แล้วคัดลอก URL การ์ดมาใส่ที่นี่
+ *                             — เราไม่ได้สร้าง/เก็บสถานะสแตมป์เอง แค่ส่ง URL นี้กลับให้ลูกค้า LINE จัดการที่เหลือให้ทั้งหมด
+ *                             ต้องรันเอง: wrangler secret put LINE_REWARD_CARD_URL>
  *
  * ต้องเพิ่ม KV namespace binding ชื่อ OFRESH_KV ด้วย (Settings → Bindings → KV Namespace บน dashboard)
  * ใช้เก็บ cache ประวัติลูกค้าสำหรับให้ AI จับคู่ลูกค้าเดิม
@@ -473,14 +477,19 @@ async function handleLineWebhook(request, env, ctx) {
   const events = Array.isArray(payload.events) ? payload.events : [];
   for (const event of events) {
     const isAdminGroup = event.source && event.source.type === 'group' && event.source.groupId === ADMIN_GROUP_ID;
-    if (!isAdminGroup) continue;
+    const isDirectMessage = event.source && event.source.type === 'user';
 
     // ตอบ LINE ให้เร็วที่สุด (200 ทันที) แล้วประมวลผลจริงต่อเบื้องหลังผ่าน waitUntil
-    // เพราะเรียก Gemini + อ่านชีตอาจใช้เวลาหลายวินาที ไม่ควรให้ LINE รอ
-    if (event.type === 'message' && event.message && event.message.type === 'text') {
-      ctx.waitUntil(handleIncomingText(event, env).catch(err => console.error('handleIncomingText error:', err)));
-    } else if (event.type === 'postback') {
-      ctx.waitUntil(handlePostback(event, env).catch(err => console.error('handlePostback error:', err)));
+    // เพราะเรียก Gemini + อ่านชีต/รูปภาพอาจใช้เวลาหลายวินาที ไม่ควรให้ LINE รอ
+    if (isAdminGroup) {
+      if (event.type === 'message' && event.message && event.message.type === 'text') {
+        ctx.waitUntil(handleIncomingText(event, env).catch(err => console.error('handleIncomingText error:', err)));
+      } else if (event.type === 'postback') {
+        ctx.waitUntil(handlePostback(event, env).catch(err => console.error('handlePostback error:', err)));
+      }
+    } else if (isDirectMessage && event.type === 'message' && event.message && event.message.type === 'image') {
+      // แชท 1:1 กับลูกค้า — แจ้งเตือนกลุ่มแอดมินพร้อมปุ่มให้กดส่งลิงก์บัตรสะสมแต้ม (ไม่มีการตรวจสอบรูปอัตโนมัติใดๆ)
+      ctx.waitUntil(handleSlipImage(event, env).catch(err => console.error('handleSlipImage error:', err)));
     }
   }
 
@@ -701,6 +710,59 @@ function cancelQuickReply(orderId) {
   };
 }
 
+// ══════════════════════════════════════════════════════════════════════
+// Reward-card auto-reply — ลูกค้าทัก DM ส่งรูปสลิป ไม่มีการตรวจสอบรูปใดๆ ด้วยโค้ด/AI
+// แค่แจ้งเตือนกลุ่มแอดมินพร้อมปุ่ม ให้แอดมินดูสลิปเองแล้วกดปุ่มเดียวส่งลิงก์บัตรสะสมแต้ม (ของ LINE OA เอง) ให้ลูกค้า
+// ══════════════════════════════════════════════════════════════════════
+
+// ส่งข้อความแบบ push (ต่างจาก replyToLine ตรงที่ยิงหา groupId/userId ตรงๆ ได้ ไม่ต้องมี replyToken สดๆ)
+async function pushToLine(env, to, messages) {
+  const res = await fetch('https://api.line.me/v2/bot/message/push', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${env.LINE_CHANNEL_TOKEN}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ to, messages }),
+  });
+  if (!res.ok) {
+    console.error('LINE push error:', await res.text());
+  }
+}
+
+function sendRewardQuickReply(shortId) {
+  return {
+    items: [
+      { type: 'action', action: { type: 'postback', label: '🎁 ส่งลิงก์บัตรสะสมแต้ม', data: `sendreward:${shortId}`, displayText: 'ส่งลิงก์บัตรสะสมแต้มให้ลูกค้า' } },
+    ],
+  };
+}
+
+async function handleSlipImage(event, env) {
+  try {
+    const shortId = generateOrderId();
+    // เก็บ userId ของลูกค้าไว้ชั่วคราว รอแอดมินกดปุ่มในกลุ่ม (replyToken ตอนนี้จะหมดอายุก่อนแอดมินทันเวลา
+    // เลยต้องใช้ push API ยิงหา userId นี้ตรงๆ ทีหลัง ไม่ใช่ reply API)
+    await env.OFRESH_KV.put(
+      `slipuser:${shortId}`,
+      JSON.stringify({ userId: event.source.userId }),
+      { expirationTtl: 86400 }
+    );
+
+    await pushToLine(env, ADMIN_GROUP_ID, [{
+      type: 'text',
+      text: '📸 มีลูกค้าส่งรูปสลิปมาในแชท OA — เช็ครูปในแชทเอง แล้วกดปุ่มด้านล่างถ้าถูกต้อง',
+      quickReply: sendRewardQuickReply(shortId),
+    }]);
+
+    await replyToLine(env, event.replyToken, [
+      { type: 'text', text: 'ได้รับรูปแล้วค่ะ 🙏 รอแอดมินตรวจสอบสักครู่นะคะ' },
+    ]);
+  } catch (err) {
+    console.error('handleSlipImage failed:', err);
+  }
+}
+
 async function saveOrderToSheet(env, order, id) {
   if (!env.SHEET_WEBHOOK_URL) throw new Error('SHEET_WEBHOOK_URL not configured');
   const total = (order.qty || 0) * ORDER_PRICE_PER_KG;
@@ -771,6 +833,28 @@ async function handlePostback(event, env) {
     } catch (err) {
       console.error('cancelOrderInSheet failed:', err);
       await replyToLine(env, replyToken, [{ type: 'text', text: '⚠️ ยกเลิกไม่สำเร็จ รบกวนแก้สถานะในแดชบอร์ดแทนครับ' }]);
+    }
+  } else if (action === 'sendreward') {
+    const shortId = orderId; // ตัวแปรชื่อ orderId เดิม แต่ในเคสนี้คือ shortId ของ handleSlipImage
+    try {
+      if (!env.LINE_REWARD_CARD_URL) throw new Error('LINE_REWARD_CARD_URL secret not configured');
+
+      const stored = await env.OFRESH_KV.get(`slipuser:${shortId}`, { type: 'json' });
+      if (!stored || !stored.userId) {
+        await replyToLine(env, replyToken, [{ type: 'text', text: '⚠️ หาไม่เจอหรือหมดเวลาแล้ว อาจกดซ้ำหรือเกิน 24 ชม. ลองส่งเองแทนครับ' }]);
+        return;
+      }
+
+      await pushToLine(env, stored.userId, [{
+        type: 'text',
+        text: `ขอบคุณสำหรับการอุดหนุนนะคะ 🎉🍊\nนี่คือบัตรสะสมแต้มของคุณค่ะ:\n${env.LINE_REWARD_CARD_URL}`,
+      }]);
+      await env.OFRESH_KV.delete(`slipuser:${shortId}`); // กันกดซ้ำ
+
+      await replyToLine(env, replyToken, [{ type: 'text', text: '✅ ส่งลิงก์บัตรสะสมแต้มให้ลูกค้าแล้วครับ' }]);
+    } catch (err) {
+      console.error('sendreward postback failed:', err);
+      await replyToLine(env, replyToken, [{ type: 'text', text: '⚠️ ส่งลิงก์ไม่สำเร็จ รบกวนลองใหม่หรือส่งเองแทนครับ' }]);
     }
   }
 }
