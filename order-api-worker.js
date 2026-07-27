@@ -20,6 +20,11 @@
  *                             (สร้างแคมเปญเองที่ Home > บัตรสะสมแต้ม ใน manager.line.biz แล้วคัดลอก URL การ์ดมาใส่ที่นี่
  *                             — เราไม่ได้สร้าง/เก็บสถานะสแตมป์เอง แค่ส่ง URL นี้กลับให้ลูกค้า LINE จัดการที่เหลือให้ทั้งหมด
  *                             ต้องรันเอง: wrangler secret put LINE_REWARD_CARD_URL>
+ *   ANTHROPIC_API_KEY      = <API key จาก console.anthropic.com — ใช้ให้ Claude ดูรูปจากกล้องหน้าตู้
+ *                             แล้วประเมินจำนวนคน/มีเด็กมาด้วยไหม สำหรับหน้า visits.html>
+ *   VISIT_SHEET_API_URL    = <Apps Script Web App URL ของ visit-photo-sheet-script.gs (เก็บรูป+ผลวิเคราะห์)>
+ *   VISIT_SHEET_ADMIN_KEY  = <ADMIN_KEY ที่ตั้งไว้ใน Script Properties ของ Apps Script ตัวนั้น — คนละค่ากับ
+ *                             ADMIN_PIN ด้านบน ไม่ส่งให้ client เห็นเด็ดขาด>
  *
  * ต้องเพิ่ม KV namespace binding ชื่อ OFRESH_KV ด้วย (Settings → Bindings → KV Namespace บน dashboard)
  * ใช้เก็บ cache ประวัติลูกค้าสำหรับให้ AI จับคู่ลูกค้าเดิม
@@ -88,6 +93,14 @@ export default {
 
     if (request.method === 'POST' && url.pathname === '/api/line/webhook') {
       return handleLineWebhook(request, env, ctx);
+    }
+
+    if (request.method === 'POST' && url.pathname === '/api/admin/visit-upload') {
+      return handleVisitUpload(request, env);
+    }
+
+    if (request.method === 'GET' && url.pathname === '/api/admin/visit-history') {
+      return handleVisitHistory(request, env);
     }
 
     return jsonResponse({ error: 'Not found' }, 404);
@@ -395,6 +408,153 @@ function parseNayaxCSV(text) {
     const price = parseFloat(g(iPrice)) || 0;
     return { datetime, price };
   }).filter(r => r.datetime && !isNaN(r.datetime) && r.price > 0);
+}
+
+// ── รูปลูกค้าหน้าตู้ (visits.html) ──
+// รับรูปจาก visits.html -> ให้ Claude ดูรูปประเมินจำนวนคน/มีเด็กมาด้วยไหม -> จับคู่กับยอดขาย Nayax
+// ที่เวลาใกล้เคียงที่สุด (ถ้ามีภายใน 5 นาที) -> ส่งต่อให้ Apps Script บันทึกรูป+ข้อมูลลงชีต
+const VISIT_MATCH_WINDOW_MS = 5 * 60 * 1000;
+
+async function handleVisitUpload(request, env) {
+  const ok = await verifyAuthHeader(request, env);
+  if (!ok) return jsonResponse({ error: 'Unauthorized' }, 401);
+  if (!env.VISIT_SHEET_API_URL || !env.VISIT_SHEET_ADMIN_KEY) {
+    return jsonResponse({ error: 'Not configured' }, 500);
+  }
+
+  let data;
+  try {
+    data = await request.json();
+  } catch {
+    return jsonResponse({ error: 'Invalid JSON' }, 400);
+  }
+  if (!data.imageBase64) {
+    return jsonResponse({ error: 'Missing image' }, 400);
+  }
+
+  const timestamp = data.timestamp ? new Date(data.timestamp) : new Date();
+  const mimeType = data.mimeType || 'image/jpeg';
+
+  const analysis = await analyzeVisitPhoto_(env, data.imageBase64, mimeType);
+
+  let matchedTxnTime = '', matchedAmount = null;
+  if (env.NAYAX_SHEET_CSV_URL) {
+    try {
+      const res = await fetch(env.NAYAX_SHEET_CSV_URL + (env.NAYAX_SHEET_CSV_URL.includes('?') ? '&' : '?') + 't=' + Date.now());
+      const rows = parseNayaxCSV(await res.text());
+      let closest = null, closestDiff = Infinity;
+      for (const r of rows) {
+        const diff = Math.abs(r.datetime.getTime() - timestamp.getTime());
+        if (diff < closestDiff) { closestDiff = diff; closest = r; }
+      }
+      if (closest && closestDiff <= VISIT_MATCH_WINDOW_MS) {
+        matchedTxnTime = closest.datetime.toISOString();
+        matchedAmount = closest.price;
+      }
+    } catch (err) {
+      console.error('Nayax match lookup failed (non-fatal):', err);
+    }
+  }
+
+  try {
+    const res = await fetch(env.VISIT_SHEET_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({
+        key: env.VISIT_SHEET_ADMIN_KEY,
+        action: 'saveVisit',
+        imageBase64: data.imageBase64,
+        mimeType,
+        timestamp: timestamp.toISOString(),
+        peopleCount: analysis.peopleCount,
+        hasChildren: analysis.hasChildren,
+        notes: analysis.notes,
+        matchedTxnTime,
+        matchedAmount,
+      }),
+    });
+    const result = await res.json();
+    if (result.error) return jsonResponse({ error: result.error }, 502);
+    return jsonResponse({
+      success: true,
+      photoUrl: result.photoUrl,
+      peopleCount: analysis.peopleCount,
+      hasChildren: analysis.hasChildren,
+      notes: analysis.notes,
+      matchedTxnTime,
+      matchedAmount,
+    });
+  } catch (err) {
+    console.error('Visit save failed:', err);
+    return jsonResponse({ error: 'Failed to save visit' }, 502);
+  }
+}
+
+async function handleVisitHistory(request, env) {
+  const ok = await verifyAuthHeader(request, env);
+  if (!ok) return jsonResponse({ error: 'Unauthorized' }, 401);
+  if (!env.VISIT_SHEET_API_URL || !env.VISIT_SHEET_ADMIN_KEY) {
+    return jsonResponse({ error: 'Not configured' }, 500);
+  }
+  try {
+    const target = new URL(env.VISIT_SHEET_API_URL);
+    target.searchParams.set('action', 'list');
+    target.searchParams.set('key', env.VISIT_SHEET_ADMIN_KEY);
+    const res = await fetch(target.toString());
+    const text = await res.text();
+    return new Response(text, { headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } });
+  } catch (err) {
+    console.error('Visit history proxy error:', err);
+    return jsonResponse({ error: 'Failed to fetch visit history' }, 502);
+  }
+}
+
+// เรียก Claude ดูรูปแล้วประเมินจำนวนคน/มีเด็กมาด้วยไหม — ถ้าวิเคราะห์ไม่สำเร็จก็ยังบันทึกรูปได้ปกติ
+// แค่ปล่อยให้ค่าพวกนี้เป็น null ไม่ทำให้การอัปโหลดทั้งหมดล้มเหลวไปด้วย
+async function analyzeVisitPhoto_(env, imageBase64, mimeType) {
+  if (!env.ANTHROPIC_API_KEY) {
+    return { peopleCount: null, hasChildren: null, notes: 'ANTHROPIC_API_KEY not configured' };
+  }
+  const prompt = 'This photo was taken by a vending machine\'s front-facing camera at the moment of a purchase. ' +
+    'Count how many people are visible who appear to be customers at the machine (ignore anyone clearly just ' +
+    'passing by in the background). Note whether any of them appear to be children (roughly under 12 years old). ' +
+    'Respond with ONLY a JSON object, no markdown formatting, no explanation: ' +
+    '{"peopleCount": <integer>, "hasChildren": <true or false>, "notes": "<one short phrase, e.g. \'two adults, one child\' or \'single customer\'>"}. ' +
+    'If you cannot see any people clearly, use peopleCount: 0 and hasChildren: false.';
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 200,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: mimeType, data: imageBase64 } },
+            { type: 'text', text: prompt },
+          ],
+        }],
+      }),
+    });
+    const data = await res.json();
+    const raw = (data.content && data.content[0] && data.content[0].text) || '';
+    const cleaned = raw.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(cleaned);
+    return {
+      peopleCount: Number.isFinite(parsed.peopleCount) ? parsed.peopleCount : null,
+      hasChildren: typeof parsed.hasChildren === 'boolean' ? parsed.hasChildren : null,
+      notes: parsed.notes || '',
+    };
+  } catch (err) {
+    console.error('Claude vision analysis failed (non-fatal):', err);
+    return { peopleCount: null, hasChildren: null, notes: 'AI analysis failed' };
+  }
 }
 
 async function verifyAuthHeader(request, env) {
@@ -847,7 +1007,7 @@ async function handlePostback(event, env) {
 
       await pushToLine(env, stored.userId, [{
         type: 'text',
-        text: `ขอบคุณสำหรับการอุดหนุนนะคะ 🎉🍊\nนี่คือบัตรสะสมแต้มของคุณค่ะ:\n${env.LINE_REWARD_CARD_URL}`,
+        text: `ขอบคุณสำหรับการอุดหนุนกดน้ำส้มคั้นสดนะคะ 🎉🍊\nนี่คือบัตรสะสมแต้มของคุณค่ะ:\n${env.LINE_REWARD_CARD_URL}`,
       }]);
       await env.OFRESH_KV.delete(`slipuser:${shortId}`); // กันกดซ้ำ
 
