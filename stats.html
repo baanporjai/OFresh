@@ -212,6 +212,27 @@ body { font-family: 'Prompt', sans-serif; background: var(--off-white); color: v
 .legend-scale { display: flex; gap: 4px; }
 .legend-dot { width: 14px; height: 14px; border-radius: 4px; }
 
+/* ── DAILY CALENDAR ── */
+.calendar-weekdays { display: grid; grid-template-columns: repeat(7,1fr); gap: 5px; margin-bottom: 6px; }
+.calendar-weekdays div { text-align: center; font-size: .68rem; font-weight: 700; color: var(--muted); }
+.calendar-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 5px; }
+.cal-cell {
+  aspect-ratio: 1; border-radius: 8px; background: var(--gray); position: relative;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  transition: transform .15s;
+}
+.cal-cell:hover { transform: scale(1.06); z-index: 2; }
+.cal-cell.out-of-range { opacity: .3; }
+.cal-cell .cc-date { position: absolute; top: 4px; left: 6px; font-size: .58rem; color: var(--muted); }
+.cal-cell .cc-count { font-size: .74rem; font-weight: 700; color: var(--text); margin-top: 6px; }
+.cal-cell.p1 { background: var(--orange); box-shadow: 0 0 12px rgba(255,107,0,.3); }
+.cal-cell.p1 .cc-count, .cal-cell.p1 .cc-date { color: #fff; }
+.cal-cell.p2 { background: var(--orange-light); }
+.cal-cell.p2 .cc-count, .cal-cell.p2 .cc-date { color: #fff; }
+.cal-cell.p3 { background: #FFD7A8; }
+.cal-cell.p3 .cc-count { color: var(--dark); }
+@media(max-width:600px){ .cal-cell .cc-date { font-size: .5rem; } .cal-cell .cc-count { font-size: .66rem; } }
+
 /* ── BEST DAYS ── */
 .day-list { display: flex; flex-direction: column; gap: 10px; }
 .day-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; }
@@ -483,7 +504,17 @@ footer a { color: var(--orange); text-decoration: none; }
         <select class="month-select" id="dailyMonthFilter" onchange="onDailyMonthChange(this.value)"></select>
         <div class="chart-badge" id="dailyBadge">—</div>
       </div>
-      <canvas id="chartDaily" height="90"></canvas>
+      <div class="calendar-weekdays" id="dailyWeekdays"></div>
+      <div class="calendar-grid" id="dailyCalendar"></div>
+      <div class="heatmap-legend">
+        <div class="legend-scale">
+          <div class="legend-dot" style="background:var(--gray)"></div>
+          <div class="legend-dot" style="background:#FFD7A8"></div>
+          <div class="legend-dot" style="background:var(--orange-light)"></div>
+          <div class="legend-dot" style="background:var(--orange)"></div>
+        </div>
+        <span data-th="น้อย → มาก" data-en="Low → High">น้อย → มาก</span>
+      </div>
     </div>
   </div>
 
@@ -643,56 +674,60 @@ function populateDailyMonthFilter(rows) {
   sel.value = dailyMonthFilter;
 }
 
+// แสดงยอดขายรายวันเป็นตารางปฏิทิน (แถว = สัปดาห์, คอลัมน์ = วันในสัปดาห์) แทนกราฟแท่ง
+// โทนสีไล่ระดับ p1/p2/p3 ใช้ธรรมเนียมเดียวกับ heatmap ช่วงเวลาที่ลูกค้าสั่งมากที่สุด (renderHeatmap ด้านล่าง)
 function renderDailyChart(rows) {
-  destroyChart('daily');
   const isTh = currentLang === 'th';
   const useMoney = dailyMetric === 'money';
   const valueOf = r => useMoney ? r.price : 1;
-  let labels, data;
 
+  let rangeStart, rangeEnd; // inclusive ทั้งคู่ เทียบกันด้วยเวลาท้องถิ่น (เที่ยงคืน)
   if (dailyMonthFilter === 'recent30') {
-    const now = new Date(); const counts = {};
-    for (let i = 29; i >= 0; i--) {
-      const d = new Date(now); d.setDate(d.getDate()-i);
-      counts[d.toDateString()] = 0;
-    }
-    rows.forEach(r => { const k = r.datetime.toDateString(); if (k in counts) counts[k] += valueOf(r); });
-    labels = Object.keys(counts).map(k => new Date(k).toLocaleDateString(isTh?'th-TH':'en-US',{day:'2-digit',month:'short'}));
-    data = Object.values(counts);
+    rangeEnd = new Date(); rangeEnd.setHours(0,0,0,0);
+    rangeStart = new Date(rangeEnd); rangeStart.setDate(rangeStart.getDate() - 29);
   } else {
-    const [y,mo] = dailyMonthFilter.split('-').map(Number);
-    const daysInMonth = new Date(y, mo, 0).getDate();
-    const counts = Array(daysInMonth).fill(0);
-    rows.forEach(r => {
-      if (r.datetime.getFullYear()===y && r.datetime.getMonth()+1===mo) counts[r.datetime.getDate()-1] += valueOf(r);
-    });
-    labels = counts.map((_,i) => String(i+1));
-    data = counts;
+    const [y, mo] = dailyMonthFilter.split('-').map(Number);
+    rangeStart = new Date(y, mo - 1, 1);
+    rangeEnd = new Date(y, mo, 0); // วันสุดท้ายของเดือน
   }
 
-  const avg = data.reduce((a,b)=>a+b,0)/data.length;
+  // ขยายขอบเขตให้ครบสัปดาห์เต็ม (อาทิตย์–เสาร์) เพื่อวางเป็นตารางปฏิทินได้พอดี
+  const gridStart = new Date(rangeStart); gridStart.setDate(gridStart.getDate() - gridStart.getDay());
+  const gridEnd = new Date(rangeEnd); gridEnd.setDate(gridEnd.getDate() + (6 - gridEnd.getDay()));
+
+  const counts = {};
+  rows.forEach(r => { const k = r.datetime.toDateString(); counts[k] = (counts[k]||0) + valueOf(r); });
+
+  const cells = [];
+  for (let d = new Date(gridStart); d <= gridEnd; d.setDate(d.getDate() + 1)) {
+    const inRange = d >= rangeStart && d <= rangeEnd;
+    cells.push({ date: new Date(d), count: inRange ? (counts[d.toDateString()] || 0) : null, inRange });
+  }
+
+  const inRangeCounts = cells.filter(c => c.inRange).map(c => c.count);
+  const maxC = inRangeCounts.length ? Math.max(...inRangeCounts) : 0;
+
+  const weekdayLabels = isTh ? ['อา','จ','อ','พ','พฤ','ศ','ส'] : ['Su','Mo','Tu','We','Th','Fr','Sa'];
+  document.getElementById('dailyWeekdays').innerHTML = weekdayLabels.map(l => `<div>${l}</div>`).join('');
+
+  const grid = document.getElementById('dailyCalendar');
+  grid.innerHTML = cells.map(c => {
+    if (!c.inRange) return `<div class="cal-cell out-of-range"><div class="cc-date">${c.date.getDate()}</div></div>`;
+    const p = maxC > 0 ? c.count / maxC : 0;
+    const cls = c.count === 0 ? '' : (p>=.85?'p1':p>=.55?'p2':p>=.25?'p3':'');
+    const countLabel = c.count === 0 ? '' : (useMoney ? `฿${c.count.toLocaleString()}` : c.count);
+    return `<div class="cal-cell ${cls}">
+      <div class="cc-date">${c.date.getDate()}</div>
+      <div class="cc-count">${countLabel}</div>
+    </div>`;
+  }).join('');
+
+  const avg = inRangeCounts.length ? inRangeCounts.reduce((a,b)=>a+b,0)/inRangeCounts.length : 0;
   const avgLabel = useMoney ? `฿${Math.round(avg).toLocaleString()}` : avg.toFixed(1);
   const unit = useMoney ? (isTh?'/วัน':'/day') : (isTh?'แก้ว/วัน':'cups/day');
   document.getElementById('dailyBadge').textContent = `${isTh?'เฉลี่ย':'Avg'} ${avgLabel}${useMoney?unit:' '+unit}`;
 
   document.querySelectorAll('#dailyMetricToggle button').forEach(b => b.classList.toggle('active', b.dataset.metric === dailyMetric));
-
-  const ctx = document.getElementById('chartDaily').getContext('2d');
-  const gradient = ctx.createLinearGradient(0,0,0,200);
-  gradient.addColorStop(0,'rgba(255,107,0,.25)'); gradient.addColorStop(1,'rgba(255,107,0,0)');
-
-  charts.daily = new Chart(ctx, {
-    type:'bar', data: {
-      labels,
-      datasets: [{
-        data, backgroundColor: data.map(v => v === Math.max(...data) ? '#FF6B00' : 'rgba(255,107,0,.5)'),
-        borderColor:'#FF6B00', borderWidth:0, borderRadius:6, borderSkipped:false,
-      }]
-    },
-    options: { ...chartDefaults, plugins: { legend:{display:false}, tooltip: {
-      callbacks: { label: ctx => useMoney ? ` ฿${ctx.raw.toLocaleString()}` : ` ${ctx.raw} ${currentLang==='th'?'แก้ว':'cups'}` }
-    }}}
-  });
 }
 
 let monthlyMetric = 'cups';
