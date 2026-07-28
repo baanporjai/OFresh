@@ -198,7 +198,15 @@ function deleteExpense(sheet, headers, data) {
 
 function handleVisitRequest(data) {
   if (data.action === 'saveVisit') return saveVisit(data);
+  if (data.action === 'updateVisit') return updateVisit(data);
   return jsonOut({ success: false, error: 'Unknown visit action: ' + data.action });
+}
+
+// ดึง Drive file id ออกจาก photoUrl (ทั้งแบบเก่า uc?export=view=... และแบบใหม่ thumbnail?id=...) —
+// ใช้เป็น "id" ของแถวแทนที่จะเพิ่มคอลัมน์ id ใหม่ เพราะรูปแต่ละแถว unique อยู่แล้วโดยธรรมชาติ
+function extractFileId_(url) {
+  const m = String(url || '').match(/[?&]id=([^&]+)/);
+  return m ? m[1] : '';
 }
 
 function saveVisit(data) {
@@ -230,6 +238,34 @@ function saveVisit(data) {
   ]);
 
   return jsonOut({ success: true, photoUrl: photoUrl });
+}
+
+// แก้ไขข้อมูลการมาเยือนที่บันทึกไว้แล้ว (จากหน้า /admin/visits) — หาแถวด้วย id (Drive file id ที่ฝังอยู่
+// ใน photoUrl) แล้วแก้เฉพาะฟิลด์ที่ส่งมา เหมือน updateOrder/updateExpense ด้านบน
+function updateVisit(data) {
+  if (!data.id) return jsonOut({ success: false, error: 'Missing id' });
+
+  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(VISITS_SHEET_NAME);
+  if (!sheet) return jsonOut({ success: false, error: 'Visits tab not found' });
+
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return jsonOut({ success: false, error: 'No data rows' });
+
+  // คอลัมน์ตามลำดับที่ saveVisit เขียน: A timestamp, B photoUrl, C peopleCount, D hasChildren,
+  // E matchedTxnTime, F matchedAmount, G notes, H gender
+  const photoUrls = sheet.getRange(2, 2, lastRow - 1, 1).getValues();
+  for (let i = 0; i < photoUrls.length; i++) {
+    if (extractFileId_(photoUrls[i][0]) === data.id) {
+      const row = i + 2;
+      if (data.timestamp) sheet.getRange(row, 1).setValue(new Date(data.timestamp));
+      if ('peopleCount' in data) sheet.getRange(row, 3).setValue(Number(data.peopleCount) || 0);
+      if ('hasChildren' in data) sheet.getRange(row, 4).setValue(!!data.hasChildren);
+      if ('notes' in data) sheet.getRange(row, 7).setValue(data.notes || '');
+      if ('gender' in data) sheet.getRange(row, 8).setValue(data.gender || '');
+      return jsonOut({ success: true });
+    }
+  }
+  return jsonOut({ success: false, error: 'Visit id not found' });
 }
 
 function getVisitPhotoFolder_() {

@@ -105,6 +105,10 @@ export default {
       return handleAdminSheetProxy(request, env, env.VISIT_SHEET_CSV_URL, ctx, url.searchParams.has('fresh'));
     }
 
+    if (request.method === 'POST' && url.pathname === '/api/admin/visit-update') {
+      return handleVisitUpdate(request, env);
+    }
+
     return jsonResponse({ error: 'Not found' }, 404);
   },
 };
@@ -539,6 +543,49 @@ async function handleVisitUpload(request, env) {
   } catch (err) {
     console.error('Visit save failed:', err);
     return jsonResponse({ error: 'Failed to save visit' }, 502);
+  }
+}
+
+// แก้ไขข้อมูลการมาเยือนที่บันทึกไว้แล้ว (จากหน้า /admin/visits) — ใช้ id (Drive file id ที่ฝังอยู่ใน
+// photoUrl) หาแถวที่จะแก้ ส่งต่อให้ Apps Script ผ่าน action: 'updateVisit'
+async function handleVisitUpdate(request, env) {
+  const ok = await verifyAuthHeader(request, env);
+  if (!ok) return jsonResponse({ error: 'Unauthorized' }, 401);
+  const webhookUrl = env.VISIT_SHEET_WEBHOOK_URL || env.SHEET_WEBHOOK_URL;
+  if (!webhookUrl) return jsonResponse({ error: 'Not configured' }, 500);
+
+  let data;
+  try {
+    data = await request.json();
+  } catch {
+    return jsonResponse({ error: 'Invalid JSON' }, 400);
+  }
+  if (!data.id) return jsonResponse({ error: 'Missing id' }, 400);
+
+  const payload = { target: 'visit', action: 'updateVisit', id: data.id };
+  if (data.peopleCount != null) payload.peopleCount = Number(data.peopleCount) || 0;
+  if (data.hasChildren != null) payload.hasChildren = !!data.hasChildren;
+  if (data.gender) payload.gender = data.gender;
+  if (data.notes != null) payload.notes = data.notes;
+  if (data.timestamp) {
+    // ค่าที่ส่งมาจากฟอร์มแก้ไข (input datetime-local) เป็นเวลาไทยเสมอ ไม่มี timezone suffix —
+    // ต้องแปลงผ่าน parseBangkokIsoLike เหมือนจุดอื่นๆ ก่อนส่งต่อเป็น ISO UTC ให้ Apps Script
+    const parsed = parseBangkokIsoLike(data.timestamp);
+    if (parsed && !isNaN(parsed)) payload.timestamp = parsed.toISOString();
+  }
+
+  try {
+    const res = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const result = await res.json();
+    if (!result.success) return jsonResponse({ error: result.error || 'Failed to update visit' }, 502);
+    return jsonResponse({ success: true });
+  } catch (err) {
+    console.error('Visit update failed:', err);
+    return jsonResponse({ error: 'Failed to update visit' }, 502);
   }
 }
 
