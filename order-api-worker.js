@@ -304,11 +304,13 @@ async function handlePublicHighlights(request, env) {
     const totalCups = rows.length;
 
     // ชั่วโมงยอดนิยม — ดูเฉพาะเดือนปัจจุบัน (เวลาไทย) เพื่อสะท้อนพฤติกรรมล่าสุด ไม่ใช่ค่าเฉลี่ยสะสมทั้งหมด
-    const nowBangkok = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
-    const curYear = nowBangkok.getFullYear(), curMonth = nowBangkok.getMonth();
-    const monthRows = rows.filter(r => r.datetime.getFullYear() === curYear && r.datetime.getMonth() === curMonth);
+    const { year: curYear, month: curMonth } = toBangkokParts(new Date());
+    const monthRows = rows.filter(r => {
+      const p = toBangkokParts(r.datetime);
+      return p.year === curYear && p.month === curMonth;
+    });
     const hourCounts = Array(24).fill(0);
-    monthRows.forEach(r => hourCounts[r.datetime.getHours()]++);
+    monthRows.forEach(r => hourCounts[toBangkokParts(r.datetime).hour]++);
     const peakHour = hourCounts.every(c => c === 0) ? null : hourCounts.indexOf(Math.max(...hourCounts));
 
     return jsonResponse(
@@ -395,6 +397,13 @@ function splitCSVLine(line) {
 const BANGKOK_OFFSET_MS = 7 * 60 * 60 * 1000;
 function bangkokTimeToUtc(y, mo, d, hr, mn, sec) {
   return new Date(Date.UTC(y, mo, d, hr, mn, sec || 0) - BANGKOK_OFFSET_MS);
+}
+
+// ทางกลับกัน — ดึงปี/เดือน/ชั่วโมง "ตามเวลาไทย" จาก Date instant ที่ถูกต้องแล้ว (เช่นจาก bangkokTimeToUtc)
+// ห้ามใช้ .getHours()/.getMonth()/.getFullYear() ตรงๆ เพราะจะได้ค่าเวลา UTC กลับมาแทน (runtime นี้เป็น UTC เสมอ)
+function toBangkokParts(date) {
+  const shifted = new Date(date.getTime() + BANGKOK_OFFSET_MS);
+  return { year: shifted.getUTCFullYear(), month: shifted.getUTCMonth(), hour: shifted.getUTCHours() };
 }
 
 // รับสตริงเวลาแบบ "YYYY-MM-DDTHH:mm[:ss]" หรือ "YYYY-MM-DD HH:mm[:ss]" ที่ไม่มี timezone suffix
