@@ -304,11 +304,16 @@ async function handlePublicHighlights(request, env) {
     const totalCups = rows.length;
 
     // ชั่วโมงยอดนิยม — ดูเฉพาะเดือนปัจจุบัน (เวลาไทย) เพื่อสะท้อนพฤติกรรมล่าสุด ไม่ใช่ค่าเฉลี่ยสะสมทั้งหมด
-    const nowBangkok = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
-    const curYear = nowBangkok.getFullYear(), curMonth = nowBangkok.getMonth();
-    const monthRows = rows.filter(r => r.datetime.getFullYear() === curYear && r.datetime.getMonth() === curMonth);
+    // r.datetime เป็น UTC instant ที่ถูกต้อง แต่ Workers รันด้วย timezone UTC — ถ้าเรียก getHours()/getMonth()
+    // ตรงๆ จะได้ค่าตามเวลา UTC (ช้ากว่าเวลาไทย 7 ชม.) ทำให้ชั่วโมงยอดนิยมเพี้ยน เช่นพีคจริง 15:00 กลายเป็น 08:00
+    // จึงต้องบวก offset กลับเป็น "wall clock เวลาไทย" แล้วอ่านค่าผ่าน getUTC* เพื่อให้ตรงกับพฤติกรรมลูกค้าจริง
+    const nowBangkok = new Date(Date.now() + BANGKOK_OFFSET_MS);
+    const curYear = nowBangkok.getUTCFullYear(), curMonth = nowBangkok.getUTCMonth();
     const hourCounts = Array(24).fill(0);
-    monthRows.forEach(r => hourCounts[r.datetime.getHours()]++);
+    rows.forEach(r => {
+      const bkk = new Date(r.datetime.getTime() + BANGKOK_OFFSET_MS);
+      if (bkk.getUTCFullYear() === curYear && bkk.getUTCMonth() === curMonth) hourCounts[bkk.getUTCHours()]++;
+    });
     const peakHour = hourCounts.every(c => c === 0) ? null : hourCounts.indexOf(Math.max(...hourCounts));
 
     return jsonResponse(
