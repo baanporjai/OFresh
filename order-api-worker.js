@@ -583,10 +583,16 @@ async function analyzeVisitPhoto_(env, imageBase64, mimeType) {
     });
     if (!res.ok) {
       const errText = await res.text();
-      throw new Error(`Gemini API error ${res.status}: ${errText}`);
+      throw new Error(`Gemini API error ${res.status}: ${errText.slice(0, 300)}`);
     }
     const data = await res.json();
+    if (data.promptFeedback && data.promptFeedback.blockReason) {
+      throw new Error('Blocked by Gemini safety filter: ' + data.promptFeedback.blockReason);
+    }
     const candidate = data.candidates && data.candidates[0];
+    if (candidate && candidate.finishReason && candidate.finishReason !== 'STOP') {
+      throw new Error('Gemini did not finish normally: ' + candidate.finishReason);
+    }
     const raw = (candidate && candidate.content && candidate.content.parts && candidate.content.parts[0] && candidate.content.parts[0].text) || '';
     const match = raw.match(/\{[\s\S]*\}/);
     if (!match) throw new Error('Gemini response did not contain JSON: ' + raw.slice(0, 200));
@@ -601,7 +607,9 @@ async function analyzeVisitPhoto_(env, imageBase64, mimeType) {
     };
   } catch (err) {
     console.error('Gemini vision analysis failed (non-fatal):', err);
-    return { peopleCount: null, hasChildren: null, gender: null, notes: 'AI analysis failed' };
+    // ใส่ข้อความ error จริงลงใน notes (ไม่ใช่แค่ "AI analysis failed" เฉยๆ) เพื่อให้เห็นสาเหตุจริงจาก
+    // หน้าประวัติ/ชีตได้เลย โดยไม่ต้องเข้าไปดู Worker logs — หน้านี้เป็นแอดมินภายในอยู่แล้วไม่มีความเสี่ยง
+    return { peopleCount: null, hasChildren: null, gender: null, notes: 'AI analysis failed: ' + (err && err.message ? err.message.slice(0, 200) : String(err)) };
   }
 }
 
