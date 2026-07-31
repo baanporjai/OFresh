@@ -94,7 +94,7 @@ const translations = {
 
     // CTA
     cta_h2: 'พร้อมลิ้มรสน้ำส้มคั้นสดแท้?',
-    cta_p: 'ตอนนี้ ตู้ตั้งอยู่ที่ห้างเซ็นทรัล เฟสติวัล เชียงใหม่ ชั้น 4 โซนศูนย์อาหาร มาสัมผัสความสดใหม่ในทุกแก้ว',
+    cta_p: 'ตอนนี้ ตู้ตั้งอยู่ที่ห้างเซ็นทรัล เฟสติวัล เชียงใหม่ ชั้น 4 โซนศูนย์อาหาร รวมถึงออกบูธที่งานเทศกาลลำไย และงานหอการค้าแฟร์ จังหวัดลำพูน มาสัมผัสความสดใหม่ในทุกแก้ว',
     cta_btn: 'นำทางไปยังตู้ O\'Fresh',
 
     // Footer
@@ -133,7 +133,7 @@ const translations = {
     faq1_q: '💰 ราคาแก้วละเท่าไหร่?',
     faq1_a: 'ราคา 69 บาทต่อแก้ว (ปริมาณน้ำส้ม 280 ml) ชำระผ่าน QR Code หรือบัตรเครดิต/เดบิตได้เลย',
     faq2_q: '📍 ตู้ตั้งอยู่ที่ไหน?',
-    faq2_a: 'ตู้ O\'Fresh ตั้งอยู่ที่ห้างเซ็นทรัล เฟสติวัล เชียงใหม่ ชั้น 4 โซนศูนย์อาหาร เปิดให้บริการตลอด 24 ชั่วโมง',
+    faq2_a: 'ตู้ O\'Fresh ตั้งอยู่ที่ห้างเซ็นทรัล เฟสติวัล เชียงใหม่ ชั้น 4 โซนศูนย์อาหาร เปิดให้บริการตลอด 24 ชั่วโมง และช่วงนี้ยังออกบูธที่งานเทศกาลลำไย จังหวัดลำพูน และงานหอการค้าแฟร์ จังหวัดลำพูนอีกด้วย',
     faq3_q: '💳 ชำระเงินด้วยอะไรได้บ้าง?',
     faq3_a: 'รองรับ QR Code / PromptPay, TrueMoney, WeChat Pay และบัตรเครดิต/เดบิต (VISA, Mastercard) ยังไม่รองรับ Google Wallet และ Apple Pay',
     faq4_q: '⏱️ ดื่มได้นานแค่ไหน?',
@@ -285,7 +285,7 @@ const translations = {
     b4_p: 'Premium fresh juice at an accessible price, supporting multiple payment channels including contactless.',
 
     cta_h2: 'Ready to Taste Real Freshness?',
-    cta_p: 'Our machine is currently located at Central Festival Chiang Mai, 4th floor, Food Court Zone. Come experience the freshness!',
+    cta_p: 'Our machine is currently at Central Festival Chiang Mai, 4th floor, Food Court Zone — and popping up at the Lamphun Longan Festival and the Lamphun Chamber of Commerce Fair. Come experience the freshness!',
     cta_btn: 'Get Directions to O\'Fresh',
 
     footer_desc: 'Automatic Fresh Orange Juice Vending Machine\n100% Natural · No Sugar Added\nTemperature kept within 3-9°C',
@@ -323,7 +323,7 @@ const translations = {
     faq1_q: '💰 How much does a cup cost?',
     faq1_a: '69 Baht per cup (280 ml of fresh orange juice). Pay via QR Code or credit/debit card.',
     faq2_q: '📍 Where is the machine located?',
-    faq2_a: 'O\'Fresh is located at Central Festival Chiang Mai, 4th floor, Food Court Zone. Open 24 hours a day.',
+    faq2_a: 'O\'Fresh is located at Central Festival Chiang Mai, 4th floor, Food Court Zone, open 24 hours a day. We\'re also popping up at the Lamphun Longan Festival and the Lamphun Chamber of Commerce Fair.',
     faq3_q: '💳 What payment methods are accepted?',
     faq3_a: 'QR Code / PromptPay, TrueMoney, WeChat Pay, and VISA/Mastercard credit/debit cards. Google Wallet and Apple Pay are not supported.',
     faq4_q: '⏱️ How long can I keep it?',
@@ -475,7 +475,7 @@ const translations = {
     b4_p: '优质鲜榨橙汁，价格实惠，支持多种支付方式，包括非接触式支付。',
 
     cta_h2: '准备好品尝真正的新鲜了吗？',
-    cta_p: '我们的机器目前位于清迈 Central Festival 购物中心 4 楼美食广场。欢迎前来体验！',
+    cta_p: '我们的机器目前位于清迈 Central Festival 购物中心 4 楼美食广场，并在南奔龙眼节和南奔商会展销会设点。欢迎前来体验！',
     cta_btn: '前往 O\'Fresh 机器位置',
 
     footer_desc: '全自动鲜榨橙汁机\n100% 天然 · 不加糖\n全程控温 3-9°C',
@@ -513,7 +513,7 @@ const translations = {
     faq1_q: '💰 一杯多少钱？',
     faq1_a: '每杯 69 泰铢（280 ml），支持 QR Code 或信用卡/借记卡付款。',
     faq2_q: '📍 机器在哪里？',
-    faq2_a: 'O\'Fresh 位于清迈 Central Festival 购物中心 4 楼美食广场，全天 24 小时开放。',
+    faq2_a: 'O\'Fresh 位于清迈 Central Festival 购物中心 4 楼美食广场，全天 24 小时开放。近期还在南奔龙眼节和南奔商会展销会设点。',
     faq3_q: '💳 支持哪些付款方式？',
     faq3_a: '支持 QR Code / PromptPay、TrueMoney、微信支付及 VISA/Mastercard 刷卡。暂不支持 Google Wallet 和 Apple Pay。',
     faq4_q: '⏱️ 可以保存多久？',
@@ -665,7 +665,7 @@ const translations = {
     b4_p: '手の届く価格のプレミアムフレッシュジュース。タッチレス決済を含む複数の支払い方法に対応。',
 
     cta_h2: '本物の新鮮さを体験しませんか？',
-    cta_p: '現在、チェンマイ・セントラルフェスティバル4階フードコートに設置中。ぜひお試しください！',
+    cta_p: '現在、チェンマイ・セントラルフェスティバル4階フードコートに設置中。さらにランプーンのリュウガン祭りと商工会議所フェアにも出店しています。ぜひお試しください！',
     cta_btn: 'O\'Fresh の場所へ案内',
 
     footer_desc: '全自動フレッシュオレンジジュース自販機\n100% ナチュラル · 砂糖不使用\n常時3〜9°C温度管理',
@@ -703,7 +703,7 @@ const translations = {
     faq1_q: '💰 1杯いくらですか？',
     faq1_a: '1杯 69バーツ（280ml）。QRコードまたはクレジット/デビットカードでお支払いいただけます。',
     faq2_q: '📍 どこにありますか？',
-    faq2_a: 'O\'Fresh はチェンマイ・セントラルフェスティバル4階フードコートにあります。24時間営業です。',
+    faq2_a: 'O\'Fresh はチェンマイ・セントラルフェスティバル4階フードコートにあります。24時間営業です。現在はランプーンのリュウガン祭りと商工会議所フェアにも出店中です。',
     faq3_q: '💳 どの支払い方法が使えますか？',
     faq3_a: 'QRコード / PromptPay、TrueMoney、WeChat Pay、VISA/Mastercardに対応。Google WalletとApple Payは非対応です。',
     faq4_q: '⏱️ どのくらい保存できますか？',
@@ -854,7 +854,7 @@ const translations = {
     b4_p: '합리적인 가격의 프리미엄 신선 주스. 비접촉 결제를 포함한 다양한 결제 수단 지원.',
 
     cta_h2: '진짜 신선함을 맛볼 준비 되셨나요?',
-    cta_p: '현재 치앙마이 센트럴 페스티벌 4층 푸드코트에 설치되어 있습니다. 방문해 보세요!',
+    cta_p: '현재 치앙마이 센트럴 페스티벌 4층 푸드코트에 설치되어 있으며, 람푼 롱안 축제와 람푼 상공회의소 페어에도 부스를 운영합니다. 방문해 보세요!',
     cta_btn: 'O\'Fresh 위치로 안내',
 
     footer_desc: '완전 자동 신선 착즙 오렌지 주스 자판기\n100% 천연 · 설탕 무첨가\n상시 3~9°C 온도 유지',
@@ -892,7 +892,7 @@ const translations = {
     faq1_q: '💰 한 컵에 얼마인가요?',
     faq1_a: '한 컵 69바트（280ml）. QR코드 또는 신용카드/직불카드로 결제 가능합니다.',
     faq2_q: '📍 기계가 어디에 있나요?',
-    faq2_a: 'O\'Fresh는 치앙마이 센트럴 페스티벌 4층 푸드코트에 있습니다. 24시간 운영합니다.',
+    faq2_a: 'O\'Fresh는 치앙마이 센트럴 페스티벌 4층 푸드코트에 있습니다. 24시간 운영합니다. 요즘은 람푼 롱안 축제와 람푼 상공회의소 페어에도 부스를 운영합니다.',
     faq3_q: '💳 어떤 결제 방법을 지원하나요?',
     faq3_a: 'QR코드 / PromptPay, TrueMoney, 위챗페이, VISA/Mastercard 카드 결제 지원. Google Wallet 및 Apple Pay는 미지원.',
     faq4_q: '⏱️ 얼마나 보관할 수 있나요?',
