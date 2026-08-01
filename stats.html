@@ -263,6 +263,14 @@ body { font-family: 'Prompt', sans-serif; background: var(--off-white); color: v
   display: flex; align-items: center; gap: 10px;
 }
 
+.machine-filter-bar {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+  background: var(--white); border: 1px solid var(--border); border-radius: 16px;
+  padding: 12px 18px; margin-bottom: 20px; box-shadow: var(--shadow);
+}
+.machine-filter-label { font-size: .85rem; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px; }
+.machine-filter-bar .metric-toggle { flex-wrap: wrap; }
+
 /* ── COMPARISON ── */
 .compare-list { display: flex; flex-direction: column; gap: 0; }
 .compare-row {
@@ -468,6 +476,12 @@ footer a { color: var(--orange); text-decoration: none; }
 
 <div class="page">
 
+  <!-- MACHINE FILTER — โผล่ก็ต่อเมื่อข้อมูลมีมากกว่า 1 ตู้เท่านั้น -->
+  <div class="machine-filter-bar" id="machineFilterWrap" style="display:none">
+    <div class="machine-filter-label">🥤 <span data-th="แสดงข้อมูลตู้" data-en="Show machine">แสดงข้อมูลตู้</span></div>
+    <div class="metric-toggle" id="machineFilterTabs"></div>
+  </div>
+
   <!-- SILENCE ALERT -->
   <div class="alert-banner" id="silenceAlert" style="display:none">
     <span>⚠️</span> <span id="silenceAlertText"></span>
@@ -668,6 +682,7 @@ function parseCSV(text) {
   const h = lines[0].split(',').map(s => s.trim().toLowerCase().replace(/\r/g,''));
   const iDt = h.indexOf('machineautime'), iPrice = h.indexOf('auvalue'), iPay = h.indexOf('card_type_desc');
   const iFirst4 = h.indexOf('card_first4digits'), iLast4 = h.indexOf('card_last4digits');
+  const iMachine = h.indexOf('machine_name');
   function pd(s) {
     if (!s) return null;
     const [dp,tp] = s.trim().split(' ');
@@ -680,8 +695,13 @@ function parseCSV(text) {
   return lines.slice(1).map(line => {
     const v = line.split(','); const g = i => (v[i]||'').trim().replace(/\r/g,'');
     const dt = pd(g(iDt)); const price = parseFloat(g(iPrice))||0;
-    return { datetime: dt, price, payment: g(iPay)||'Other', first4: g(iFirst4), last4: g(iLast4) };
+    return { datetime: dt, price, payment: g(iPay)||'Other', first4: g(iFirst4), last4: g(iLast4), machine: g(iMachine) };
   }).filter(r => r.datetime && !isNaN(r.datetime) && r.price > 0);
+}
+
+// "OFresh_CentralFest" → "Central Fest" — ตัด prefix แบรนด์ออกให้อ่านง่ายขึ้นบนปุ่มเลือกตู้
+function machineLabel(m) {
+  return (m || '').replace(/^OFresh_?/i, '').replace(/_/g, ' ').trim() || m;
 }
 
 // ── PAYMENT CONFIG ──
@@ -719,6 +739,34 @@ const chartDefaults = {
     x: { grid: { display: false }, ticks: { color: '#6B7280', font: { family: 'Prompt', size: 11 } } }
   }
 };
+
+// ── MACHINE FILTER ── กรองข้อมูลตามตู้ (window._allRows = ดิบทั้งหมดทุกตู้, window._rows = หลังกรองแล้ว
+// ใช้เป็น input ให้ทุกกราฟ/สรุปในหน้านี้) ค่าเริ่มต้น 'all' คือรวมทุกตู้ ตามที่ธุรกิจต้องการ
+let machineFilter = 'all';
+
+function renderMachineFilter(allRows) {
+  const isTh = currentLang === 'th';
+  const machines = Array.from(new Set(allRows.map(r => r.machine).filter(Boolean))).sort();
+  const wrap = document.getElementById('machineFilterWrap');
+  if (machines.length < 2) { wrap.style.display = 'none'; return; }
+  wrap.style.display = '';
+  const allLabel = isTh ? 'ทุกตู้' : 'All machines';
+  document.getElementById('machineFilterTabs').innerHTML = [
+    `<button type="button" data-machine="all" onclick="onMachineFilterChange('all')">${allLabel}</button>`,
+    ...machines.map(m => `<button type="button" data-machine="${m}" onclick="onMachineFilterChange('${m}')">${machineLabel(m)}</button>`)
+  ].join('');
+  document.querySelectorAll('#machineFilterTabs button').forEach(b => b.classList.toggle('active', b.dataset.machine === machineFilter));
+}
+
+function onMachineFilterChange(val) {
+  machineFilter = val;
+  document.querySelectorAll('#machineFilterTabs button').forEach(b => b.classList.toggle('active', b.dataset.machine === machineFilter));
+  render(applyMachineFilter(window._allRows));
+}
+
+function applyMachineFilter(allRows) {
+  return machineFilter === 'all' ? allRows : allRows.filter(r => r.machine === machineFilter);
+}
 
 let dailyMonthFilter = 'recent30';
 let dailyMetric = 'cups';
@@ -1302,7 +1350,9 @@ async function load(force) {
       rows=parseCSV(text);
       localStorage.setItem(CACHE_KEY,JSON.stringify({date:today,rows}));
     }
-    render(rows);
+    window._allRows = rows;
+    renderMachineFilter(rows);
+    render(applyMachineFilter(rows));
   } catch(e) {
     document.getElementById('lastUpdate').textContent=currentLang==='th'?'โหลดไม่สำเร็จ':'Load failed';
     console.error(e);
