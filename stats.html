@@ -694,8 +694,14 @@ function parseCSV(text) {
   }
   return lines.slice(1).map(line => {
     const v = line.split(','); const g = i => (v[i]||'').trim().replace(/\r/g,'');
-    const dt = pd(g(iDt)); const price = parseFloat(g(iPrice))||0;
-    return { datetime: dt, price, payment: g(iPay)||'Other', first4: g(iFirst4), last4: g(iLast4), machine: g(iMachine) };
+    const raw = g(iDt);
+    const dt = pd(raw); const price = parseFloat(g(iPrice))||0;
+    // เก็บ "ชั่วโมงไทย" แยกจาก dt.getHours() ตรงๆ — machineautime เป็นเวลาไทยเสมอ แต่ dt.getHours()
+    // อ่านค่ากลับตาม timezone ของเบราว์เซอร์ผู้ดูหน้านี้ ถ้าดูจากเครื่อง/เบราว์เซอร์ที่ตั้ง timezone
+    // ไม่ใช่ไทย (เช่น เปิดจากต่างประเทศ) ชั่วโมงจะเพี้ยนได้ทั้งที่ dt เก็บค่าถูกต้องอยู่แล้ว
+    const hourMatch = raw && raw.match(/\s(\d{1,2}):\d{2}/);
+    const hour = hourMatch ? Number(hourMatch[1]) : (dt ? dt.getHours() : null);
+    return { datetime: dt, hour, price, payment: g(iPay)||'Other', first4: g(iFirst4), last4: g(iLast4), machine: g(iMachine) };
   }).filter(r => r.datetime && !isNaN(r.datetime) && r.price > 0);
 }
 
@@ -1139,7 +1145,7 @@ function renderHeatmap(rows) {
   const isTh = currentLang === 'th';
   const filtered = heatmapMonthFilter === 'all' ? rows : rows.filter(r => monthKey(r.datetime) === heatmapMonthFilter);
   const hourCounts = Array(24).fill(0);
-  filtered.forEach(r=>hourCounts[r.datetime.getHours()]++);
+  filtered.forEach(r=>{ if (r.hour != null) hourCounts[r.hour]++; });
   const maxH = Math.max(...hourCounts), peakH = hourCounts.indexOf(maxH);
 
   const grid = document.getElementById('hourGrid');
@@ -1236,7 +1242,7 @@ function render(rows) {
 
   // Hours
   const hourCounts = Array(24).fill(0);
-  rows.forEach(r=>hourCounts[r.datetime.getHours()]++);
+  rows.forEach(r=>{ if (r.hour != null) hourCounts[r.hour]++; });
   const maxH = Math.max(...hourCounts), peakH = hourCounts.indexOf(maxH);
 
   // Payment
