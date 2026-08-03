@@ -297,10 +297,15 @@ async function handleAdminExpenseWrite(request, env) {
 }
 
 // เอนด์พอยต์สาธารณะสำหรับหน้าแรก — คืนแค่ตัวเลขสรุป (ไม่มีข้อมูลลูกค้า/ธุรกรรมดิบ) จึงไม่ต้องใช้ PIN
+// ?machine=OFresh_CentralFest (optional) — จำกัด "ชั่วโมงยอดนิยม" ให้ดูเฉพาะตู้นั้น ใช้กับจอที่ติดอยู่หน้าตู้
+// เฉพาะเครื่อง (เช่น realstat_central.html) ส่วน totalCups ยังเป็นยอดรวมทุกตู้เสมอ ไม่ผูกกับ query param นี้
 async function handlePublicHighlights(request, env) {
   if (!env.NAYAX_SHEET_CSV_URL) return jsonResponse({ error: 'Not configured' }, 500);
 
   try {
+    const url = new URL(request.url);
+    const machineFilter = url.searchParams.get('machine');
+
     const res = await fetch(env.NAYAX_SHEET_CSV_URL + (env.NAYAX_SHEET_CSV_URL.includes('?') ? '&' : '?') + 't=' + Date.now());
     const text = await res.text();
     const rows = parseNayaxCSV(text);
@@ -309,10 +314,11 @@ async function handlePublicHighlights(request, env) {
 
     // ชั่วโมงยอดนิยม — ดูเฉพาะเดือนปัจจุบัน (เวลาไทย) เพื่อสะท้อนพฤติกรรมล่าสุด ไม่ใช่ค่าเฉลี่ยสะสมทั้งหมด
     const { year: curYear, month: curMonth } = toBangkokParts(new Date());
-    const monthRows = rows.filter(r => {
+    let monthRows = rows.filter(r => {
       const p = toBangkokParts(r.datetime);
       return p.year === curYear && p.month === curMonth;
     });
+    if (machineFilter) monthRows = monthRows.filter(r => r.machine === machineFilter);
     const hourCounts = Array(24).fill(0);
     monthRows.forEach(r => hourCounts[toBangkokParts(r.datetime).hour]++);
     const peakHour = hourCounts.every(c => c === 0) ? null : hourCounts.indexOf(Math.max(...hourCounts));
@@ -430,6 +436,7 @@ function parseNayaxCSV(text) {
   if (lines.length < 2) return [];
   const h = lines[0].split(',').map(s => s.trim().toLowerCase().replace(/\r/g, ''));
   const iDt = h.indexOf('machineautime'), iPrice = h.indexOf('auvalue');
+  const iMachine = h.indexOf('machine_name');
 
   function parseDt(s) {
     if (!s) return null;
@@ -446,7 +453,7 @@ function parseNayaxCSV(text) {
     const g = i => (v[i] || '').trim().replace(/\r/g, '');
     const datetime = parseDt(g(iDt));
     const price = parseFloat(g(iPrice)) || 0;
-    return { datetime, price };
+    return { datetime, price, machine: g(iMachine) };
   }).filter(r => r.datetime && !isNaN(r.datetime) && r.price > 0);
 }
 

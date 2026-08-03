@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>O'Fresh — สถิติสดจากตู้</title>
+<title>O'Fresh — สถิติสดจากตู้ Central Fest</title>
 <link rel="icon" href="/favicon.ico">
 
 <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -96,7 +96,7 @@
       <div class="stat-icon">⏰</div>
       <div class="stat-value" id="peakHourValue">—</div>
       <div class="stat-label">ชั่วโมงยอดนิยม</div>
-      <div class="stat-sub">ช่วงเวลาที่มีคนสั่งมากที่สุดเดือนนี้</div>
+      <div class="stat-sub">ช่วงเวลาที่มีคนสั่งมากที่สุดเดือนนี้ (ตู้ Central Fest)</div>
     </div>
   </div>
 
@@ -107,6 +107,7 @@
 
 <script>
 const API_BASE = 'https://fancy-dust-060c.yai-taweewoot.workers.dev';
+const MACHINE = 'OFresh_CentralFest'; // จำกัด "ชั่วโมงยอดนิยม" ให้เฉพาะตู้นี้ (แก้วรวมยังเป็นยอดทุกตู้เหมือนเดิม)
 const REFRESH_MS = 2 * 60 * 1000; // เผื่อไว้ต่ำกว่า cache ฝั่ง Worker (5 นาที) พอให้จอที่เปิดค้างไว้เห็นเลขใหม่ไม่ช้าเกินไป
 
 let lastCups = null, lastPeakHour = null;
@@ -127,7 +128,7 @@ function animateNum(el, from, to) {
 async function loadStats() {
   const offlineNote = document.getElementById('offlineNote');
   try {
-    const res = await fetch(API_BASE + '/api/public/highlights', { cache: 'no-store' });
+    const res = await fetch(API_BASE + '/api/public/highlights?machine=' + encodeURIComponent(MACHINE), { cache: 'no-store' });
     if (!res.ok) throw new Error('bad status');
     const data = await res.json();
 
