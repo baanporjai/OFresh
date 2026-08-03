@@ -90,7 +90,7 @@
       <div class="stat-icon"><img src="/assets/cup.png" alt="cup"></div>
       <div class="stat-value" id="cupsValue">—</div>
       <div class="stat-label">แก้วที่เสิร์ฟไปแล้ว</div>
-      <div class="stat-sub">จากยอดขายจริงของตู้</div>
+      <div class="stat-sub">จากยอดขายจริงของตู้งานลำไย</div>
     </div>
     <div class="stat-card">
       <div class="stat-icon">⏰</div>
@@ -128,7 +128,7 @@ function animateNum(el, from, to) {
 async function loadStats() {
   const offlineNote = document.getElementById('offlineNote');
   try {
-    const res = await fetch(API_BASE + '/api/public/highlights?machine=' + encodeURIComponent(MACHINE), { cache: 'no-store' });
+    const res = await fetch(API_BASE + '/api/public/highlights?machine=' + encodeURIComponent(MACHINE) + '&cupsScope=machine', { cache: 'no-store' });
     if (!res.ok) throw new Error('bad status');
     const data = await res.json();
 

@@ -305,12 +305,17 @@ async function handlePublicHighlights(request, env) {
   try {
     const url = new URL(request.url);
     const machineFilter = url.searchParams.get('machine');
+    // ปกติ "แก้วรวม" นับทุกตู้เสมอ (realstat_central.html ตั้งใจให้เป็นยอดรวมทั้งบริษัท) — ต้องส่ง
+    // cupsScope=machine มาด้วยชัดๆ ถึงจะกรองแก้วรวมให้เหลือเฉพาะตู้ที่ระบุใน machine (ใช้กับ
+    // realstat_lamyai.html ที่อยากโชว์แก้วเฉพาะงานลำไย ไม่ใช่ยอดรวมทุกตู้)
+    const scopeCupsToMachine = url.searchParams.get('cupsScope') === 'machine';
 
     const res = await fetch(env.NAYAX_SHEET_CSV_URL + (env.NAYAX_SHEET_CSV_URL.includes('?') ? '&' : '?') + 't=' + Date.now());
     const text = await res.text();
     const rows = parseNayaxCSV(text);
 
-    const totalCups = rows.length;
+    const cupsRows = (machineFilter && scopeCupsToMachine) ? rows.filter(r => r.machine === machineFilter) : rows;
+    const totalCups = cupsRows.length;
 
     // ชั่วโมงยอดนิยม — ดูเฉพาะเดือนปัจจุบัน (เวลาไทย) เพื่อสะท้อนพฤติกรรมล่าสุด ไม่ใช่ค่าเฉลี่ยสะสมทั้งหมด
     const { year: curYear, month: curMonth } = toBangkokParts(new Date());
