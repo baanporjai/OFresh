@@ -141,7 +141,7 @@ async function loadStats() {
     lastPeakHour = data.peakHour;
 
     document.getElementById('updatedAt').textContent = data.lastSaleAt
-      ? 'แก้วล่าสุด ' + new Date(data.lastSaleAt).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
+      ? 'ข้อมูลอัพเดทล่าสุด ' + new Date(data.lastSaleAt).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' })
       : 'ยังไม่มีข้อมูลแก้วของตู้นี้';
     offlineNote.classList.remove('show');
   } catch (e) {
