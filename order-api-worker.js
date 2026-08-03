@@ -309,6 +309,9 @@ async function handlePublicHighlights(request, env) {
     // cupsScope=machine มาด้วยชัดๆ ถึงจะกรองแก้วรวมให้เหลือเฉพาะตู้ที่ระบุใน machine (ใช้กับ
     // realstat_lamyai.html ที่อยากโชว์แก้วเฉพาะงานลำไย ไม่ใช่ยอดรวมทุกตู้)
     const scopeCupsToMachine = url.searchParams.get('cupsScope') === 'machine';
+    // month=YYYY-M (M เป็นเลข 0-11 ให้ตรงกับ toBangkokParts().month) — ไม่ระบุ = เดือนปัจจุบัน
+    // ใช้กับ dropdown เลือกเดือนของ heatmap ให้ตรงกับหน้า stats.html แอดมิน
+    const monthParam = url.searchParams.get('month');
 
     const res = await fetch(env.NAYAX_SHEET_CSV_URL + (env.NAYAX_SHEET_CSV_URL.includes('?') ? '&' : '?') + 't=' + Date.now());
     const text = await res.text();
@@ -317,26 +320,42 @@ async function handlePublicHighlights(request, env) {
     const cupsRows = (machineFilter && scopeCupsToMachine) ? rows.filter(r => r.machine === machineFilter) : rows;
     const totalCups = cupsRows.length;
 
-    // ชั่วโมงยอดนิยม — ดูเฉพาะเดือนปัจจุบัน (เวลาไทย) เพื่อสะท้อนพฤติกรรมล่าสุด ไม่ใช่ค่าเฉลี่ยสะสมทั้งหมด
-    const { year: curYear, month: curMonth } = toBangkokParts(new Date());
-    let monthRows = rows.filter(r => {
+    const machineRows = machineFilter ? rows.filter(r => r.machine === machineFilter) : rows;
+
+    // รายเดือนที่มีข้อมูลจริงของตู้นี้ — ให้ dropdown เลือกได้ตรงกับข้อมูลจริง ไม่ใช่เดาเดือนเอาเอง
+    const monthKeySet = new Set(machineRows.map(r => {
       const p = toBangkokParts(r.datetime);
-      return p.year === curYear && p.month === curMonth;
+      return `${p.year}-${p.month}`;
+    }));
+    const availableMonths = Array.from(monthKeySet)
+      .map(k => { const [year, month] = k.split('-').map(Number); return { year, month }; })
+      .sort((a, b) => (b.year - a.year) || (b.month - a.month));
+
+    // ชั่วโมงยอดนิยม — ดูเฉพาะเดือนที่เลือก (เวลาไทย) ค่าเริ่มต้นคือเดือนปัจจุบัน ไม่ใช่ค่าเฉลี่ยสะสมทั้งหมด
+    let targetYear, targetMonth;
+    if (monthParam && /^\d{4}-\d{1,2}$/.test(monthParam)) {
+      const [y, m] = monthParam.split('-').map(Number);
+      targetYear = y; targetMonth = m;
+    } else {
+      const cur = toBangkokParts(new Date());
+      targetYear = cur.year; targetMonth = cur.month;
+    }
+    const monthRows = machineRows.filter(r => {
+      const p = toBangkokParts(r.datetime);
+      return p.year === targetYear && p.month === targetMonth;
     });
-    if (machineFilter) monthRows = monthRows.filter(r => r.machine === machineFilter);
     const hourCounts = Array(24).fill(0);
     monthRows.forEach(r => hourCounts[toBangkokParts(r.datetime).hour]++);
     const peakHour = hourCounts.every(c => c === 0) ? null : hourCounts.indexOf(Math.max(...hourCounts));
 
     // เวลาแก้วล่าสุด — ใช้ scope เดียวกับชั่วโมงยอดนิยม (ตาม machineFilter ถ้ามี) เพราะจอหน้าตู้อยากรู้ว่า
     // "ตู้นี้" ขายล่าสุดเมื่อไหร่ ไม่ใช่ทั้งบริษัท ต่างจาก totalCups ที่ default เป็นยอดรวมทุกตู้เสมอ
-    const lastSaleRows = machineFilter ? rows.filter(r => r.machine === machineFilter) : rows;
-    const lastSaleAt = lastSaleRows.length
-      ? new Date(Math.max(...lastSaleRows.map(r => r.datetime.getTime()))).toISOString()
+    const lastSaleAt = machineRows.length
+      ? new Date(Math.max(...machineRows.map(r => r.datetime.getTime()))).toISOString()
       : null;
 
     return jsonResponse(
-      { totalCups, peakHour, lastSaleAt, hourCounts },
+      { totalCups, peakHour, lastSaleAt, hourCounts, availableMonths, selectedMonth: { year: targetYear, month: targetMonth } },
       200,
       { 'Cache-Control': 'public, max-age=300' }
     );

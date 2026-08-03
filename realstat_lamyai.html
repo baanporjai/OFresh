@@ -87,7 +87,11 @@
     flex-wrap: wrap; margin-bottom: 18px;
   }
   .heatmap-title { font-size: clamp(15px, 2vw, 19px); font-weight: 700; }
-  .heatmap-month { font-size: clamp(12px, 1.6vw, 15px); color: var(--text-muted); }
+  .heatmap-month-select {
+    font-family: 'Prompt', sans-serif; font-size: clamp(12px, 1.6vw, 15px); font-weight: 600;
+    color: var(--text-dark); background: #F5F5F5; border: none; border-radius: 999px;
+    padding: 7px 14px; cursor: pointer;
+  }
   .heatmap-badge {
     background: rgba(255,107,0,.1); color: var(--orange-dark);
     padding: 5px 14px; border-radius: 999px; font-size: clamp(12px, 1.6vw, 15px); font-weight: 700;
@@ -137,7 +141,7 @@
   <div class="heatmap-card">
     <div class="heatmap-header">
       <div class="heatmap-title">🌡️ ช่วงเวลาที่ลูกค้าสั่งมากที่สุด</div>
-      <div class="heatmap-month" id="heatmapMonth"></div>
+      <select class="heatmap-month-select" id="heatmapMonthSelect" onchange="onHeatmapMonthChange(this.value)"></select>
       <div class="heatmap-badge" id="heatmapBadge">—</div>
     </div>
     <div class="hour-grid" id="hourGrid"></div>
@@ -163,9 +167,24 @@ const MACHINE = 'OFresh_Lamyai'; // จำกัด "ชั่วโมงยอ
 const REFRESH_MS = 2 * 60 * 1000; // เผื่อไว้ต่ำกว่า cache ฝั่ง Worker (5 นาที) พอให้จอที่เปิดค้างไว้เห็นเลขใหม่ไม่ช้าเกินไป
 
 let lastCups = null, lastPeakHour = null;
+let monthOverride = null; // "YYYY-M" ที่ผู้ใช้เลือกเอง — null = ให้ Worker ใช้เดือนปัจจุบันเป็นค่าเริ่มต้น
 
-document.getElementById('heatmapMonth').textContent =
-  new Date().toLocaleDateString('th-TH', { month: 'long', year: 'numeric' });
+function renderMonthOptions(availableMonths, selectedMonth) {
+  const sel = document.getElementById('heatmapMonthSelect');
+  const keepValue = sel.options.length ? sel.value : (selectedMonth ? `${selectedMonth.year}-${selectedMonth.month}` : '');
+  sel.innerHTML = (availableMonths || []).map(({ year, month }) => {
+    const value = `${year}-${month}`;
+    const label = new Date(year, month, 1).toLocaleDateString('th-TH', { month: 'long', year: 'numeric' });
+    return `<option value="${value}">${label}</option>`;
+  }).join('');
+  const stillExists = Array.from(sel.options).some(o => o.value === keepValue);
+  sel.value = stillExists ? keepValue : (selectedMonth ? `${selectedMonth.year}-${selectedMonth.month}` : '');
+}
+
+function onHeatmapMonthChange(value) {
+  monthOverride = value;
+  loadStats();
+}
 
 function renderHourGrid(hourCounts) {
   if (!Array.isArray(hourCounts)) return;
@@ -196,7 +215,8 @@ function animateNum(el, from, to) {
 async function loadStats() {
   const offlineNote = document.getElementById('offlineNote');
   try {
-    const res = await fetch(API_BASE + '/api/public/highlights?machine=' + encodeURIComponent(MACHINE) + '&cupsScope=machine', { cache: 'no-store' });
+    const monthQuery = monthOverride ? '&month=' + encodeURIComponent(monthOverride) : '';
+    const res = await fetch(API_BASE + '/api/public/highlights?machine=' + encodeURIComponent(MACHINE) + '&cupsScope=machine' + monthQuery, { cache: 'no-store' });
     if (!res.ok) throw new Error('bad status');
     const data = await res.json();
 
@@ -210,6 +230,7 @@ async function loadStats() {
       typeof data.peakHour === 'number' ? `🔥 ยอดฮิต ${data.peakHour}:00–${(data.peakHour + 1) % 24}:00` : 'ยังไม่มีข้อมูล';
     lastPeakHour = data.peakHour;
 
+    renderMonthOptions(data.availableMonths, data.selectedMonth);
     renderHourGrid(data.hourCounts);
 
     document.getElementById('updatedAt').textContent = data.lastSaleAt
