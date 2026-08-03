@@ -336,7 +336,7 @@ async function handlePublicHighlights(request, env) {
       : null;
 
     return jsonResponse(
-      { totalCups, peakHour, lastSaleAt },
+      { totalCups, peakHour, lastSaleAt, hourCounts },
       200,
       { 'Cache-Control': 'public, max-age=300' }
     );

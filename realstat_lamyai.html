@@ -74,6 +74,40 @@
   @media (max-width: 560px) {
     .stats { grid-template-columns: 1fr; max-width: 360px; }
   }
+
+  .heatmap-card {
+    background: #fff; border-radius: 28px;
+    padding: clamp(20px, 3.5vh, 36px) clamp(16px, 3vw, 32px);
+    box-shadow: 0 16px 50px rgba(0,0,0,.07);
+    border: 1px solid rgba(255,107,0,.08);
+    width: 100%; max-width: 900px;
+  }
+  .heatmap-header {
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    flex-wrap: wrap; margin-bottom: 18px;
+  }
+  .heatmap-title { font-size: clamp(15px, 2vw, 19px); font-weight: 700; }
+  .heatmap-month { font-size: clamp(12px, 1.6vw, 15px); color: var(--text-muted); }
+  .heatmap-badge {
+    background: rgba(255,107,0,.1); color: var(--orange-dark);
+    padding: 5px 14px; border-radius: 999px; font-size: clamp(12px, 1.6vw, 15px); font-weight: 700;
+  }
+  .hour-grid { display: grid; grid-template-columns: repeat(12,1fr); gap: 5px; }
+  @media (max-width: 600px) { .hour-grid { grid-template-columns: repeat(6,1fr); } }
+  .hour-cell {
+    aspect-ratio: 1; border-radius: 8px; background: #F5F5F5;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .hour-cell .hc-count { font-size: clamp(.6rem, 1.4vw, .82rem); font-weight: 700; color: var(--text-dark); line-height: 1; }
+  .hour-cell .hc-lbl { font-size: clamp(.45rem, 1vw, .58rem); color: var(--text-muted); margin-top: 2px; }
+  .hour-cell.p1 { background: var(--orange); box-shadow: 0 0 12px rgba(255,107,0,.3); }
+  .hour-cell.p1 .hc-count, .hour-cell.p1 .hc-lbl { color: #fff; }
+  .hour-cell.p2 { background: #FFB870; }
+  .hour-cell.p2 .hc-count, .hour-cell.p2 .hc-lbl { color: #fff; }
+  .hour-cell.p3 { background: #FFD7A8; }
+  .heatmap-legend { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 14px; font-size: clamp(11px, 1.4vw, 13px); color: var(--text-muted); }
+  .legend-scale { display: flex; gap: 4px; }
+  .legend-dot { width: 14px; height: 14px; border-radius: 4px; }
 </style>
 </head>
 <body>
@@ -100,6 +134,24 @@
     </div>
   </div>
 
+  <div class="heatmap-card">
+    <div class="heatmap-header">
+      <div class="heatmap-title">🌡️ ช่วงเวลาที่ลูกค้าสั่งมากที่สุด</div>
+      <div class="heatmap-month" id="heatmapMonth"></div>
+      <div class="heatmap-badge" id="heatmapBadge">—</div>
+    </div>
+    <div class="hour-grid" id="hourGrid"></div>
+    <div class="heatmap-legend">
+      <div class="legend-scale">
+        <div class="legend-dot" style="background:#F5F5F5"></div>
+        <div class="legend-dot" style="background:#FFD7A8"></div>
+        <div class="legend-dot" style="background:#FFB870"></div>
+        <div class="legend-dot" style="background:var(--orange)"></div>
+      </div>
+      <span>น้อย → มาก</span>
+    </div>
+  </div>
+
   <div>
     <div class="updated-at" id="updatedAt">กำลังโหลด...</div>
     <div class="offline-note" id="offlineNote">เชื่อมต่อไม่สำเร็จ — แสดงค่าล่าสุดที่มี</div>
@@ -111,6 +163,22 @@ const MACHINE = 'OFresh_Lamyai'; // จำกัด "ชั่วโมงยอ
 const REFRESH_MS = 2 * 60 * 1000; // เผื่อไว้ต่ำกว่า cache ฝั่ง Worker (5 นาที) พอให้จอที่เปิดค้างไว้เห็นเลขใหม่ไม่ช้าเกินไป
 
 let lastCups = null, lastPeakHour = null;
+
+document.getElementById('heatmapMonth').textContent =
+  new Date().toLocaleDateString('th-TH', { month: 'long', year: 'numeric' });
+
+function renderHourGrid(hourCounts) {
+  if (!Array.isArray(hourCounts)) return;
+  const maxH = Math.max(...hourCounts);
+  document.getElementById('hourGrid').innerHTML = hourCounts.map((cnt, h) => {
+    const p = maxH > 0 ? cnt / maxH : 0;
+    const cls = p >= .85 ? 'p1' : p >= .55 ? 'p2' : p >= .25 ? 'p3' : '';
+    return `<div class="hour-cell ${cls}">
+      <div class="hc-count">${cnt || ''}</div>
+      <div class="hc-lbl">${h}:00</div>
+    </div>`;
+  }).join('');
+}
 
 // นับเลขวิ่งขึ้นแบบ ease-out เหมือนหน้า stats.html แอดมิน ให้ดูมีชีวิตชีวาเวลาเลขเปลี่ยน
 function animateNum(el, from, to) {
@@ -138,7 +206,11 @@ async function loadStats() {
     }
     document.getElementById('peakHourValue').textContent =
       typeof data.peakHour === 'number' ? `${data.peakHour}:00-${(data.peakHour + 1) % 24}:00` : '—';
+    document.getElementById('heatmapBadge').textContent =
+      typeof data.peakHour === 'number' ? `🔥 ยอดฮิต ${data.peakHour}:00–${(data.peakHour + 1) % 24}:00` : 'ยังไม่มีข้อมูล';
     lastPeakHour = data.peakHour;
+
+    renderHourGrid(data.hourCounts);
 
     document.getElementById('updatedAt').textContent = data.lastSaleAt
       ? 'ข้อมูลอัพเดทล่าสุด ' + new Date(data.lastSaleAt).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' })
