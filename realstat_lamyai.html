@@ -140,8 +140,9 @@ async function loadStats() {
       typeof data.peakHour === 'number' ? `${data.peakHour}:00-${(data.peakHour + 1) % 24}:00` : '—';
     lastPeakHour = data.peakHour;
 
-    document.getElementById('updatedAt').textContent =
-      'อัปเดตล่าสุด ' + new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+    document.getElementById('updatedAt').textContent = data.lastSaleAt
+      ? 'แก้วล่าสุด ' + new Date(data.lastSaleAt).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
+      : 'ยังไม่มีข้อมูลแก้วของตู้นี้';
     offlineNote.classList.remove('show');
   } catch (e) {
     // จอนี้ถูกเปิดค้างไว้ที่หน้าตู้ตลอดเวลา — พังทั้งจอไม่ได้ แค่เตือนเบาๆ แล้วคงค่าล่าสุดที่เคยโหลดได้ไว้

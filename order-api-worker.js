@@ -328,8 +328,15 @@ async function handlePublicHighlights(request, env) {
     monthRows.forEach(r => hourCounts[toBangkokParts(r.datetime).hour]++);
     const peakHour = hourCounts.every(c => c === 0) ? null : hourCounts.indexOf(Math.max(...hourCounts));
 
+    // เวลาแก้วล่าสุด — ใช้ scope เดียวกับชั่วโมงยอดนิยม (ตาม machineFilter ถ้ามี) เพราะจอหน้าตู้อยากรู้ว่า
+    // "ตู้นี้" ขายล่าสุดเมื่อไหร่ ไม่ใช่ทั้งบริษัท ต่างจาก totalCups ที่ default เป็นยอดรวมทุกตู้เสมอ
+    const lastSaleRows = machineFilter ? rows.filter(r => r.machine === machineFilter) : rows;
+    const lastSaleAt = lastSaleRows.length
+      ? new Date(Math.max(...lastSaleRows.map(r => r.datetime.getTime()))).toISOString()
+      : null;
+
     return jsonResponse(
-      { totalCups, peakHour },
+      { totalCups, peakHour, lastSaleAt },
       200,
       { 'Cache-Control': 'public, max-age=300' }
     );
