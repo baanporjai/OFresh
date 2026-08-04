@@ -597,8 +597,6 @@ function renderRealstatLamyaiHtml_(stats) {
     gap: clamp(24px, 4vh, 48px);
   }
 
-  .logo { width: min(32vw, 200px); height: auto; object-fit: contain; }
-
   .live-tag {
     display: inline-flex; align-items: center; gap: 10px;
     background: rgba(51,153,51,.1); color: var(--green);
@@ -606,6 +604,7 @@ function renderRealstatLamyaiHtml_(stats) {
     font-size: clamp(13px, 1.6vw, 17px); font-weight: 700;
     letter-spacing: .3px;
   }
+  .live-tag-logo { height: clamp(16px, 2.4vw, 22px); width: auto; object-fit: contain; }
   .live-dot {
     width: 10px; height: 10px; border-radius: 50%; background: var(--green);
     animation: pulse 1.6s ease-in-out infinite;
@@ -678,9 +677,8 @@ function renderRealstatLamyaiHtml_(stats) {
 </head>
 <body>
 
-  <img class="logo" src="https://ofresh.baanporjai.com/OFresh_Logo_transparent.png" alt="O'Fresh">
-
   <div class="live-tag">
+    <img class="live-tag-logo" src="https://ofresh.baanporjai.com/OFresh_Logo_transparent.png" alt="O'Fresh">
     <span class="live-dot"></span>
     <span>ข้อมูลอัปเดตแบบวันต่อวันจากตู้ในงานลำไย</span>
   </div>
