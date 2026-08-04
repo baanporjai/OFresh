@@ -456,7 +456,7 @@ function renderRealstatCentralHtml_(stats) {
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="refresh" content="120">
 <title>O'Fresh — สถิติสดจากตู้ Central Fest</title>
-<link rel="icon" href="/favicon.ico">
+<link rel="icon" href="https://ofresh.baanporjai.com/favicon.ico">
 
 <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
@@ -525,7 +525,7 @@ function renderRealstatCentralHtml_(stats) {
 </head>
 <body>
 
-  <img class="logo" src="/OFresh_Logo_transparent.png" alt="O'Fresh">
+  <img class="logo" src="https://ofresh.baanporjai.com/OFresh_Logo_transparent.png" alt="O'Fresh">
 
   <div class="live-tag">
     <span class="live-dot"></span>
@@ -534,7 +534,7 @@ function renderRealstatCentralHtml_(stats) {
 
   <div class="stats">
     <div class="stat-card">
-      <div class="stat-icon"><img src="/assets/cup.png" alt="cup"></div>
+      <div class="stat-icon"><img src="https://ofresh.baanporjai.com/assets/cup.png" alt="cup"></div>
       <div class="stat-value">${cupsText}</div>
       <div class="stat-label">แก้วที่เสิร์ฟไปแล้ว</div>
       <div class="stat-sub">จากยอดขายจริงของตู้</div>
@@ -572,7 +572,7 @@ function renderRealstatLamyaiHtml_(stats) {
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="refresh" content="120">
 <title>O'Fresh — สถิติสดจากตู้งานลำไย</title>
-<link rel="icon" href="/favicon.ico">
+<link rel="icon" href="https://ofresh.baanporjai.com/favicon.ico">
 
 <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
@@ -678,7 +678,7 @@ function renderRealstatLamyaiHtml_(stats) {
 </head>
 <body>
 
-  <img class="logo" src="/OFresh_Logo_transparent.png" alt="O'Fresh">
+  <img class="logo" src="https://ofresh.baanporjai.com/OFresh_Logo_transparent.png" alt="O'Fresh">
 
   <div class="live-tag">
     <span class="live-dot"></span>
@@ -687,7 +687,7 @@ function renderRealstatLamyaiHtml_(stats) {
 
   <div class="stats">
     <div class="stat-card">
-      <div class="stat-icon"><img src="/assets/cup.png" alt="cup"></div>
+      <div class="stat-icon"><img src="https://ofresh.baanporjai.com/assets/cup.png" alt="cup"></div>
       <div class="stat-value">${cupsText}</div>
       <div class="stat-label">แก้วที่เสิร์ฟไปแล้ว</div>
     </div>
