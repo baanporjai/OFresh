@@ -109,6 +109,16 @@ export default {
       return handleVisitUpdate(request, env);
     }
 
+    // จอหน้าตู้จริงเป็น WebView ที่รัน JavaScript ไม่ได้ — สองเส้นทางนี้เลย render ตัวเลขเป็น HTML
+    // สำเร็จรูปฝั่งเซิร์ฟเวอร์ตรงๆ (ไม่มี <script> fetch เหมือน realstat_*.html แบบเดิม) แล้วใช้
+    // <meta refresh> รีเฟรชหน้าเป็นระยะแทน
+    if (request.method === 'GET' && url.pathname === '/realstat/central') {
+      return handleRealstatCentral(request, env);
+    }
+    if (request.method === 'GET' && url.pathname === '/realstat/lamyai') {
+      return handleRealstatLamyai(request, env);
+    }
+
     return jsonResponse({ error: 'Not found' }, 404);
   },
 };
@@ -296,6 +306,56 @@ async function handleAdminExpenseWrite(request, env) {
   }
 }
 
+// คำนวณตัวเลขสรุป (แก้วรวม/ชั่วโมงยอดนิยม/แก้วล่าสุด) จากข้อมูล Nayax ดิบ — ใช้ร่วมกันทั้ง
+// /api/public/highlights (JSON สำหรับหน้าที่รัน JS ได้) และ /realstat/* (HTML สำเร็จรูปสำหรับจอหน้าตู้
+// ที่เป็น WebView รัน JS ไม่ได้) กันโค้ดซ้ำและกันสองทางคำนวณเพี้ยนไม่ตรงกัน
+function computeHighlights_(rows, { machineFilter, scopeCupsToMachine, monthParam }) {
+  const cupsRows = (machineFilter && scopeCupsToMachine) ? rows.filter(r => r.machine === machineFilter) : rows;
+  const totalCups = cupsRows.length;
+
+  const machineRows = machineFilter ? rows.filter(r => r.machine === machineFilter) : rows;
+
+  // รายเดือนที่มีข้อมูลจริงของตู้นี้ — ให้ dropdown เลือกได้ตรงกับข้อมูลจริง ไม่ใช่เดาเดือนเอาเอง
+  const monthKeySet = new Set(machineRows.map(r => {
+    const p = toBangkokParts(r.datetime);
+    return `${p.year}-${p.month}`;
+  }));
+  const availableMonths = Array.from(monthKeySet)
+    .map(k => { const [year, month] = k.split('-').map(Number); return { year, month }; })
+    .sort((a, b) => (b.year - a.year) || (b.month - a.month));
+
+  // ชั่วโมงยอดนิยม — ดูเฉพาะเดือนที่เลือก (เวลาไทย) ค่าเริ่มต้นคือเดือนปัจจุบัน ไม่ใช่ค่าเฉลี่ยสะสมทั้งหมด
+  let targetYear, targetMonth;
+  if (monthParam && /^\d{4}-\d{1,2}$/.test(monthParam)) {
+    const [y, m] = monthParam.split('-').map(Number);
+    targetYear = y; targetMonth = m;
+  } else {
+    const cur = toBangkokParts(new Date());
+    targetYear = cur.year; targetMonth = cur.month;
+  }
+  const monthRows = machineRows.filter(r => {
+    const p = toBangkokParts(r.datetime);
+    return p.year === targetYear && p.month === targetMonth;
+  });
+  const hourCounts = Array(24).fill(0);
+  monthRows.forEach(r => hourCounts[toBangkokParts(r.datetime).hour]++);
+  const peakHour = hourCounts.every(c => c === 0) ? null : hourCounts.indexOf(Math.max(...hourCounts));
+
+  // เวลาแก้วล่าสุด — ใช้ scope เดียวกับชั่วโมงยอดนิยม (ตาม machineFilter ถ้ามี) เพราะจอหน้าตู้อยากรู้ว่า
+  // "ตู้นี้" ขายล่าสุดเมื่อไหร่ ไม่ใช่ทั้งบริษัท ต่างจาก totalCups ที่ default เป็นยอดรวมทุกตู้เสมอ
+  const lastSaleAt = machineRows.length
+    ? new Date(Math.max(...machineRows.map(r => r.datetime.getTime()))).toISOString()
+    : null;
+
+  return { totalCups, peakHour, lastSaleAt, hourCounts, availableMonths, selectedMonth: { year: targetYear, month: targetMonth } };
+}
+
+async function fetchNayaxRows_(env) {
+  const res = await fetch(env.NAYAX_SHEET_CSV_URL + (env.NAYAX_SHEET_CSV_URL.includes('?') ? '&' : '?') + 't=' + Date.now());
+  const text = await res.text();
+  return parseNayaxCSV(text);
+}
+
 // เอนด์พอยต์สาธารณะสำหรับหน้าแรก — คืนแค่ตัวเลขสรุป (ไม่มีข้อมูลลูกค้า/ธุรกรรมดิบ) จึงไม่ต้องใช้ PIN
 // ?machine=OFresh_CentralFest (optional) — จำกัด "ชั่วโมงยอดนิยม" ให้ดูเฉพาะตู้นั้น ใช้กับจอที่ติดอยู่หน้าตู้
 // เฉพาะเครื่อง (เช่น realstat_central.html) ส่วน totalCups ยังเป็นยอดรวมทุกตู้เสมอ ไม่ผูกกับ query param นี้
@@ -313,55 +373,378 @@ async function handlePublicHighlights(request, env) {
     // ใช้กับ dropdown เลือกเดือนของ heatmap ให้ตรงกับหน้า stats.html แอดมิน
     const monthParam = url.searchParams.get('month');
 
-    const res = await fetch(env.NAYAX_SHEET_CSV_URL + (env.NAYAX_SHEET_CSV_URL.includes('?') ? '&' : '?') + 't=' + Date.now());
-    const text = await res.text();
-    const rows = parseNayaxCSV(text);
+    const rows = await fetchNayaxRows_(env);
+    const stats = computeHighlights_(rows, { machineFilter, scopeCupsToMachine, monthParam });
 
-    const cupsRows = (machineFilter && scopeCupsToMachine) ? rows.filter(r => r.machine === machineFilter) : rows;
-    const totalCups = cupsRows.length;
-
-    const machineRows = machineFilter ? rows.filter(r => r.machine === machineFilter) : rows;
-
-    // รายเดือนที่มีข้อมูลจริงของตู้นี้ — ให้ dropdown เลือกได้ตรงกับข้อมูลจริง ไม่ใช่เดาเดือนเอาเอง
-    const monthKeySet = new Set(machineRows.map(r => {
-      const p = toBangkokParts(r.datetime);
-      return `${p.year}-${p.month}`;
-    }));
-    const availableMonths = Array.from(monthKeySet)
-      .map(k => { const [year, month] = k.split('-').map(Number); return { year, month }; })
-      .sort((a, b) => (b.year - a.year) || (b.month - a.month));
-
-    // ชั่วโมงยอดนิยม — ดูเฉพาะเดือนที่เลือก (เวลาไทย) ค่าเริ่มต้นคือเดือนปัจจุบัน ไม่ใช่ค่าเฉลี่ยสะสมทั้งหมด
-    let targetYear, targetMonth;
-    if (monthParam && /^\d{4}-\d{1,2}$/.test(monthParam)) {
-      const [y, m] = monthParam.split('-').map(Number);
-      targetYear = y; targetMonth = m;
-    } else {
-      const cur = toBangkokParts(new Date());
-      targetYear = cur.year; targetMonth = cur.month;
-    }
-    const monthRows = machineRows.filter(r => {
-      const p = toBangkokParts(r.datetime);
-      return p.year === targetYear && p.month === targetMonth;
-    });
-    const hourCounts = Array(24).fill(0);
-    monthRows.forEach(r => hourCounts[toBangkokParts(r.datetime).hour]++);
-    const peakHour = hourCounts.every(c => c === 0) ? null : hourCounts.indexOf(Math.max(...hourCounts));
-
-    // เวลาแก้วล่าสุด — ใช้ scope เดียวกับชั่วโมงยอดนิยม (ตาม machineFilter ถ้ามี) เพราะจอหน้าตู้อยากรู้ว่า
-    // "ตู้นี้" ขายล่าสุดเมื่อไหร่ ไม่ใช่ทั้งบริษัท ต่างจาก totalCups ที่ default เป็นยอดรวมทุกตู้เสมอ
-    const lastSaleAt = machineRows.length
-      ? new Date(Math.max(...machineRows.map(r => r.datetime.getTime()))).toISOString()
-      : null;
-
-    return jsonResponse(
-      { totalCups, peakHour, lastSaleAt, hourCounts, availableMonths, selectedMonth: { year: targetYear, month: targetMonth } },
-      200,
-      { 'Cache-Control': 'public, max-age=300' }
-    );
+    return jsonResponse(stats, 200, { 'Cache-Control': 'public, max-age=300' });
   } catch (err) {
     console.error('Public highlights error:', err);
     return jsonResponse({ error: 'Failed to compute highlights' }, 502);
+  }
+}
+
+// ═══════════ /realstat/central, /realstat/lamyai — จอหน้าตู้จริง (WebView รัน JS ไม่ได้) ═══════════
+// render ตัวเลขเป็น HTML สำเร็จรูปฝั่งเซิร์ฟเวอร์ตรงๆ แทนการพึ่ง <script> fetch เหมือนไฟล์
+// realstat_*.html แบบเดิม (ยังเก็บไฟล์เดิมไว้เผื่อเปิดดูจากเบราว์เซอร์ปกติที่รัน JS ได้) แล้วใช้
+// <meta http-equiv="refresh"> รีเฟรชหน้าใหม่ทั้งหน้าเป็นระยะแทนการ fetch ข้อมูลใหม่ด้วย JS
+
+function htmlResponse_(html, status = 200, extraHeaders = {}) {
+  return new Response(html, { status, headers: { 'Content-Type': 'text/html; charset=utf-8', ...extraHeaders } });
+}
+
+const TH_MONTH_NAMES_ = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+  'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+// ใช้ตาราง Thai month name ตรงๆ แทน Date/Intl เพราะแค่ต้องการ "เดือน+ปี พ.ศ." จากเลข year/month
+// (0-11) ที่รู้ค่าแน่ชัดอยู่แล้ว ไม่มีประโยชน์ต้องเสี่ยงปัญหา timezone จาก Date object เพิ่ม
+function thaiMonthYearLabel_(year, month) {
+  return `${TH_MONTH_NAMES_[month]} ${year + 543}`;
+}
+
+function peakHourRangeText_(peakHour) {
+  return typeof peakHour === 'number' ? `${peakHour}:00-${(peakHour + 1) % 24}:00` : '—';
+}
+
+// "แก้วล่าสุด" เป็น UTC ISO string จริงจาก computeHighlights_ (ผ่าน bangkokTimeToUtc มาแล้วตอน parse
+// จาก Nayax CSV) ต้องระบุ timeZone: 'Asia/Bangkok' ตรงๆ ตอน format เสมอ เพราะ Worker รันด้วย timezone
+// UTC เป็นค่าเริ่มต้น — พลาดจุดนี้จะเพี้ยนไป 7 ชั่วโมงเหมือนบั๊กที่เจอมาก่อนหน้านี้ในระบบ visits
+function renderUpdatedAtText_(lastSaleAt) {
+  if (!lastSaleAt) return 'ยังไม่มีข้อมูลแก้วของตู้นี้';
+  const label = new Date(lastSaleAt).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Bangkok' });
+  return 'ข้อมูลอัพเดทล่าสุด ' + label;
+}
+
+function renderHourGridHtml_(hourCounts) {
+  const maxH = Math.max(...hourCounts);
+  return hourCounts.map((cnt, h) => {
+    const p = maxH > 0 ? cnt / maxH : 0;
+    const cls = p >= .85 ? 'p1' : p >= .55 ? 'p2' : p >= .25 ? 'p3' : '';
+    return `<div class="hour-cell ${cls}">
+      <div class="hc-count">${cnt || ''}</div>
+      <div class="hc-lbl">${h}:00</div>
+    </div>`;
+  }).join('');
+}
+
+// หน้า error สั้นๆ เผื่อดึงข้อมูล Nayax ไม่สำเร็จ — รีเฟรชถี่กว่าปกติ (60s) เพื่อลองใหม่เร็วๆ
+// จอนี้ถูกเปิดค้างไว้ที่หน้าตู้ตลอดเวลา ไม่มีใครมาคอยกดรีเฟรชเอง
+function renderRealstatErrorHtml_(title) {
+  return `<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta http-equiv="refresh" content="60">
+<title>${title}</title>
+<style>
+  body { font-family: 'Prompt', sans-serif; display: flex; align-items: center; justify-content: center;
+    min-height: 100vh; margin: 0; background: #FFF8F0; color: #b91c1c; text-align: center; padding: 20px; }
+</style>
+</head>
+<body>โหลดข้อมูลไม่สำเร็จ — ระบบจะลองใหม่อัตโนมัติ</body>
+</html>`;
+}
+
+function renderRealstatCentralHtml_(stats) {
+  const cupsText = stats.totalCups.toLocaleString('th-TH');
+  const peakText = peakHourRangeText_(stats.peakHour);
+  const updatedText = renderUpdatedAtText_(stats.lastSaleAt);
+
+  return `<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta http-equiv="refresh" content="120">
+<title>O'Fresh — สถิติสดจากตู้ Central Fest</title>
+<link rel="icon" href="/favicon.ico">
+
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --orange: #FF6B00;
+    --orange-dark: #E85D00;
+    --green: #339933;
+    --off-white: #FFF8F0;
+    --text-dark: #2D2D2D;
+    --text-muted: #6B7280;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    min-height: 100%;
+    font-family: 'Prompt', sans-serif;
+    color: var(--text-dark);
+    background: linear-gradient(160deg, #FFF8F0 0%, #FFEEDD 100%);
+  }
+  body {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 100vh; padding: 5vh 5vw; text-align: center;
+    gap: clamp(24px, 4vh, 48px);
+  }
+
+  .logo { width: min(50vw, 320px); height: auto; object-fit: contain; }
+
+  .live-tag {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: rgba(51,153,51,.1); color: var(--green);
+    padding: 8px 20px; border-radius: 50px;
+    font-size: clamp(13px, 1.6vw, 17px); font-weight: 700;
+    letter-spacing: .3px;
+  }
+  .live-dot {
+    width: 10px; height: 10px; border-radius: 50%; background: var(--green);
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+
+  .stats {
+    display: grid; grid-template-columns: repeat(2, 1fr);
+    gap: clamp(16px, 3vw, 32px);
+    width: 100%; max-width: 900px;
+  }
+  .stat-card {
+    background: #fff; border-radius: 28px;
+    padding: clamp(24px, 4vh, 44px) clamp(16px, 3vw, 32px);
+    box-shadow: 0 16px 50px rgba(0,0,0,.07);
+    border: 1px solid rgba(255,107,0,.08);
+  }
+  .stat-icon { font-size: clamp(32px, 5vw, 48px); margin-bottom: 10px; }
+  .stat-icon img { height: clamp(56px, 9vw, 88px); width: auto; display: block; margin: 0 auto; }
+  .stat-value {
+    font-size: clamp(36px, 7vw, 72px); font-weight: 800; color: var(--orange);
+    line-height: 1.1; font-variant-numeric: tabular-nums;
+  }
+  .stat-label { font-size: clamp(16px, 2.4vw, 24px); font-weight: 700; margin-top: 10px; }
+  .stat-sub { font-size: clamp(12px, 1.6vw, 16px); color: var(--text-muted); margin-top: 4px; font-weight: 300; }
+
+  .updated-at { font-size: clamp(11px, 1.4vw, 14px); color: var(--text-muted); opacity: .7; }
+
+  @media (max-width: 560px) {
+    .stats { grid-template-columns: 1fr; max-width: 360px; }
+  }
+</style>
+</head>
+<body>
+
+  <img class="logo" src="/OFresh_Logo_transparent.png" alt="O'Fresh">
+
+  <div class="live-tag">
+    <span class="live-dot"></span>
+    <span>อัปเดตข้อมูลวันต่อวันจากตู้จริง</span>
+  </div>
+
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-icon"><img src="/assets/cup.png" alt="cup"></div>
+      <div class="stat-value">${cupsText}</div>
+      <div class="stat-label">แก้วที่เสิร์ฟไปแล้ว</div>
+      <div class="stat-sub">จากยอดขายจริงของตู้</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">⏰</div>
+      <div class="stat-value">${peakText}</div>
+      <div class="stat-label">ชั่วโมงยอดนิยม</div>
+      <div class="stat-sub">ช่วงเวลาที่มีคนสั่งมากที่สุดเดือนนี้ (ตู้ Central Fest)</div>
+    </div>
+  </div>
+
+  <div>
+    <div class="updated-at">${updatedText}</div>
+  </div>
+
+</body>
+</html>`;
+}
+
+function renderRealstatLamyaiHtml_(stats) {
+  const cupsText = stats.totalCups.toLocaleString('th-TH');
+  const peakText = peakHourRangeText_(stats.peakHour);
+  const badgeText = typeof stats.peakHour === 'number'
+    ? `🔥 ยอดฮิต ${stats.peakHour}:00–${(stats.peakHour + 1) % 24}:00`
+    : 'ยังไม่มีข้อมูล';
+  const monthLabel = thaiMonthYearLabel_(stats.selectedMonth.year, stats.selectedMonth.month);
+  const updatedText = renderUpdatedAtText_(stats.lastSaleAt);
+  const hourGridHtml = renderHourGridHtml_(stats.hourCounts);
+
+  return `<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta http-equiv="refresh" content="120">
+<title>O'Fresh — สถิติสดจากตู้งานลำไย</title>
+<link rel="icon" href="/favicon.ico">
+
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --orange: #FF6B00;
+    --orange-dark: #E85D00;
+    --green: #339933;
+    --off-white: #FFF8F0;
+    --text-dark: #2D2D2D;
+    --text-muted: #6B7280;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    min-height: 100%;
+    font-family: 'Prompt', sans-serif;
+    color: var(--text-dark);
+    background: linear-gradient(160deg, #FFF8F0 0%, #FFEEDD 100%);
+  }
+  body {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 100vh; padding: 5vh 5vw; text-align: center;
+    gap: clamp(24px, 4vh, 48px);
+  }
+
+  .logo { width: min(32vw, 200px); height: auto; object-fit: contain; }
+
+  .live-tag {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: rgba(51,153,51,.1); color: var(--green);
+    padding: 8px 20px; border-radius: 50px;
+    font-size: clamp(13px, 1.6vw, 17px); font-weight: 700;
+    letter-spacing: .3px;
+  }
+  .live-dot {
+    width: 10px; height: 10px; border-radius: 50%; background: var(--green);
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+
+  .stats {
+    display: grid; grid-template-columns: repeat(2, 1fr);
+    gap: clamp(16px, 3vw, 32px);
+    width: 100%; max-width: 900px;
+  }
+  .stat-card {
+    background: #fff; border-radius: 28px;
+    padding: clamp(24px, 4vh, 44px) clamp(16px, 3vw, 32px);
+    box-shadow: 0 16px 50px rgba(0,0,0,.07);
+    border: 1px solid rgba(255,107,0,.08);
+  }
+  .stat-icon { font-size: clamp(32px, 5vw, 48px); margin-bottom: 10px; }
+  .stat-icon img { height: clamp(56px, 9vw, 88px); width: auto; display: block; margin: 0 auto; }
+  .stat-value {
+    font-size: clamp(36px, 7vw, 72px); font-weight: 800; color: var(--orange);
+    line-height: 1.1; font-variant-numeric: tabular-nums;
+  }
+  #peakHourValue { font-size: clamp(24px, 4.5vw, 46px); white-space: nowrap; }
+  .stat-label { font-size: clamp(16px, 2.4vw, 24px); font-weight: 700; margin-top: 10px; }
+
+  .updated-at { font-size: clamp(11px, 1.4vw, 14px); color: var(--text-muted); opacity: .7; }
+
+  @media (max-width: 560px) {
+    .stats { grid-template-columns: 1fr; max-width: 360px; }
+  }
+
+  .heatmap-card {
+    background: #fff; border-radius: 28px;
+    padding: clamp(20px, 3.5vh, 36px) clamp(16px, 3vw, 32px);
+    box-shadow: 0 16px 50px rgba(0,0,0,.07);
+    border: 1px solid rgba(255,107,0,.08);
+    width: 100%; max-width: 900px;
+  }
+  .heatmap-header {
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    flex-wrap: wrap; margin-bottom: 18px;
+  }
+  .heatmap-title { font-size: clamp(15px, 2vw, 19px); font-weight: 700; }
+  .heatmap-month {
+    font-size: clamp(12px, 1.6vw, 15px); font-weight: 600; color: var(--text-dark);
+    background: #F5F5F5; border-radius: 999px; padding: 7px 14px;
+  }
+  .heatmap-badge {
+    background: rgba(255,107,0,.1); color: var(--orange-dark);
+    padding: 5px 14px; border-radius: 999px; font-size: clamp(12px, 1.6vw, 15px); font-weight: 700;
+  }
+  .hour-grid { display: grid; grid-template-columns: repeat(12,1fr); gap: 5px; }
+  @media (max-width: 600px) { .hour-grid { grid-template-columns: repeat(6,1fr); } }
+  .hour-cell {
+    aspect-ratio: 1; border-radius: 8px; background: #F5F5F5;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .hour-cell .hc-count { font-size: clamp(.6rem, 1.4vw, .82rem); font-weight: 700; color: var(--text-dark); line-height: 1; }
+  .hour-cell .hc-lbl { font-size: clamp(.45rem, 1vw, .58rem); color: var(--text-muted); margin-top: 2px; }
+  .hour-cell.p1 { background: var(--orange); box-shadow: 0 0 12px rgba(255,107,0,.3); }
+  .hour-cell.p1 .hc-count, .hour-cell.p1 .hc-lbl { color: #fff; }
+  .hour-cell.p2 { background: #FFB870; }
+  .hour-cell.p2 .hc-count, .hour-cell.p2 .hc-lbl { color: #fff; }
+  .hour-cell.p3 { background: #FFD7A8; }
+  .heatmap-legend { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 14px; font-size: clamp(11px, 1.4vw, 13px); color: var(--text-muted); }
+  .legend-scale { display: flex; gap: 4px; }
+  .legend-dot { width: 14px; height: 14px; border-radius: 4px; }
+</style>
+</head>
+<body>
+
+  <img class="logo" src="/OFresh_Logo_transparent.png" alt="O'Fresh">
+
+  <div class="live-tag">
+    <span class="live-dot"></span>
+    <span>ข้อมูลอัปเดตแบบวันต่อวันจากตู้ในงานลำไย</span>
+  </div>
+
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-icon"><img src="/assets/cup.png" alt="cup"></div>
+      <div class="stat-value">${cupsText}</div>
+      <div class="stat-label">แก้วที่เสิร์ฟไปแล้ว</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">⏰</div>
+      <div class="stat-value" id="peakHourValue">${peakText}</div>
+      <div class="stat-label">ชั่วโมงยอดนิยม</div>
+    </div>
+  </div>
+
+  <div class="heatmap-card">
+    <div class="heatmap-header">
+      <div class="heatmap-title">🌡️ ช่วงเวลาที่ลูกค้าสั่งมากที่สุด</div>
+      <div class="heatmap-month">${monthLabel}</div>
+      <div class="heatmap-badge">${badgeText}</div>
+    </div>
+    <div class="hour-grid">${hourGridHtml}</div>
+    <div class="heatmap-legend">
+      <div class="legend-scale">
+        <div class="legend-dot" style="background:#F5F5F5"></div>
+        <div class="legend-dot" style="background:#FFD7A8"></div>
+        <div class="legend-dot" style="background:#FFB870"></div>
+        <div class="legend-dot" style="background:var(--orange)"></div>
+      </div>
+      <span>น้อย → มาก</span>
+    </div>
+  </div>
+
+  <div>
+    <div class="updated-at">${updatedText}</div>
+  </div>
+
+</body>
+</html>`;
+}
+
+async function handleRealstatCentral(request, env) {
+  if (!env.NAYAX_SHEET_CSV_URL) return htmlResponse_(renderRealstatErrorHtml_("O'Fresh — Central Fest"));
+  try {
+    const rows = await fetchNayaxRows_(env);
+    const stats = computeHighlights_(rows, { machineFilter: 'OFresh_CentralFest', scopeCupsToMachine: false, monthParam: null });
+    return htmlResponse_(renderRealstatCentralHtml_(stats), 200, { 'Cache-Control': 'public, max-age=120' });
+  } catch (err) {
+    console.error('Realstat central error:', err);
+    return htmlResponse_(renderRealstatErrorHtml_("O'Fresh — Central Fest"));
+  }
+}
+
+async function handleRealstatLamyai(request, env) {
+  if (!env.NAYAX_SHEET_CSV_URL) return htmlResponse_(renderRealstatErrorHtml_("O'Fresh — งานลำไย"));
+  try {
+    const rows = await fetchNayaxRows_(env);
+    const stats = computeHighlights_(rows, { machineFilter: 'OFresh_Lamyai', scopeCupsToMachine: true, monthParam: null });
+    return htmlResponse_(renderRealstatLamyaiHtml_(stats), 200, { 'Cache-Control': 'public, max-age=120' });
+  } catch (err) {
+    console.error('Realstat lamyai error:', err);
+    return htmlResponse_(renderRealstatErrorHtml_("O'Fresh — งานลำไย"));
   }
 }
 
