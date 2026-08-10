@@ -12,7 +12,18 @@
   "name": "fancy-dust-060c",
   "main": "order-api-worker.js",
   "compatibility_date": "2026-07-08",
+  // ต้องเปิดไว้เสมอ — order.html/dashboard/LINE webhook ทุกอย่างชี้มาที่โดเมนนี้ตรงๆ อยู่แล้ว
+  // (ไม่ได้ตั้งใจย้ายไป custom domain ทั้งหมด แค่เพิ่ม route เฉพาะ /realstat/* เข้ามาเสริม) —
+  // ลืมใส่บรรทัดนี้ตอน deploy ครั้งก่อนหน้าทำให้ wrangler ปิด workers.dev ให้อัตโนมัติ เว็บ/บอทล่มไปพักหนึ่ง
+  "workers_dev": true,
   "kv_namespaces": [
     { "binding": "OFRESH_KV", "id": "6cfd5b8831a146aba54365bf20b948a3" }
+  ],
+  // Path-specific Route on the same zone as the static "ofresh" Worker — confirmed
+  // ofresh.baanporjai.com is bound via Route (not an exclusive Custom Domain), so this
+  // more-specific /realstat/* pattern takes over just that path; the static Worker
+  // keeps serving everything else on the domain untouched.
+  "routes": [
+    { "pattern": "ofresh.baanporjai.com/realstat/*", "zone_name": "baanporjai.com" }
   ]
 }
