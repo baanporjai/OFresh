@@ -387,6 +387,12 @@ async function handlePublicHighlights(request, env) {
 // render ตัวเลขเป็น HTML สำเร็จรูปฝั่งเซิร์ฟเวอร์ตรงๆ แทนการพึ่ง <script> fetch เหมือนไฟล์
 // realstat_*.html แบบเดิม (ยังเก็บไฟล์เดิมไว้เผื่อเปิดดูจากเบราว์เซอร์ปกติที่รัน JS ได้) แล้วใช้
 // <meta http-equiv="refresh"> รีเฟรชหน้าใหม่ทั้งหน้าเป็นระยะแทนการ fetch ข้อมูลใหม่ด้วย JS
+//
+// รีเฟรชทุก 30 นาที (ไม่ใช่ถี่กว่านั้น) เพราะข้อมูลยอดขายจาก Nayax sheet อัปเดตแค่วันละครั้ง
+// ตอน 7 โมงเช้า — รีเฟรชถี่กว่านี้ไม่มีประโยชน์ (เลขไม่มีทางเปลี่ยนระหว่างวัน) แค่เปลืองการยิง
+// request มาที่ Worker/Google Sheet โดยเปล่าประโยชน์ 30 นาทีเลือกไว้ให้พอทันเห็นเลขใหม่หลัง 7 โมง
+// ไม่ช้าเกินไป และยังคอยรีเฟรชกู้ตัวเองได้เร็วพอถ้าโหลดพลาดชั่วคราว (ต่างจากหน้า error ที่รีเฟรชถี่
+// กว่านี้ที่ 60s เพราะรู้ตัวแล้วว่าพลาด อยากลองใหม่เร็วๆ)
 
 function htmlResponse_(html, status = 200, extraHeaders = {}) {
   return new Response(html, { status, headers: { 'Content-Type': 'text/html; charset=utf-8', ...extraHeaders } });
@@ -454,7 +460,7 @@ function renderRealstatCentralHtml_(stats) {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta http-equiv="refresh" content="120">
+<meta http-equiv="refresh" content="1800">
 <title>O'Fresh — สถิติสดจากตู้ Central Fest</title>
 <link rel="icon" href="https://ofresh.baanporjai.com/favicon.ico">
 
@@ -570,7 +576,7 @@ function renderRealstatLamyaiHtml_(stats) {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta http-equiv="refresh" content="120">
+<meta http-equiv="refresh" content="1800">
 <title>O'Fresh — สถิติสดจากตู้งานลำไย</title>
 <link rel="icon" href="https://ofresh.baanporjai.com/favicon.ico">
 

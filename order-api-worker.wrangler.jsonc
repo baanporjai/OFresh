@@ -1,0 +1,18 @@
+{
+  // Separate config from the sibling wrangler.jsonc — that one deploys the static
+  // marketing site ("ofresh" Worker, assets-only). This one is specifically for
+  // order-api-worker.js, deployed as the "fancy-dust-060c" Worker.
+  //
+  // The kv_namespaces binding here MUST stay in sync with what's actually bound —
+  // wrangler deploy replaces the full binding set from this config on every deploy.
+  // Secrets (LINE_CHANNEL_TOKEN, GEMINI_API_KEY, etc. — see the doc comment at the
+  // top of order-api-worker.js) are NOT declared here; they're set via
+  // `wrangler secret put <NAME> --name fancy-dust-060c` and persist independently
+  // of code/config deploys.
+  "name": "fancy-dust-060c",
+  "main": "order-api-worker.js",
+  "compatibility_date": "2026-07-08",
+  "kv_namespaces": [
+    { "binding": "OFRESH_KV", "id": "6cfd5b8831a146aba54365bf20b948a3" }
+  ]
+}
