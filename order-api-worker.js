@@ -113,10 +113,10 @@ export default {
     // สำเร็จรูปฝั่งเซิร์ฟเวอร์ตรงๆ (ไม่มี <script> fetch เหมือน realstat_*.html แบบเดิม) แล้วใช้
     // <meta refresh> รีเฟรชหน้าเป็นระยะแทน
     if (request.method === 'GET' && url.pathname === '/realstat/central') {
-      return handleRealstatCentral(request, env);
+      return handleRealstatCentral(request, env, ctx);
     }
     if (request.method === 'GET' && url.pathname === '/realstat/lamyai') {
-      return handleRealstatLamyai(request, env);
+      return handleRealstatLamyai(request, env, ctx);
     }
 
     return jsonResponse({ error: 'Not found' }, 404);
@@ -315,15 +315,6 @@ function computeHighlights_(rows, { machineFilter, scopeCupsToMachine, monthPara
 
   const machineRows = machineFilter ? rows.filter(r => r.machine === machineFilter) : rows;
 
-  // รายเดือนที่มีข้อมูลจริงของตู้นี้ — ให้ dropdown เลือกได้ตรงกับข้อมูลจริง ไม่ใช่เดาเดือนเอาเอง
-  const monthKeySet = new Set(machineRows.map(r => {
-    const p = toBangkokParts(r.datetime);
-    return `${p.year}-${p.month}`;
-  }));
-  const availableMonths = Array.from(monthKeySet)
-    .map(k => { const [year, month] = k.split('-').map(Number); return { year, month }; })
-    .sort((a, b) => (b.year - a.year) || (b.month - a.month));
-
   // ชั่วโมงยอดนิยม — ดูเฉพาะเดือนที่เลือก (เวลาไทย) ค่าเริ่มต้นคือเดือนปัจจุบัน ไม่ใช่ค่าเฉลี่ยสะสมทั้งหมด
   let targetYear, targetMonth;
   if (monthParam && /^\d{4}-\d{1,2}$/.test(monthParam)) {
@@ -333,19 +324,32 @@ function computeHighlights_(rows, { machineFilter, scopeCupsToMachine, monthPara
     const cur = toBangkokParts(new Date());
     targetYear = cur.year; targetMonth = cur.month;
   }
-  const monthRows = machineRows.filter(r => {
-    const p = toBangkokParts(r.datetime);
-    return p.year === targetYear && p.month === targetMonth;
-  });
+
+  // วนแถวรอบเดียว แล้วเก็บทุกอย่างที่ต้องใช้พร้อมกัน — เดิมวน machineRows ถึง 3 รอบ (monthKeySet map,
+  // monthRows filter, hourCounts forEach) แถม Math.max(...map) กาง array ทั้งก้อน ทำให้สร้าง Date object
+  // ~3 ตัวต่อแถว พอ Nayax sheet โตขึ้นทุกวันจน CPU ต่อ request เกิน limit ของ Worker → Error 1102
+  // (Worker exceeded resource limits) ที่จอหน้าตู้ — รอบเดียวเหลือ 1 Date ต่อแถว และเลี่ยง spread ก้อนใหญ่
+  const monthKeySet = new Set();
   const hourCounts = Array(24).fill(0);
-  monthRows.forEach(r => hourCounts[toBangkokParts(r.datetime).hour]++);
+  let lastSaleMs = -Infinity;
+  for (const r of machineRows) {
+    const p = toBangkokParts(r.datetime);
+    monthKeySet.add(`${p.year}-${p.month}`);
+    if (p.year === targetYear && p.month === targetMonth) hourCounts[p.hour]++;
+    const t = r.datetime.getTime();
+    if (t > lastSaleMs) lastSaleMs = t;
+  }
+
+  // รายเดือนที่มีข้อมูลจริงของตู้นี้ — ให้ dropdown เลือกได้ตรงกับข้อมูลจริง ไม่ใช่เดาเดือนเอาเอง
+  const availableMonths = Array.from(monthKeySet)
+    .map(k => { const [year, month] = k.split('-').map(Number); return { year, month }; })
+    .sort((a, b) => (b.year - a.year) || (b.month - a.month));
+
   const peakHour = hourCounts.every(c => c === 0) ? null : hourCounts.indexOf(Math.max(...hourCounts));
 
   // เวลาแก้วล่าสุด — ใช้ scope เดียวกับชั่วโมงยอดนิยม (ตาม machineFilter ถ้ามี) เพราะจอหน้าตู้อยากรู้ว่า
   // "ตู้นี้" ขายล่าสุดเมื่อไหร่ ไม่ใช่ทั้งบริษัท ต่างจาก totalCups ที่ default เป็นยอดรวมทุกตู้เสมอ
-  const lastSaleAt = machineRows.length
-    ? new Date(Math.max(...machineRows.map(r => r.datetime.getTime()))).toISOString()
-    : null;
+  const lastSaleAt = machineRows.length ? new Date(lastSaleMs).toISOString() : null;
 
   return { totalCups, peakHour, lastSaleAt, hourCounts, availableMonths, selectedMonth: { year: targetYear, month: targetMonth } };
 }
@@ -728,28 +732,58 @@ function renderRealstatLamyaiHtml_(stats) {
 </html>`;
 }
 
-async function handleRealstatCentral(request, env) {
-  if (!env.NAYAX_SHEET_CSV_URL) return htmlResponse_(renderRealstatErrorHtml_("O'Fresh — Central Fest"));
-  try {
-    const rows = await fetchNayaxRows_(env);
-    const stats = computeHighlights_(rows, { machineFilter: 'OFresh_CentralFest', scopeCupsToMachine: false, monthParam: null });
-    return htmlResponse_(renderRealstatCentralHtml_(stats), 200, { 'Cache-Control': 'public, max-age=120' });
-  } catch (err) {
-    console.error('Realstat central error:', err);
-    return htmlResponse_(renderRealstatErrorHtml_("O'Fresh — Central Fest"));
+// จอหน้าตู้รีเฟรชทุก 30 นาที และหน้า error ยังวนรีเฟรชทุก 60 วิ ถ้าปล่อยให้ทุก request ดึง CSV ทั้งไฟล์
+// มา parse+compute ใหม่หมด CPU จะบานจน Worker เกิน limit (Error 1102) — cache HTML ที่ render แล้วไว้ที่
+// edge (Cache API) TTL 10 นาที ให้ส่วนหนักทำงานอย่างมากแค่ครั้งเดียวต่อ 10 นาที ที่เหลือเสิร์ฟจาก cache
+// ตรงๆ ไม่แตะ Google Sheet เลย ข้อมูล Nayax อัปเดตวันละครั้ง (7 โมงเช้า) อยู่แล้ว 10 นาทีจึงสดพอเหลือเฟือ
+const REALSTAT_EDGE_TTL_S = 600;
+
+async function serveRealstatCached_(request, env, ctx, builder) {
+  const cache = caches.default;
+  const url = new URL(request.url);
+  const cacheKey = new Request(url.origin + url.pathname, { method: 'GET' });
+
+  const cached = await cache.match(cacheKey);
+  if (cached) return cached;
+
+  const resp = await builder();
+  // cache เฉพาะหน้าที่ render สำเร็จ (200) — หน้า error ปล่อยให้รีเฟรชลองใหม่เร็วๆ ไม่ต้อง cache ค้างไว้
+  if (resp.status === 200 && ctx) {
+    const toCache = new Response(resp.clone().body, {
+      status: 200,
+      headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': `public, max-age=${REALSTAT_EDGE_TTL_S}` },
+    });
+    ctx.waitUntil(cache.put(cacheKey, toCache));
   }
+  return resp;
 }
 
-async function handleRealstatLamyai(request, env) {
+async function handleRealstatCentral(request, env, ctx) {
+  if (!env.NAYAX_SHEET_CSV_URL) return htmlResponse_(renderRealstatErrorHtml_("O'Fresh — Central Fest"));
+  return serveRealstatCached_(request, env, ctx, async () => {
+    try {
+      const rows = await fetchNayaxRows_(env);
+      const stats = computeHighlights_(rows, { machineFilter: 'OFresh_CentralFest', scopeCupsToMachine: false, monthParam: null });
+      return htmlResponse_(renderRealstatCentralHtml_(stats), 200, { 'Cache-Control': `public, max-age=${REALSTAT_EDGE_TTL_S}` });
+    } catch (err) {
+      console.error('Realstat central error:', err);
+      return htmlResponse_(renderRealstatErrorHtml_("O'Fresh — Central Fest"));
+    }
+  });
+}
+
+async function handleRealstatLamyai(request, env, ctx) {
   if (!env.NAYAX_SHEET_CSV_URL) return htmlResponse_(renderRealstatErrorHtml_("O'Fresh — งานลำไย"));
-  try {
-    const rows = await fetchNayaxRows_(env);
-    const stats = computeHighlights_(rows, { machineFilter: 'OFresh_Lamyai', scopeCupsToMachine: true, monthParam: null });
-    return htmlResponse_(renderRealstatLamyaiHtml_(stats), 200, { 'Cache-Control': 'public, max-age=120' });
-  } catch (err) {
-    console.error('Realstat lamyai error:', err);
-    return htmlResponse_(renderRealstatErrorHtml_("O'Fresh — งานลำไย"));
-  }
+  return serveRealstatCached_(request, env, ctx, async () => {
+    try {
+      const rows = await fetchNayaxRows_(env);
+      const stats = computeHighlights_(rows, { machineFilter: 'OFresh_Lamyai', scopeCupsToMachine: true, monthParam: null });
+      return htmlResponse_(renderRealstatLamyaiHtml_(stats), 200, { 'Cache-Control': `public, max-age=${REALSTAT_EDGE_TTL_S}` });
+    } catch (err) {
+      console.error('Realstat lamyai error:', err);
+      return htmlResponse_(renderRealstatErrorHtml_("O'Fresh — งานลำไย"));
+    }
+  });
 }
 
 // เอนด์พอยต์สาธารณะสำหรับหน้าสั่งซื้อ — คืนแค่จำนวนออเดอร์/น้ำหนักรวม (ไม่มียอดขาย/ข้อมูลลูกค้า)
