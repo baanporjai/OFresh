@@ -350,10 +350,31 @@ function computeHighlights_(rows, { machineFilter, scopeCupsToMachine, monthPara
   return { totalCups, peakHour, lastSaleAt, hourCounts, availableMonths, selectedMonth: { year: targetYear, month: targetMonth } };
 }
 
+const NAYAX_ROWS_CACHE_KEY_ = 'nayax_rows_cache';
+const NAYAX_ROWS_TTL_SECONDS_ = 5 * 60; // ข้อมูล Nayax อัปเดตแค่วันละครั้ง (~7 โมงเช้า) แคช 5 นาทีเกินพอ
+
+// /realstat/central, /realstat/lamyai, /api/public/highlights เรียกฟังก์ชันนี้ร่วมกันหมด — เดิม
+// ไม่มีแคชเลย ทุกครั้งที่มีคนเปิดหน้าไหนก็ตามจะ fetch CSV จาก Google Sheet ใหม่ + parseNayaxCSV
+// ทั้งไฟล์ใหม่ทุกครั้ง พอ CSV โตขึ้นเรื่อยๆ ตามยอดขายสะสม (ทุกแก้วที่ขายคือ 1 แถว) การ parse
+// ทุก request แพงขึ้นเรื่อยๆ จนวันหนึ่งชน Cloudflare CPU limit ทำให้จอหน้าตู้ขึ้น "Error 1102:
+// Worker exceeded resource limits" (2026-08-11) — เก็บผล parse ไว้ใน KV ตัดปัญหานี้ที่ต้นตอ
 async function fetchNayaxRows_(env) {
+  if (env.OFRESH_KV) {
+    const cached = await env.OFRESH_KV.get(NAYAX_ROWS_CACHE_KEY_, { type: 'json' });
+    if (cached) return cached.map(r => ({ ...r, datetime: new Date(r.datetime) }));
+  }
+
   const res = await fetch(env.NAYAX_SHEET_CSV_URL + (env.NAYAX_SHEET_CSV_URL.includes('?') ? '&' : '?') + 't=' + Date.now());
   const text = await res.text();
-  return parseNayaxCSV(text);
+  const rows = parseNayaxCSV(text);
+
+  if (env.OFRESH_KV) {
+    // JSON.stringify แปลง Date เป็น ISO string ให้เองผ่าน Date.prototype.toJSON — ตอนอ่านกลับ
+    // (ด้านบน) ต้องแปลงกลับเป็น Date object เองด้วยมือ เพราะ JSON.parse ไม่รู้จัก Date
+    await env.OFRESH_KV.put(NAYAX_ROWS_CACHE_KEY_, JSON.stringify(rows), { expirationTtl: NAYAX_ROWS_TTL_SECONDS_ });
+  }
+
+  return rows;
 }
 
 // เอนด์พอยต์สาธารณะสำหรับหน้าแรก — คืนแค่ตัวเลขสรุป (ไม่มีข้อมูลลูกค้า/ธุรกรรมดิบ) จึงไม่ต้องใช้ PIN
