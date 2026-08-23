@@ -7,6 +7,8 @@ Facebook Post/
 node_modules/
 .git/
 .wrangler/
+.claude/
 *.py
 *.gs
 *.md
+gsheet_creds.json
