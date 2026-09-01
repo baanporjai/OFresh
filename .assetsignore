@@ -8,6 +8,7 @@ node_modules/
 .git/
 .wrangler/
 .claude/
+android-widget/
 *.py
 *.gs
 *.md
