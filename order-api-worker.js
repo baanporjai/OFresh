@@ -1421,7 +1421,7 @@ function cancelQuickReply(orderId) {
 
 // ══════════════════════════════════════════════════════════════════════
 // Reward-card auto-reply — ลูกค้าทัก DM ส่งรูปสลิป
-// เช็คยอดเงินอัตโนมัติด้วย Gemini vision (แค่ตัวเลขยอด ไม่เช็ควันที่/ชื่อบัญชี) ถ้ายอดตรง 69 บาทชัดเจน
+// เช็คยอดเงินอัตโนมัติด้วย Gemini vision (แค่ตัวเลขยอด ไม่เช็ควันที่/ชื่อบัญชี) ถ้ายอดตรง 75 บาทชัดเจน
 // ส่งลิงก์บัตรสะสมแต้มให้ลูกค้าทันที — ถ้าอ่านไม่ออก/ไม่ตรง/error ระหว่างทาง fallback ไปแจ้งกลุ่มแอดมิน
 // พร้อมปุ่มให้กดส่งเอง (ทางสำรองเดิม)
 // ══════════════════════════════════════════════════════════════════════
@@ -1570,7 +1570,7 @@ async function handleSlipImage(event, env) {
     const imageBase64 = arrayBufferToBase64(buffer);
     const { amount } = await checkSlipAmount(imageBase64, mimeType, env);
 
-    const amountOk = typeof amount === 'number' && Math.abs(amount - 69) < 0.01;
+    const amountOk = typeof amount === 'number' && Math.abs(amount - 75) < 0.01;
 
     if (amountOk && env.LINE_REWARD_CARD_URL) {
       const sent = await pushToLine(env, event.source.userId, [{ type: 'text', text: buildRewardText(env) }]);
@@ -1579,7 +1579,7 @@ async function handleSlipImage(event, env) {
         const who = displayName ? `คุณ ${displayName} ` : 'ลูกค้า';
         await pushToLine(env, ADMIN_GROUP_ID, [{
           type: 'text',
-          text: `✅ ตรวจพบยอด 69 บาท ส่งลิงก์บัตรสะสมแต้มให้${who}อัตโนมัติแล้วครับ`,
+          text: `✅ ตรวจพบยอด 75 บาท ส่งลิงก์บัตรสะสมแต้มให้${who}อัตโนมัติแล้วครับ`,
         }]);
         return;
       }
