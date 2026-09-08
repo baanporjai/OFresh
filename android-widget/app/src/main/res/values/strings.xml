@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">O\'Fresh ปฏิทินยอดขาย</string>
+    <string name="widget_description">ปฏิทินยอดขายรายวันของ O\'Fresh ตู้น้ำส้มอัตโนมัติ (แตะเพื่อรีเฟรช)</string>
+    <string name="load_failed">โหลดข้อมูลไม่สำเร็จ</string>
+    <string name="tap_to_retry">แตะเพื่อลองใหม่</string>
+</resources>

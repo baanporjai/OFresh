@@ -27,3 +27,13 @@ node_modules/
 # ไฟล์ระบบของแต่ละเครื่อง
 .DS_Store
 Thumbs.db
+
+# android-widget/ — โปรเจกต์ Android Studio (widget ปฏิทินยอดขายบนโฮมสกรีน) build output/config
+# เครื่อง/secret ไม่ track — ดู android-widget/README.md
+android-widget/.gradle/
+android-widget/.idea/
+android-widget/local.properties
+android-widget/widget.secrets.properties
+android-widget/**/build/
+android-widget/*.iml
+android-widget/**/*.iml

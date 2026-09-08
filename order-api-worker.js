@@ -27,6 +27,11 @@
  *                             secret ใหม่
  *   VISIT_SHEET_WEBHOOK_URL = <ไม่ตั้งก็ได้ ถ้าใช้ Apps Script/สเปรดชีตตัวเดียวกับออเดอร์ส้ม จะ fallback ไปใช้
  *                              SHEET_WEBHOOK_URL แทนอัตโนมัติ เหมือน EXPENSE_SHEET_WEBHOOK_URL ด้านบน>
+ *   WIDGET_TOKEN           = <ค่าสุ่มยาวๆ (ตั้งเองได้ ไม่ต้องเป็นรูปแบบพิเศษ) ให้แอป Android widget ปฏิทิน
+ *                             ยอดขายส่งมาแนบ header X-Widget-Token ยืนยันตัวก่อนอ่าน
+ *                             /api/widget/daily-sales-calendar — คนละค่ากับ ADMIN_PIN เพราะ widget
+ *                             รีเฟรชพื้นหลังเอง ไม่มีคนกดล็อกอินซ้ำทุก 12 ชม. แบบหน้าแอดมิน
+ *                             ต้องรันเอง: wrangler secret put WIDGET_TOKEN>
  *
  * ต้องเพิ่ม KV namespace binding ชื่อ OFRESH_KV ด้วย (Settings → Bindings → KV Namespace บน dashboard)
  * ใช้เก็บ cache ประวัติลูกค้าสำหรับให้ AI จับคู่ลูกค้าเดิม
@@ -91,6 +96,14 @@ export default {
 
     if (request.method === 'GET' && url.pathname === '/api/public/order-highlights') {
       return handlePublicOrderHighlights(request, env);
+    }
+
+    // ยอดขายรายวันทั้งเดือนสำหรับ Android home-screen widget (ปฏิทิน) — ต่างจาก
+    // /api/public/highlights ตรงที่นี่คืนยอดขาย ฿ แยกรายวัน (ละเอียดกว่า) เลยต้องผ่าน
+    // WIDGET_TOKEN แทนที่จะเปิดสาธารณะเปล่าๆ แต่ก็ไม่ผูก session/PIN แบบหน้าแอดมิน เพราะ
+    // widget รีเฟรชพื้นหลังเอง ไม่มีคนกดล็อกอินซ้ำทุก 12 ชม.
+    if (request.method === 'GET' && url.pathname === '/api/widget/daily-sales-calendar') {
+      return handleWidgetDailySales(request, env);
     }
 
     if (request.method === 'POST' && url.pathname === '/api/line/webhook') {
@@ -402,6 +415,89 @@ async function handlePublicHighlights(request, env) {
     console.error('Public highlights error:', err);
     return jsonResponse({ error: 'Failed to compute highlights' }, 502);
   }
+}
+
+// เอนด์พอยต์สำหรับ Android home-screen widget (ปฏิทินยอดขายรายวัน) — ต้องแนบ header
+// X-Widget-Token ให้ตรงกับ secret WIDGET_TOKEN (ตั้งด้วย `wrangler secret put WIDGET_TOKEN`)
+// เพราะคืนยอดขาย ฿ แยกรายวันทั้งเดือน ละเอียดกว่า /api/public/highlights ที่เปิดสาธารณะเปล่าๆ ได้
+// ?month=YYYY-M (M เป็นเลข 0-11 ให้ตรงกับ toBangkokParts().month) — ไม่ระบุ = เดือนปัจจุบัน
+async function handleWidgetDailySales(request, env) {
+  if (!env.NAYAX_SHEET_CSV_URL) return jsonResponse({ error: 'Not configured' }, 500);
+
+  const token = request.headers.get('X-Widget-Token') || '';
+  if (!env.WIDGET_TOKEN || !timingSafeEqual(token, env.WIDGET_TOKEN)) {
+    return jsonResponse({ error: 'Unauthorized' }, 401);
+  }
+
+  try {
+    const url = new URL(request.url);
+    const monthParam = url.searchParams.get('month');
+    const rows = await fetchNayaxRows_(env);
+    const calendar = computeDailyCalendar_(rows, monthParam);
+    return jsonResponse(calendar, 200, { 'Cache-Control': 'public, max-age=300' });
+  } catch (err) {
+    console.error('Widget daily sales error:', err);
+    return jsonResponse({ error: 'Failed to compute calendar' }, 502);
+  }
+}
+
+// คำนวณจำนวนแก้ว + ยอดขาย ฿ แยกรายวันของเดือนที่ระบุ (ค่าเริ่มต้น = เดือนปัจจุบัน เวลาไทย) จากข้อมูล
+// Nayax ดิบ — ใช้กับ /api/widget/daily-sales-calendar เพื่อวาดเป็นตารางปฏิทินบน widget (widget ปัจจุบัน
+// โชว์ "cups" เป็นหลัก ส่วน "days"/"monthTotal" (฿) เผื่อใช้ในอนาคตถ้าอยากสลับมุมมอง)
+function computeDailyCalendar_(rows, monthParam) {
+  let targetYear, targetMonth;
+  if (monthParam && /^\d{4}-\d{1,2}$/.test(monthParam)) {
+    const [y, m] = monthParam.split('-').map(Number);
+    targetYear = y; targetMonth = m;
+  } else {
+    const cur = toBangkokParts(new Date());
+    targetYear = cur.year; targetMonth = cur.month;
+  }
+
+  const daysInMonth = new Date(Date.UTC(targetYear, targetMonth + 1, 0)).getUTCDate();
+  const dayTotals = {};
+  const dayCups = {};
+  for (let d = 1; d <= daysInMonth; d++) {
+    dayTotals[String(d).padStart(2, '0')] = 0;
+    dayCups[String(d).padStart(2, '0')] = 0;
+  }
+
+  let monthTotal = 0;
+  let monthCups = 0;
+  // แต่ละแถวใน rows คือ 1 แก้วที่ขายได้ (ผ่านการกรอง price > 0 มาแล้วตั้งแต่ parseNayaxCSV) จำนวนแถว
+  // ต่อวันเลยเท่ากับจำนวนแก้วที่ขายได้วันนั้นตรงๆ — ใช้ concept เดียวกับ totalCups ใน computeHighlights_
+  rows.forEach(r => {
+    const p = toBangkokParts(r.datetime);
+    if (p.year === targetYear && p.month === targetMonth) {
+      const key = String(p.day).padStart(2, '0');
+      dayTotals[key] += r.price;
+      dayCups[key] += 1;
+      monthTotal += r.price;
+      monthCups += 1;
+    }
+  });
+
+  const cur = toBangkokParts(new Date());
+  const isCurrentMonth = cur.year === targetYear && cur.month === targetMonth;
+  const todayKey = isCurrentMonth ? String(cur.day).padStart(2, '0') : null;
+
+  // 0=อาทิตย์..6=เสาร์ ของวันที่ 1 ในเดือนนี้ — วัน-เดือน-ปีตามปฏิทินไทยรู้ค่าแน่ชัดอยู่แล้ว (targetYear/
+  // targetMonth) จึงหา day-of-week ตรงๆ ด้วย Date.UTC ได้เลย ไม่ต้องยุ่งกับ BANGKOK_OFFSET_MS
+  const firstWeekday = new Date(Date.UTC(targetYear, targetMonth, 1)).getUTCDay();
+
+  return {
+    month: `${targetYear}-${String(targetMonth + 1).padStart(2, '0')}`,
+    monthLabel: thaiMonthYearLabel_(targetYear, targetMonth),
+    daysInMonth,
+    firstWeekday,
+    days: dayTotals,
+    cups: dayCups,
+    monthTotal: Math.round(monthTotal),
+    monthCups,
+    todayCups: todayKey ? dayCups[todayKey] : 0,
+    today: todayKey,
+    todayTotal: Math.round(todayKey ? dayTotals[todayKey] : 0),
+  };
 }
 
 // ═══════════ /realstat/central, /realstat/lamyai — จอหน้าตู้จริง (WebView รัน JS ไม่ได้) ═══════════
@@ -852,7 +948,7 @@ function bangkokTimeToUtc(y, mo, d, hr, mn, sec) {
 // ห้ามใช้ .getHours()/.getMonth()/.getFullYear() ตรงๆ เพราะจะได้ค่าเวลา UTC กลับมาแทน (runtime นี้เป็น UTC เสมอ)
 function toBangkokParts(date) {
   const shifted = new Date(date.getTime() + BANGKOK_OFFSET_MS);
-  return { year: shifted.getUTCFullYear(), month: shifted.getUTCMonth(), hour: shifted.getUTCHours() };
+  return { year: shifted.getUTCFullYear(), month: shifted.getUTCMonth(), day: shifted.getUTCDate(), hour: shifted.getUTCHours() };
 }
 
 // รับสตริงเวลาแบบ "YYYY-MM-DDTHH:mm[:ss]" หรือ "YYYY-MM-DD HH:mm[:ss]" ที่ไม่มี timezone suffix

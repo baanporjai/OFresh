@@ -1,0 +1,14 @@
+<resources>
+    <!-- โทนสีเดียวกับเว็บหลัก O'Fresh (theme_color/background_color ใน manifest.json ของเว็บ) -->
+    <color name="ofresh_orange">#FF6B00</color>
+    <color name="bg_card">#FFF8F0</color>
+    <color name="text_primary">#3A2A1A</color>
+    <color name="text_muted">#B0A392</color>
+
+    <color name="heat0">#F2E9DF</color>
+    <color name="heat1">#FFD9B3</color>
+    <color name="heat2">#FFB066</color>
+    <color name="heat3">#FF8A33</color>
+    <color name="heat4">#FF6B00</color>
+    <color name="today_bg">#3A2A1A</color>
+</resources>
