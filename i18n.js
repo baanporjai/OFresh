@@ -94,7 +94,7 @@ const translations = {
 
     // CTA
     cta_h2: 'พร้อมลิ้มรสน้ำส้มคั้นสดแท้?',
-    cta_p: 'ตอนนี้ ตู้ตั้งอยู่ที่ห้างเซ็นทรัล เฟสติวัล เชียงใหม่ ชั้น 4 โซนศูนย์อาหาร และช่วงวันที่ 1-12 สิงหาคม 2569 พบกันที่งานเทศกาลลำไยและหอการค้าแฟร์ จังหวัดลำพูน มาสัมผัสความสดใหม่ในทุกแก้ว',
+    cta_p: 'ตอนนี้ ตู้ตั้งอยู่ที่ห้างเซ็นทรัล เฟสติวัล เชียงใหม่ ชั้น 4 โซนศูนย์อาหาร มาสัมผัสความสดใหม่ในทุกแก้ว',
     cta_btn: 'นำทางไปยังตู้ O\'Fresh',
 
     // Footer
@@ -286,7 +286,7 @@ const translations = {
     b4_p: 'Premium fresh juice at an accessible price, supporting multiple payment channels including contactless.',
 
     cta_h2: 'Ready to Taste Real Freshness?',
-    cta_p: 'Our machine is currently located at Central Festival Chiang Mai, 4th floor, Food Court Zone. From August 1–12, 2026, you can also find us at the Lamyai (Longan) Festival and Chamber of Commerce Fair in Lamphun Province. Come experience the freshness!',
+    cta_p: 'Our machine is currently located at Central Festival Chiang Mai, 4th floor, Food Court Zone. Come experience the freshness in every cup!',
     cta_btn: 'Get Directions to O\'Fresh',
 
     footer_desc: 'Automatic Fresh Orange Juice Vending Machine\n100% Natural · No Sugar Added\nTemperature kept within 3-9°C',
@@ -477,7 +477,7 @@ const translations = {
     b4_p: '优质鲜榨橙汁，价格实惠，支持多种支付方式，包括非接触式支付。',
 
     cta_h2: '准备好品尝真正的新鲜了吗？',
-    cta_p: '我们的机器目前位于清迈 Central Festival 购物中心 4 楼美食广场。2026年8月1日至12日期间，也可以在 Lamphun 府的龙眼节暨商会博览会找到我们。欢迎前来体验！',
+    cta_p: '我们的机器目前位于清迈 Central Festival 购物中心 4 楼美食广场。欢迎前来体验每一杯的新鲜！',
     cta_btn: '前往 O\'Fresh 机器位置',
 
     footer_desc: '全自动鲜榨橙汁机\n100% 天然 · 不加糖\n全程控温 3-9°C',
@@ -668,7 +668,7 @@ const translations = {
     b4_p: '手の届く価格のプレミアムフレッシュジュース。タッチレス決済を含む複数の支払い方法に対応。',
 
     cta_h2: '本物の新鮮さを体験しませんか？',
-    cta_p: '現在、チェンマイ・セントラルフェスティバル4階フードコートに設置中。2026年8月1日〜12日には、Lamphun県のロンガン祭り・商工会議所フェアにも出展予定です。ぜひお試しください！',
+    cta_p: '現在、チェンマイ・セントラルフェスティバル4階フードコートに設置中。一杯一杯の新鮮さをぜひご体験ください！',
     cta_btn: 'O\'Fresh の場所へ案内',
 
     footer_desc: '全自動フレッシュオレンジジュース自販機\n100% ナチュラル · 砂糖不使用\n常時3〜9°C温度管理',
@@ -858,7 +858,7 @@ const translations = {
     b4_p: '합리적인 가격의 프리미엄 신선 주스. 비접촉 결제를 포함한 다양한 결제 수단 지원.',
 
     cta_h2: '진짜 신선함을 맛볼 준비 되셨나요?',
-    cta_p: '현재 치앙마이 센트럴 페스티벌 4층 푸드코트에 설치되어 있습니다. 2026년 8월 1일~12일에는 Lamphun 주(州)에서 열리는 롱안(용안) 축제 및 상공회의소 페어에서도 만나보실 수 있습니다. 방문해 보세요!',
+    cta_p: '현재 치앙마이 센트럴 페스티벌 4층 푸드코트에 설치되어 있습니다. 한 잔 한 잔의 신선함을 경험해 보세요!',
     cta_btn: 'O\'Fresh 위치로 안내',
 
     footer_desc: '완전 자동 신선 착즙 오렌지 주스 자판기\n100% 천연 · 설탕 무첨가\n상시 3~9°C 온도 유지',
