@@ -719,7 +719,12 @@
             background: rgba(0,0,0,0.7);
         }
         .notice-modal.open { display: flex; }
-        .notice-modal img { max-width: min(96vw, 900px); max-height: 88vh; border-radius: 14px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+        /* รูปประกาศเป็น 4:3 (1200x900) — กำหนดความกว้างจากทั้งความกว้างและความสูงจอ (88vh × 4/3)
+           แล้วให้ความสูงคำนวณตามอัตราส่วน ไม่ใช้ max-height คู่กับ max-width เพราะจะบีบรูปเบี้ยวเวลาจอเตี้ย */
+        .notice-modal img {
+            width: min(96vw, 900px, calc(88vh * 4 / 3)); height: auto; aspect-ratio: 4 / 3;
+            object-fit: contain; border-radius: 14px; box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
         .notice-close {
             position: absolute; top: 12px; right: 16px; width: 40px; height: 40px;
             border: 0; border-radius: 50%; background: #fff; color: #222;
