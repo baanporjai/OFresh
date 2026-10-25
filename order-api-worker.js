@@ -20,13 +20,6 @@
  *                             (สร้างแคมเปญเองที่ Home > บัตรสะสมแต้ม ใน manager.line.biz แล้วคัดลอก URL การ์ดมาใส่ที่นี่
  *                             — เราไม่ได้สร้าง/เก็บสถานะสแตมป์เอง แค่ส่ง URL นี้กลับให้ลูกค้า LINE จัดการที่เหลือให้ทั้งหมด
  *                             ต้องรันเอง: wrangler secret put LINE_REWARD_CARD_URL>
- *   VISIT_SHEET_CSV_URL    = <ลิงก์ CSV ของแท็บ "Visits" ในสเปรดชีตออเดอร์ส้มเดียวกัน (Publish to web) —
- *                             เก็บรูป+ผลวิเคราะห์ลูกค้าหน้าตู้ ใช้ order-sheet-script.gs ตัวเดียวกับออเดอร์
- *                             ส้ม/ต้นทุน (คนละแท็บ) — การวิเคราะห์รูป (จำนวนคน/มีเด็กมาด้วยไหม) ใช้
- *                             GEMINI_API_KEY ตัวเดียวกับผู้ช่วย AI แปลงออเดอร์ในกลุ่มไลน์ด้านบน ไม่ต้องเพิ่ม
- *                             secret ใหม่
- *   VISIT_SHEET_WEBHOOK_URL = <ไม่ตั้งก็ได้ ถ้าใช้ Apps Script/สเปรดชีตตัวเดียวกับออเดอร์ส้ม จะ fallback ไปใช้
- *                              SHEET_WEBHOOK_URL แทนอัตโนมัติ เหมือน EXPENSE_SHEET_WEBHOOK_URL ด้านบน>
  *   WIDGET_TOKEN           = <ค่าสุ่มยาวๆ (ตั้งเองได้ ไม่ต้องเป็นรูปแบบพิเศษ) ให้แอป Android widget ปฏิทิน
  *                             ยอดขายส่งมาแนบ header X-Widget-Token ยืนยันตัวก่อนอ่าน
  *                             /api/widget/daily-sales-calendar — คนละค่ากับ ADMIN_PIN เพราะ widget
@@ -45,9 +38,8 @@
  * ── ข้อมูลย้ายจาก Google Sheet มาอยู่ Cloudflare D1 แล้ว (binding DB, schema ใน migrations/, โค้ดใน ofresh-data.js) ──
  * ออเดอร์ส้ม / ต้นทุน-ค่าใช้จ่าย / ยอดขาย Nayax เก็บใน D1 และอ่านออกมาเป็น CSV หน้าตาเดิมให้หน้าเว็บ/บอทเหมือนเดิม
  * ยอดขาย Nayax อัปเดตด้วยการอัปโหลดไฟล์ CSV ที่หน้า /upload (POST /api/admin/nayax-upload) ไม่มีการตั้งเวลารันจาก Google Drive แล้ว
- * ยังใช้ชีตอยู่เฉพาะแท็บ "Visits" (รูปลูกค้าหน้าตู้ เก็บรูปใน Google Drive) — SHEET_WEBHOOK_URL / VISIT_SHEET_CSV_URL
- * ORDERS_SHEET_CSV_URL / EXPENSES_SHEET_CSV_URL / NAYAX_SHEET_CSV_URL ใช้แค่ตอนนำเข้าข้อมูลเดิมครั้งเดียว (POST /api/migrate/from-sheets
- * ต้องมี secret MIGRATE_TOKEN ชั่วคราว) แล้วเลิกใช้ได้
+ * ไม่ได้ใช้ Google Sheet แล้ว — ORDERS_SHEET_CSV_URL / EXPENSES_SHEET_CSV_URL / NAYAX_SHEET_CSV_URL ใช้แค่ตอนนำเข้าข้อมูลเดิมครั้งเดียว
+ * (POST /api/migrate/from-sheets ต้องมี secret MIGRATE_TOKEN ชั่วคราว) แล้วเลิกใช้ได้ ส่วนฟีเจอร์ "รูปลูกค้าหน้าตู้" (visits) ปิดแล้ว (25/10/2569)
  */
 
 import * as ofd from './ofresh-data.js';
@@ -133,18 +125,6 @@ export default {
 
     if (request.method === 'POST' && url.pathname === '/api/line/webhook') {
       return handleLineWebhook(request, env, ctx);
-    }
-
-    if (request.method === 'POST' && url.pathname === '/api/admin/visit-upload') {
-      return handleVisitUpload(request, env);
-    }
-
-    if (request.method === 'GET' && url.pathname === '/api/admin/visit-history') {
-      return handleAdminSheetProxy(request, env, env.VISIT_SHEET_CSV_URL, ctx, url.searchParams.has('fresh'));
-    }
-
-    if (request.method === 'POST' && url.pathname === '/api/admin/visit-update') {
-      return handleVisitUpdate(request, env);
     }
 
     // จอหน้าตู้จริงเป็น WebView ที่รัน JavaScript ไม่ได้ — สองเส้นทางนี้เลย render ตัวเลขเป็น HTML
@@ -250,45 +230,6 @@ async function handleAdminLogin(request, env) {
 
   const token = await createToken(env.SESSION_SECRET);
   return jsonResponse({ success: true, token });
-}
-
-// Google Sheets export เป็น CSV ช้าโดยธรรมชาติ (render ทั้งชีตใหม่ทุกครั้ง ยิ่งมีแถวเยอะยิ่งช้า)
-// เดิมยิงตรงไป Google ทุกครั้งพร้อม cache-buster ทำให้ทุกคลิก "รีเฟรสข้อมูล" หรือแอดมินหลายคนที่เปิดพร้อมกัน
-// ต้องรอ round-trip เต็มๆ ไปหา Google ใหม่หมด — ใส่ cache ที่ edge ของ Cloudflare (Cache API) TTL สั้นแค่ 15 วิ
-// เพื่อลดเวลารอในเคสที่มีคนโหลดซ้ำถี่ๆ โดยข้อมูลยังถือว่าสดพอสำหรับแดชบอร์ดแอดมิน
-// allowStale=false (ส่ง ?fresh=1 มา เช่นตอนกดปุ่มรีเฟรสข้อมูลเอง) จะข้าม cache ไปดึงสดเสมอ
-async function handleAdminSheetProxy(request, env, sheetUrl, ctx, forceFresh) {
-  const ok = await verifyAuthHeader(request, env);
-  if (!ok) return jsonResponse({ error: 'Unauthorized' }, 401);
-
-  if (!sheetUrl) return jsonResponse({ error: 'Not configured' }, 500);
-
-  const cache = caches.default;
-  const cacheKey = new Request(sheetUrl, { method: 'GET' });
-
-  try {
-    if (!forceFresh) {
-      const cached = await cache.match(cacheKey);
-      if (cached) {
-        return new Response(cached.body, { headers: { ...CORS_HEADERS, 'Content-Type': 'text/csv; charset=utf-8' } });
-      }
-    }
-
-    const res = await fetch(sheetUrl);
-    const text = await res.text();
-
-    const toCache = new Response(text, {
-      headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Cache-Control': 'public, max-age=15' },
-    });
-    if (ctx) ctx.waitUntil(cache.put(cacheKey, toCache));
-
-    return new Response(text, {
-      headers: { ...CORS_HEADERS, 'Content-Type': 'text/csv; charset=utf-8' },
-    });
-  } catch (err) {
-    console.error('Sheet proxy error:', err);
-    return jsonResponse({ error: 'Failed to fetch sheet' }, 502);
-  }
 }
 
 // เขียนรายการต้นทุน/ค่าใช้จ่าย (เพิ่ม/แก้ไข/ลบ) ลง D1 — ต้องผ่าน PIN token เพราะเป็นข้อมูลการเงินที่กระทบยอดกำไร
@@ -1094,215 +1035,6 @@ function parseNayaxCSV(text) {
     const price = parseFloat(g(iPrice)) || 0;
     return { datetime, price, machine: g(iMachine) };
   }).filter(r => r.datetime && !isNaN(r.datetime) && r.price > 0);
-}
-
-// ── รูปลูกค้าหน้าตู้ (visits.html) ──
-// รับรูปจาก visits.html -> ให้ Claude ดูรูปประเมินจำนวนคน/มีเด็กมาด้วยไหม -> จับคู่กับยอดขาย Nayax
-// ที่เวลาใกล้เคียงที่สุด (ถ้ามีภายใน 5 นาที) -> ส่งต่อให้ Apps Script บันทึกรูป+ข้อมูลลงชีต
-const VISIT_MATCH_WINDOW_MS = 5 * 60 * 1000;
-
-async function handleVisitUpload(request, env) {
-  const ok = await verifyAuthHeader(request, env);
-  if (!ok) return jsonResponse({ error: 'Unauthorized' }, 401);
-  // เหมือน expense — ไม่ตั้ง VISIT_SHEET_WEBHOOK_URL แยกก็ได้ ใช้ webhook เดียวกับออเดอร์ส้มแทน
-  const webhookUrl = env.VISIT_SHEET_WEBHOOK_URL || env.SHEET_WEBHOOK_URL;
-  if (!webhookUrl) {
-    return jsonResponse({ error: 'Not configured' }, 500);
-  }
-
-  let data;
-  try {
-    data = await request.json();
-  } catch {
-    return jsonResponse({ error: 'Invalid JSON' }, 400);
-  }
-  if (!data.imageBase64) {
-    return jsonResponse({ error: 'Missing image' }, 400);
-  }
-
-  const fallbackTimestamp = data.timestamp ? new Date(data.timestamp) : new Date();
-  const mimeType = data.mimeType || 'image/jpeg';
-
-  const analysis = await analyzeVisitPhoto_(env, data.imageBase64, mimeType);
-
-  // ใช้เวลาที่อ่านได้จากตัวรูป (ตู้แปะวัน-เวลาไว้ในรูปอยู่แล้ว) เป็นหลักเสมอถ้า AI อ่านได้ชัดเจน —
-  // แม่นยำกว่าเวลาที่พนักงานพิมพ์เอง/เวลาที่กดอัปโหลด ซึ่งอาจห่างจากเวลาถ่ายจริงหลายนาทีถึงหลายชั่วโมง
-  let timestamp = fallbackTimestamp, timestampSource = 'manual';
-  if (analysis.photoTimestamp) {
-    // เวลาที่แปะบนรูป (ตู้/กล้อง) เป็นเวลาไทยเสมอ ไม่มี timezone suffix มาด้วย — ต้องแปลงผ่าน
-    // parseBangkokIsoLike ไม่ใช่ new Date() ตรงๆ (ดูคอมเมนต์อธิบายที่ bangkokTimeToUtc ด้านบน)
-    const parsed = parseBangkokIsoLike(analysis.photoTimestamp);
-    if (parsed && !isNaN(parsed)) { timestamp = parsed; timestampSource = 'photo'; }
-  }
-
-  let matchedTxnTime = '', matchedAmount = null;
-  if (env.DB) {
-    try {
-      const rows = parseNayaxCSV(await ofd.nayaxCsv(env.DB));
-      let closest = null, closestDiff = Infinity;
-      for (const r of rows) {
-        const diff = Math.abs(r.datetime.getTime() - timestamp.getTime());
-        if (diff < closestDiff) { closestDiff = diff; closest = r; }
-      }
-      if (closest && closestDiff <= VISIT_MATCH_WINDOW_MS) {
-        matchedTxnTime = closest.datetime.toISOString();
-        matchedAmount = closest.price;
-      }
-    } catch (err) {
-      console.error('Nayax match lookup failed (non-fatal):', err);
-    }
-  }
-
-  try {
-    const res = await fetch(webhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        target: 'visit',
-        action: 'saveVisit',
-        imageBase64: data.imageBase64,
-        mimeType,
-        timestamp: timestamp.toISOString(),
-        peopleCount: analysis.peopleCount,
-        hasChildren: analysis.hasChildren,
-        gender: analysis.gender,
-        notes: analysis.notes,
-        matchedTxnTime,
-        matchedAmount,
-      }),
-    });
-    const result = await res.json();
-    if (!result.success) return jsonResponse({ error: result.error || 'Failed to save visit' }, 502);
-    return jsonResponse({
-      success: true,
-      photoUrl: result.photoUrl,
-      timestamp: timestamp.toISOString(),
-      timestampSource,
-      peopleCount: analysis.peopleCount,
-      hasChildren: analysis.hasChildren,
-      gender: analysis.gender,
-      notes: analysis.notes,
-      matchedTxnTime,
-      matchedAmount,
-    });
-  } catch (err) {
-    console.error('Visit save failed:', err);
-    return jsonResponse({ error: 'Failed to save visit' }, 502);
-  }
-}
-
-// แก้ไขข้อมูลการมาเยือนที่บันทึกไว้แล้ว (จากหน้า /admin/visits) — ใช้ id (Drive file id ที่ฝังอยู่ใน
-// photoUrl) หาแถวที่จะแก้ ส่งต่อให้ Apps Script ผ่าน action: 'updateVisit'
-async function handleVisitUpdate(request, env) {
-  const ok = await verifyAuthHeader(request, env);
-  if (!ok) return jsonResponse({ error: 'Unauthorized' }, 401);
-  const webhookUrl = env.VISIT_SHEET_WEBHOOK_URL || env.SHEET_WEBHOOK_URL;
-  if (!webhookUrl) return jsonResponse({ error: 'Not configured' }, 500);
-
-  let data;
-  try {
-    data = await request.json();
-  } catch {
-    return jsonResponse({ error: 'Invalid JSON' }, 400);
-  }
-  if (!data.id) return jsonResponse({ error: 'Missing id' }, 400);
-
-  const payload = { target: 'visit', action: 'updateVisit', id: data.id };
-  if (data.peopleCount != null) payload.peopleCount = Number(data.peopleCount) || 0;
-  if (data.hasChildren != null) payload.hasChildren = !!data.hasChildren;
-  if (data.gender) payload.gender = data.gender;
-  if (data.notes != null) payload.notes = data.notes;
-  if (data.timestamp) {
-    // ค่าที่ส่งมาจากฟอร์มแก้ไข (input datetime-local) เป็นเวลาไทยเสมอ ไม่มี timezone suffix —
-    // ต้องแปลงผ่าน parseBangkokIsoLike เหมือนจุดอื่นๆ ก่อนส่งต่อเป็น ISO UTC ให้ Apps Script
-    const parsed = parseBangkokIsoLike(data.timestamp);
-    if (parsed && !isNaN(parsed)) payload.timestamp = parsed.toISOString();
-  }
-
-  try {
-    const res = await fetch(webhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    const result = await res.json();
-    if (!result.success) return jsonResponse({ error: result.error || 'Failed to update visit' }, 502);
-    return jsonResponse({ success: true });
-  } catch (err) {
-    console.error('Visit update failed:', err);
-    return jsonResponse({ error: 'Failed to update visit' }, 502);
-  }
-}
-
-// เรียก Gemini ดูรูปแล้วประเมินจำนวนคน/มีเด็กมาด้วยไหม — ใช้ GEMINI_API_KEY ตัวเดียวกับที่ผู้ช่วย
-// AI แปลงข้อความออเดอร์ในกลุ่มไลน์ใช้อยู่แล้ว (ดู parseOrderWithAI ด้านบน) ไม่ต้องเพิ่ม secret ใหม่
-// ถ้าวิเคราะห์ไม่สำเร็จก็ยังบันทึกรูปได้ปกติ แค่ปล่อยให้ค่าพวกนี้เป็น null ไม่ทำให้การอัปโหลดทั้งหมดล้มเหลวไปด้วย
-async function analyzeVisitPhoto_(env, imageBase64, mimeType) {
-  if (!env.GEMINI_API_KEY) {
-    return { peopleCount: null, hasChildren: null, gender: null, notes: 'GEMINI_API_KEY not configured' };
-  }
-  const prompt = 'This photo was taken by a vending machine\'s front-facing camera at the moment of a purchase. ' +
-    'Count how many people are visible who appear to be customers at the machine (ignore anyone clearly just ' +
-    'passing by in the background). Note whether any of them appear to be children (roughly under 12 years old). ' +
-    'Also give your best guess at the apparent gender mix of the visible customers. ' +
-    'The camera also burns a date/time stamp as text somewhere on the photo (usually a corner) — read it exactly ' +
-    'as printed (it is local Thailand time, do NOT add any timezone suffix) and convert it to ' +
-    'YYYY-MM-DDTHH:mm:ss format. ' +
-    'Respond with a JSON object: {"peopleCount": <integer>, "hasChildren": <true or false>, ' +
-    '"gender": <one of "male", "female", "mixed" (both present), or "unknown" (cannot tell / no one visible)>, ' +
-    '"notes": "<one short phrase, e.g. \'two adults, one child\' or \'single customer\'>", ' +
-    '"photoTimestamp": "<YYYY-MM-DDTHH:mm:ss datetime read from the stamp on the photo, or null if no timestamp is visible/legible>"}. ' +
-    'If you cannot see any people clearly, use peopleCount: 0, hasChildren: false, gender: "unknown".';
-
-  try {
-    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent', {
-      method: 'POST',
-      headers: {
-        'x-goog-api-key': env.GEMINI_API_KEY,
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: [{
-          role: 'user',
-          parts: [
-            { inline_data: { mime_type: mimeType, data: imageBase64 } },
-            { text: prompt },
-          ],
-        }],
-        // บังคับให้ตอบเป็น JSON ล้วนๆ ที่ฝั่ง API เลย กันปัญหาโมเดลพันด้วย markdown fence หรือพูดนำ/พูดต่อท้าย
-        generationConfig: { responseMimeType: 'application/json' },
-      }),
-    });
-    if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(`Gemini API error ${res.status}: ${errText.slice(0, 300)}`);
-    }
-    const data = await res.json();
-    if (data.promptFeedback && data.promptFeedback.blockReason) {
-      throw new Error('Blocked by Gemini safety filter: ' + data.promptFeedback.blockReason);
-    }
-    const candidate = data.candidates && data.candidates[0];
-    if (candidate && candidate.finishReason && candidate.finishReason !== 'STOP') {
-      throw new Error('Gemini did not finish normally: ' + candidate.finishReason);
-    }
-    const raw = (candidate && candidate.content && candidate.content.parts && candidate.content.parts[0] && candidate.content.parts[0].text) || '';
-    const match = raw.match(/\{[\s\S]*\}/);
-    if (!match) throw new Error('Gemini response did not contain JSON: ' + raw.slice(0, 200));
-    const parsed = JSON.parse(match[0]);
-    const validGenders = ['male', 'female', 'mixed', 'unknown'];
-    return {
-      peopleCount: Number.isFinite(parsed.peopleCount) ? parsed.peopleCount : null,
-      hasChildren: typeof parsed.hasChildren === 'boolean' ? parsed.hasChildren : null,
-      gender: validGenders.includes(parsed.gender) ? parsed.gender : null,
-      notes: parsed.notes || '',
-      photoTimestamp: parsed.photoTimestamp || null,
-    };
-  } catch (err) {
-    console.error('Gemini vision analysis failed (non-fatal):', err);
-    // ใส่ข้อความ error จริงลงใน notes (ไม่ใช่แค่ "AI analysis failed" เฉยๆ) เพื่อให้เห็นสาเหตุจริงจาก
-    // หน้าประวัติ/ชีตได้เลย โดยไม่ต้องเข้าไปดู Worker logs — หน้านี้เป็นแอดมินภายในอยู่แล้วไม่มีความเสี่ยง
-    return { peopleCount: null, hasChildren: null, gender: null, notes: 'AI analysis failed: ' + (err && err.message ? err.message.slice(0, 200) : String(err)) };
-  }
 }
 
 async function verifyAuthHeader(request, env) {
