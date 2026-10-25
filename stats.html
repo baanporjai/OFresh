@@ -472,6 +472,9 @@ footer a { color: var(--orange); text-decoration: none; }
   <button id="refreshBtn" onclick="load(true)" class="refresh-btn">
     <span id="refreshIcon">🔄</span> <span data-th="รีเฟรชข้อมูล" data-en="Refresh">รีเฟรชข้อมูล</span>
   </button>
+  <button id="uploadBtn" onclick="openUpload()" class="refresh-btn">
+    <span>⬆️</span> <span data-th="อัปโหลดข้อมูล" data-en="Upload data">อัปโหลดข้อมูล</span>
+  </button>
 </div>
 
 <div class="page">
@@ -1375,6 +1378,129 @@ if (sessionStorage.getItem('ofresh_admin_token')) load();
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js'));
 }
+</script>
+
+<!-- UPLOAD NAYAX CSV (modal) — อัปเดตยอดขายตู้ด้วยไฟล์รายงาน Nayax แทนการวางไฟล์ใน Google Drive -->
+<style>
+#uploadModal { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: none; align-items: center; justify-content: center; padding: 16px; z-index: 9000; }
+#uploadModal.open { display: flex; }
+#uploadModal .um-card { background: #fff; color: var(--text); border-radius: 18px; padding: 22px; width: 100%; max-width: 560px; max-height: 90vh; overflow: auto; box-shadow: 0 20px 60px rgba(0,0,0,.35); }
+#uploadModal h3 { font-size: 1.1rem; margin-bottom: 4px; }
+#uploadModal .um-sub { color: var(--muted); font-size: .85rem; margin-bottom: 14px; line-height: 1.6; }
+#uploadModal .um-drop { display: block; border: 2px dashed var(--orange-light); border-radius: 14px; padding: 22px 14px; text-align: center; cursor: pointer; background: #fffaf4; font-size: .9rem; }
+#uploadModal .um-drop.over { background: #fff0e0; }
+#uploadModal .um-drop small { display: block; color: var(--muted); margin-top: 4px; }
+#uploadModal .um-btn { margin-top: 14px; padding: 11px 20px; border: 0; border-radius: 12px; cursor: pointer; background: linear-gradient(135deg, var(--orange), var(--orange-light)); color: #fff; font: 700 .92rem 'Prompt', sans-serif; }
+#uploadModal .um-btn.ghost { background: #fff; color: var(--orange); border: 1.5px solid var(--orange); }
+#uploadModal .um-btn:disabled { opacity: .45; cursor: not-allowed; }
+#uploadModal .um-msg { padding: 11px 13px; border-radius: 12px; margin-top: 14px; font-size: .88rem; line-height: 1.65; }
+#uploadModal .um-msg.ok { background: #dcfce7; color: #15803d; }
+#uploadModal .um-msg.warn { background: #fef3c7; color: #b45309; }
+#uploadModal .um-msg.err { background: #fee2e2; color: #b91c1c; }
+#uploadModal table { width: 100%; border-collapse: collapse; font-size: .8rem; margin-top: 8px; }
+#uploadModal th, #uploadModal td { padding: 6px 7px; border-bottom: 1px solid #eee; text-align: left; vertical-align: top; }
+#uploadModal th { color: var(--muted); font-weight: 500; white-space: nowrap; }
+#uploadModal .um-wrap { overflow-x: auto; }
+</style>
+<div id="uploadModal" onclick="if (event.target === this) closeUpload()">
+  <div class="um-card">
+    <h3>อัปโหลดยอดขาย Nayax</h3>
+    <p class="um-sub">ดาวน์โหลดไฟล์ <b>.csv</b> จากอีเมล "Nayax Transactions Report" แล้วเลือกไฟล์ที่นี่ ระบบจะตรวจให้ก่อนว่าจะเพิ่มกี่รายการ ยังไม่บันทึกจนกว่าจะกดยืนยัน อัปโหลดไฟล์เดิมซ้ำได้ ระบบข้ามรายการที่มีอยู่แล้วให้</p>
+    <label class="um-drop" id="umDrop" for="umFile">
+      <strong>แตะเพื่อเลือกไฟล์ CSV หรือลากไฟล์มาวางที่นี่</strong>
+      <small id="umFileName">ยังไม่ได้เลือกไฟล์</small>
+    </label>
+    <input type="file" id="umFile" accept=".csv,text/csv" style="display:none">
+    <div style="display:flex; gap:10px; flex-wrap:wrap">
+      <button class="um-btn" id="umCheck" disabled>ตรวจไฟล์</button>
+      <button class="um-btn ghost" onclick="closeUpload()">ปิด</button>
+    </div>
+    <div id="umResult"></div>
+  </div>
+</div>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]));
+  const fmt = (n) => Number(n || 0).toLocaleString('en-US');
+  // "24/10/2026 21:16:00" -> "24/10/2569 21:16:00" และ "2026/10/24" -> "24/10/2569" (ปี พ.ศ. ทุกที่ที่แสดงให้คน)
+  const beText = (s) => String(s == null ? '' : s).replace(/(\d{1,2})\/(\d{1,2})\/(\d{4})/, (m, d, mo, y) => d + '/' + mo + '/' + (+y + 543));
+  const thDate = (s) => { const m = /^(\d{4})\/(\d{2})\/(\d{2})$/.exec(s || ''); return m ? m[3] + '/' + m[2] + '/' + (+m[1] + 543) : '-'; };
+  let fileText = '', fileName = '';
+
+  window.openUpload = function () { $('umResult').innerHTML = ''; $('uploadModal').classList.add('open'); };
+  window.closeUpload = function () { $('uploadModal').classList.remove('open'); };
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') window.closeUpload(); });
+
+  function headers(extra) { return Object.assign({ Authorization: 'Bearer ' + sessionStorage.getItem('ofresh_admin_token') }, extra); }
+
+  async function send(mode) {
+    const res = await fetch(API_BASE + '/api/admin/nayax-upload?mode=' + mode, {
+      method: 'POST', headers: headers({ 'Content-Type': 'text/csv', 'X-Filename': encodeURIComponent(fileName) }), body: fileText,
+    });
+    if (res.status === 401) {
+      sessionStorage.removeItem('ofresh_admin_token');
+      window.closeUpload();
+      document.getElementById('pinGate').classList.remove('hidden');
+      throw new Error('หมดเวลา กรุณาใส่ PIN ใหม่');
+    }
+    return res.json();
+  }
+
+  function setFile(f) {
+    $('umResult').innerHTML = ''; $('umCheck').disabled = true;
+    if (!f) return;
+    if (f.size > 5 * 1024 * 1024) { $('umResult').innerHTML = '<div class="um-msg err">ไฟล์ใหญ่เกิน 5 MB</div>'; return; }
+    fileName = f.name; $('umFileName').textContent = f.name + ' (' + (f.size / 1024).toFixed(0) + ' KB)';
+    const reader = new FileReader();
+    reader.onload = () => { fileText = String(reader.result); $('umCheck').disabled = false; };
+    reader.readAsText(f, 'utf-8');
+  }
+
+  function preview(r) {
+    if (!r.ok) {
+      const rows = (r.badRows || []).map((b) => '<tr><td>' + b.line + '</td><td>' + esc(b.reason) + '</td></tr>').join('');
+      return '<div class="um-msg err">' + esc(r.error || 'ตรวจไฟล์ไม่ผ่าน') + '</div>' +
+        (rows ? '<div class="um-wrap"><table><tr><th>บรรทัด</th><th>ปัญหา</th></tr>' + rows + '</table></div>' : '');
+    }
+    const none = r.toAdd === 0;
+    const sample = (r.sample || []).map((s) => '<tr><td>' + esc(beText(s.time)) + '</td><td>' + esc(s.machine) + '</td><td>' + esc(s.product) + '</td><td>' + esc(s.value) + '</td></tr>').join('');
+    return '<div class="um-msg ' + (none ? 'warn' : 'ok') + '"><b>' + (none ? 'ไม่มีรายการใหม่ให้เพิ่ม' : 'จะเพิ่ม ' + fmt(r.toAdd) + ' รายการ') + '</b><br>' +
+      'ในไฟล์ ' + fmt(r.totalRows) + ' แถว · มีอยู่แล้ว ' + fmt(r.alreadyStored) + ' · ซ้ำกันเองในไฟล์ ' + fmt(r.duplicatesInFile) + ' · ใช้ไม่ได้ ' + fmt(r.bad) +
+      (r.firstDate ? '<br>ช่วงวันที่ของรายการใหม่: ' + thDate(r.firstDate) + ' – ' + thDate(r.lastDate) : '') + '</div>' +
+      (sample ? '<div class="um-wrap"><table><tr><th>เวลา</th><th>ตู้</th><th>สินค้า</th><th>ยอด</th></tr>' + sample + '</table></div>' : '') +
+      (none ? '' : '<button class="um-btn" id="umCommit">ยืนยันบันทึก</button>');
+  }
+
+  async function check() {
+    $('umCheck').disabled = true; $('umResult').innerHTML = '<div class="um-msg warn">กำลังตรวจไฟล์...</div>';
+    try {
+      const r = await send('preview'); $('umResult').innerHTML = preview(r);
+      if ($('umCommit')) $('umCommit').onclick = commit;
+    } catch (e) { $('umResult').innerHTML = '<div class="um-msg err">' + esc(e.message || 'เชื่อมต่อไม่สำเร็จ') + '</div>'; }
+    $('umCheck').disabled = false;
+  }
+
+  async function commit() {
+    $('umCommit').disabled = true; $('umCommit').textContent = 'กำลังบันทึก...';
+    try {
+      const r = await send('commit');
+      if (r.ok && r.committed) {
+        $('umResult').innerHTML = '<div class="um-msg ok"><b>บันทึกแล้ว ' + fmt(r.toAdd) + ' รายการ</b><br>ข้ามรายการที่มีอยู่แล้ว ' + fmt(r.alreadyStored + r.duplicatesInFile) + ' รายการ · กำลังรีเฟรชสถิติ...</div>';
+        fileText = ''; $('umFile').value = ''; $('umFileName').textContent = 'ยังไม่ได้เลือกไฟล์'; $('umCheck').disabled = true;
+        await load(true);
+        $('umResult').innerHTML = '<div class="um-msg ok"><b>บันทึกแล้ว ' + fmt(r.toAdd) + ' รายการ และรีเฟรชสถิติเรียบร้อย</b></div>';
+      } else $('umResult').innerHTML = preview(r);
+    } catch (e) { $('umResult').innerHTML = '<div class="um-msg err">' + esc(e.message || 'บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง') + '</div>'; }
+  }
+
+  $('umFile').addEventListener('change', (e) => setFile(e.target.files[0]));
+  $('umCheck').onclick = check;
+  const drop = $('umDrop');
+  ['dragenter', 'dragover'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add('over'); }));
+  ['dragleave', 'drop'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove('over'); }));
+  drop.addEventListener('drop', (e) => setFile(e.dataTransfer.files[0]));
+})();
 </script>
 </body>
 </html>
