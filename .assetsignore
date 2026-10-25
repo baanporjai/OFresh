@@ -13,3 +13,6 @@ android-widget/
 *.gs
 *.md
 gsheet_creds.json
+migrations/
+scripts/
+ofresh-data.js

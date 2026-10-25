@@ -19,6 +19,11 @@
   "kv_namespaces": [
     { "binding": "OFRESH_KV", "id": "6cfd5b8831a146aba54365bf20b948a3" }
   ],
+  // ออเดอร์ / ต้นทุน / ยอดขาย Nayax อยู่ใน D1 (ย้ายจาก Google Sheet) — schema ใน migrations/
+  // เหมือน KV: ต้องคงไว้เสมอ เพราะ wrangler deploy แทนที่ binding ทั้งชุดตาม config นี้
+  "d1_databases": [
+    { "binding": "DB", "database_name": "ofresh", "database_id": "6b9f919e-8bd5-4b70-a279-420e1fff3c81", "migrations_dir": "migrations" }
+  ],
   // Path-specific Route on the same zone as the static "ofresh" Worker — confirmed
   // ofresh.baanporjai.com is bound via Route (not an exclusive Custom Domain), so this
   // more-specific /realstat/* pattern takes over just that path; the static Worker

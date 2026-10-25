@@ -571,7 +571,16 @@ footer a { color: var(--orange); text-decoration: none; }
 
 <script>
 const API_BASE = 'https://fancy-dust-060c.yai-taweewoot.workers.dev';
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxZFTmbeMA_HnfYVMg_sIb6dzbVE4k3hrHAoYWuyl15rB_EUXoeKmPk6natYPGXrDk/exec';
+// แก้ออเดอร์ผ่าน Worker (ข้อมูลอยู่ใน D1) ต้องมี PIN token — เดิมหน้านี้ยิงตรงไป Apps Script โดยไม่มีการยืนยันตัวตน
+async function postOrderUpdate(payload) {
+  const res = await fetch(API_BASE + '/api/admin/order-update', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + sessionStorage.getItem('ofresh_admin_token') },
+    body: JSON.stringify(payload),
+  });
+  if (res.status === 401) { sessionStorage.removeItem('ofresh_admin_token'); location.reload(); throw new Error('หมดเวลา กรุณาใส่ PIN ใหม่'); }
+  return res.json();
+}
 const CACHE_KEY = 'ofresh_orders_v1';
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 ชั่วโมง
 
@@ -960,16 +969,8 @@ async function updateOrderStatus(id, selectEl) {
   const prevCls = selectEl.className.replace('status-select', '').trim();
   selectEl.disabled = true;
   try {
-    // ใช้ Content-Type: text/plain แทน application/json เพื่อเลี่ยง CORS preflight
-    // (เบราว์เซอร์จะยิง OPTIONS ก่อนถ้าใช้ application/json แต่ Apps Script ไม่รองรับ preflight)
-    const res = await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action: 'updateStatus', id, status: newStatus }),
-    });
-    // ต้องเช็คผลลัพธ์จริงจาก server เสมอ — fetch() ไม่ throw ถ้า server ตอบ {success:false} มาแบบ HTTP 200
-    // (เคยพลาดจุดนี้มาก่อน: หน้าเว็บเข้าใจว่าสำเร็จทั้งที่ชีตไม่ได้ถูกแก้เลย จนมากดรีเฟรชถึงเห็นค่าเดิม)
-    const j = await res.json();
+    // ต้องเช็คผลลัพธ์จริงจาก server เสมอ — ถ้า server ตอบ {success:false} ต้องไม่ทำเหมือนสำเร็จ
+    const j = await postOrderUpdate({ action: 'updateStatus', id, status: newStatus });
     if (j.success === false) throw new Error(j.error || 'update failed');
 
     selectEl.className = `status-select ${newStatus}`;
@@ -1092,15 +1093,8 @@ async function saveOrderEdit(id) {
   const btn = document.getElementById('editSaveBtn');
   btn.disabled = true; btn.textContent = isTh?'กำลังบันทึก...':'Saving...';
   try {
-    // text/plain เลี่ยง CORS preflight เช่นเดียวกับ updateOrderStatus
-    const res = await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action: 'updateOrder', id, ...fields }),
-    });
-    let ok = true;
-    try { const j = await res.json(); ok = j.success !== false; } catch (_) { /* อ่าน response ไม่ได้ ถือว่าสำเร็จตาม pattern เดิม */ }
-    if (!ok) throw new Error('sheet update failed');
+    const j = await postOrderUpdate({ action: 'updateOrder', id, ...fields });
+    if (j.success === false) throw new Error(j.error || 'update failed');
 
     // อัปเดตข้อมูลในหน้า + cache ทันที ไม่ต้องรอ fetch รอบใหม่
     Object.assign(r, fields);

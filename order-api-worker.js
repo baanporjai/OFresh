@@ -41,7 +41,16 @@
  * แจ้งเตือนเดิม ไม่ต้องเชิญใหม่)
  *
  * ADMIN_GROUP_ID ตั้งค่าไว้ใน code ด้านล่างได้เลย (ไม่ใช่ข้อมูลลับ)
+ *
+ * ── ข้อมูลย้ายจาก Google Sheet มาอยู่ Cloudflare D1 แล้ว (binding DB, schema ใน migrations/, โค้ดใน ofresh-data.js) ──
+ * ออเดอร์ส้ม / ต้นทุน-ค่าใช้จ่าย / ยอดขาย Nayax เก็บใน D1 และอ่านออกมาเป็น CSV หน้าตาเดิมให้หน้าเว็บ/บอทเหมือนเดิม
+ * ยอดขาย Nayax อัปเดตด้วยการอัปโหลดไฟล์ CSV ที่หน้า /upload (POST /api/admin/nayax-upload) ไม่มีการตั้งเวลารันจาก Google Drive แล้ว
+ * ยังใช้ชีตอยู่เฉพาะแท็บ "Visits" (รูปลูกค้าหน้าตู้ เก็บรูปใน Google Drive) — SHEET_WEBHOOK_URL / VISIT_SHEET_CSV_URL
+ * ORDERS_SHEET_CSV_URL / EXPENSES_SHEET_CSV_URL / NAYAX_SHEET_CSV_URL ใช้แค่ตอนนำเข้าข้อมูลเดิมครั้งเดียว (POST /api/migrate/from-sheets
+ * ต้องมี secret MIGRATE_TOKEN ชั่วคราว) แล้วเลิกใช้ได้
  */
+
+import * as ofd from './ofresh-data.js';
 
 const ADMIN_GROUP_ID = 'C6cb7cc0124997383e2066d971d5d0819'; // LINE group: O'Fresh_admin
 const SESSION_TTL_MS = 12 * 60 * 60 * 1000; // 12 ชั่วโมง
@@ -74,16 +83,32 @@ export default {
       return handleAdminLogin(request, env);
     }
 
+    if (request.method === 'POST' && url.pathname === '/api/migrate/from-sheets') {
+      return handleMigrate(request, env);
+    }
+
     if (request.method === 'GET' && url.pathname === '/api/admin/orders') {
-      return handleAdminSheetProxy(request, env, env.ORDERS_SHEET_CSV_URL, ctx, url.searchParams.has('fresh'));
+      return handleAdminCsv(request, env, () => ofd.ordersCsv(env.DB));
+    }
+
+    if (request.method === 'POST' && url.pathname === '/api/admin/order-update') {
+      return handleAdminOrderUpdate(request, env);
     }
 
     if (request.method === 'GET' && url.pathname === '/api/admin/nayax-stats') {
-      return handleAdminSheetProxy(request, env, env.NAYAX_SHEET_CSV_URL, ctx, url.searchParams.has('fresh'));
+      return handleAdminCsv(request, env, () => ofd.nayaxCsv(env.DB));
+    }
+
+    if (request.method === 'POST' && url.pathname === '/api/admin/nayax-upload') {
+      return handleNayaxUpload(request, env);
+    }
+
+    if (request.method === 'GET' && url.pathname === '/api/admin/upload-info') {
+      return handleUploadInfo(request, env);
     }
 
     if (request.method === 'GET' && url.pathname === '/api/admin/expenses') {
-      return handleAdminSheetProxy(request, env, env.EXPENSES_SHEET_CSV_URL, ctx, url.searchParams.has('fresh'));
+      return handleAdminCsv(request, env, () => ofd.expensesCsv(env.DB));
     }
 
     if (request.method === 'POST' && url.pathname === '/api/admin/expenses') {
@@ -194,17 +219,12 @@ async function handleOrder(request, env) {
       return jsonResponse({ success: false, error: 'LINE push failed' }, 500);
     }
 
-    // บันทึกออเดอร์ลง Google Sheet สำหรับ dashboard — ไม่ให้ล้มทั้งคำขอถ้าบันทึกไม่สำเร็จ
-    if (env.SHEET_WEBHOOK_URL) {
-      try {
-        await fetch(env.SHEET_WEBHOOK_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id, name, phone, line, qty, total, address, deliveryDate, note }),
-        });
-      } catch (sheetErr) {
-        console.error('Sheet webhook error:', sheetErr);
-      }
+    // บันทึกออเดอร์ลง D1 สำหรับ dashboard — ไม่ให้ล้มทั้งคำขอถ้าบันทึกไม่สำเร็จ (แจ้ง LINE ไปแล้ว)
+    try {
+      await ofd.createOrder(env.DB, { id, name, phone, line, qty, total, address, deliveryDate, note });
+      await invalidateCaches_(env);
+    } catch (dbErr) {
+      console.error('D1 order save error:', dbErr);
     }
 
     return jsonResponse({ success: true });
@@ -271,18 +291,10 @@ async function handleAdminSheetProxy(request, env, sheetUrl, ctx, forceFresh) {
   }
 }
 
-// เขียนรายการต้นทุน/ค่าใช้จ่าย (เพิ่ม/แก้ไข/ลบ) — ต้องผ่าน PIN token เพราะเป็นข้อมูลการเงินที่กระทบยอดกำไร
-// ต่างจาก updateOrderStatus ใน orderstats.html ที่ยิงตรงไปที่ Apps Script โดยไม่ auth
-// (เหมาะกับสถานะออเดอร์ซึ่งความเสี่ยงต่ำ) — ที่นี่ให้ Worker เป็นตัวกลางยืนยัน token ก่อน
-// แล้วค่อย forward ไป Apps Script แทน เพื่อไม่ให้ URL เขียนข้อมูลการเงินหลุดไปอยู่ใน client-side JS เปิดเผย
+// เขียนรายการต้นทุน/ค่าใช้จ่าย (เพิ่ม/แก้ไข/ลบ) ลง D1 — ต้องผ่าน PIN token เพราะเป็นข้อมูลการเงินที่กระทบยอดกำไร
 async function handleAdminExpenseWrite(request, env) {
   const ok = await verifyAuthHeader(request, env);
   if (!ok) return jsonResponse({ error: 'Unauthorized' }, 401);
-
-  // ถ้าไม่ได้ตั้ง secret แยกไว้ ให้ fallback ไปใช้ SHEET_WEBHOOK_URL เดิม (ออเดอร์ส้ม) แทน
-  // เผื่อกรณีเก็บต้นทุน/ค่าใช้จ่ายไว้ในสเปรดชีตเดียวกัน (คนละแท็บ) กับออเดอร์ ใช้ Apps Script ตัวเดียวกันได้
-  const webhookUrl = env.EXPENSE_SHEET_WEBHOOK_URL || env.SHEET_WEBHOOK_URL;
-  if (!webhookUrl) return jsonResponse({ error: 'Not configured' }, 500);
 
   let data;
   try {
@@ -305,17 +317,113 @@ async function handleAdminExpenseWrite(request, env) {
   }
 
   try {
-    const res = await fetch(webhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      // target: 'expense' ให้ Apps Script แยกเส้นทางออกจากการเขียนออเดอร์ส้ม เผื่อใช้ webhook เดียวกัน
-      body: JSON.stringify({ ...data, action, target: 'expense' }),
-    });
-    const result = await res.json().catch(() => ({ success: res.ok }));
-    return jsonResponse(result, result.success === false ? 502 : 200);
+    const result = action === 'add' ? await ofd.addExpense(env.DB, data)
+      : action === 'update' ? await ofd.updateExpense(env.DB, data)
+      : await ofd.deleteExpense(env.DB, data);
+    return jsonResponse(result, result.success === false ? 404 : 200);
   } catch (err) {
-    console.error('Expense webhook error:', err);
+    console.error('Expense write error:', err);
     return jsonResponse({ success: false, error: 'Failed to save expense' }, 502);
+  }
+}
+
+// อ่านข้อมูลจาก D1 ออกมาเป็น CSV หน้าตาเดียวกับชีตเดิม (orderstats/customers/accounting/stats ยัง parse แบบเดิมได้)
+async function handleAdminCsv(request, env, build) {
+  const ok = await verifyAuthHeader(request, env);
+  if (!ok) return jsonResponse({ error: 'Unauthorized' }, 401);
+  if (!env.DB) return jsonResponse({ error: 'Not configured' }, 500);
+  try {
+    return new Response(await build(), { headers: { ...CORS_HEADERS, 'Content-Type': 'text/csv; charset=utf-8', 'Cache-Control': 'no-store' } });
+  } catch (err) {
+    console.error('D1 CSV read error:', err);
+    return jsonResponse({ error: 'Failed to read data' }, 502);
+  }
+}
+
+// แก้สถานะ/รายละเอียดออเดอร์จากหน้า orderstats.html — เดิมหน้านี้ยิงตรงไป Apps Script โดยไม่มี auth ตอนนี้ต้องผ่าน PIN token
+async function handleAdminOrderUpdate(request, env) {
+  const ok = await verifyAuthHeader(request, env);
+  if (!ok) return jsonResponse({ error: 'Unauthorized' }, 401);
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return jsonResponse({ success: false, error: 'Invalid JSON' }, 400);
+  }
+  if (!body.id) return jsonResponse({ success: false, error: 'Missing id' }, 400);
+
+  try {
+    let result;
+    if (body.action === 'updateStatus') result = await ofd.updateOrderStatus(env.DB, body.id, body.status);
+    else if (body.action === 'updateOrder') {
+      const { action, id, ...fields } = body;
+      result = await ofd.updateOrder(env.DB, id, fields);
+    } else return jsonResponse({ success: false, error: 'Unknown action' }, 400);
+    if (result.success) await invalidateCaches_(env);
+    return jsonResponse(result, result.success ? 200 : 404);
+  } catch (err) {
+    console.error('Order update error:', err);
+    return jsonResponse({ success: false, error: 'Failed to update order' }, 502);
+  }
+}
+
+// ล้างแคช KV ที่ได้จากข้อมูลใน D1 (ประวัติลูกค้าของบอท + แถว Nayax) หลังข้อมูลเปลี่ยน
+async function invalidateCaches_(env) {
+  if (!env.OFRESH_KV) return;
+  await Promise.all([env.OFRESH_KV.delete('customer_history'), env.OFRESH_KV.delete(NAYAX_ROWS_CACHE_KEY_)]);
+}
+
+const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+
+// อัปโหลดรายงาน Nayax (CSV) เพื่ออัปเดตยอดขาย — แทนการวางไฟล์ใน Google Drive แล้วรอ trigger
+// ?mode=preview (ค่าเริ่มต้น) = ตรวจไฟล์แล้วบอกว่าจะเพิ่มกี่แถว ยังไม่บันทึก, ?mode=commit = บันทึกจริง
+// body = ข้อความ CSV ดิบ (Content-Type: text/csv) ชื่อไฟล์ส่งมาใน header X-Filename
+async function handleNayaxUpload(request, env) {
+  const ok = await verifyAuthHeader(request, env);
+  if (!ok) return jsonResponse({ error: 'Unauthorized' }, 401);
+  if (!env.DB) return jsonResponse({ error: 'Not configured' }, 500);
+
+  const len = Number(request.headers.get('Content-Length') || 0);
+  if (len > MAX_UPLOAD_BYTES) return jsonResponse({ ok: false, error: 'ไฟล์ใหญ่เกิน 5 MB' }, 413);
+  const csvText = await request.text();
+  if (csvText.length > MAX_UPLOAD_BYTES) return jsonResponse({ ok: false, error: 'ไฟล์ใหญ่เกิน 5 MB' }, 413);
+
+  const commit = new URL(request.url).searchParams.get('mode') === 'commit';
+  try {
+    const result = await ofd.importNayaxCsv(env.DB, csvText, { commit });
+    if (result.ok && result.committed) {
+      let filename = '';
+      try { filename = decodeURIComponent(request.headers.get('X-Filename') || ''); } catch { filename = request.headers.get('X-Filename') || ''; }
+      await ofd.recordUpload(env.DB, { kind: 'nayax', filename, result, by: 'admin' });
+      await invalidateCaches_(env);
+    }
+    return jsonResponse(result, result.ok || !result.error ? 200 : 422);
+  } catch (err) {
+    console.error('Nayax upload error:', err);
+    return jsonResponse({ ok: false, error: 'บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง' }, 500);
+  }
+}
+
+// สรุปสถานะข้อมูลยอดขายล่าสุด + ประวัติการอัปโหลด (หน้า /upload)
+async function handleUploadInfo(request, env) {
+  const ok = await verifyAuthHeader(request, env);
+  if (!ok) return jsonResponse({ error: 'Unauthorized' }, 401);
+  if (!env.DB) return jsonResponse({ error: 'Not configured' }, 500);
+  return jsonResponse({ nayax: await ofd.nayaxSummary(env.DB), uploads: await ofd.recentUploads(env.DB, 10) });
+}
+
+// นำเข้าข้อมูลเดิมจากชีตเข้า D1 (ใช้ครั้งเดียวตอนย้ายระบบ) — ป้องกันด้วย secret MIGRATE_TOKEN ที่ตั้งชั่วคราว ทำซ้ำได้ปลอดภัย
+async function handleMigrate(request, env) {
+  const token = request.headers.get('X-Migrate-Token') || '';
+  if (!env.MIGRATE_TOKEN || !timingSafeEqual(token, env.MIGRATE_TOKEN)) return jsonResponse({ error: 'Unauthorized' }, 401);
+  try {
+    const report = await ofd.importFromSheets(env);
+    await invalidateCaches_(env);
+    return jsonResponse({ ok: true, report });
+  } catch (err) {
+    console.error('Migrate error:', err);
+    return jsonResponse({ ok: false, error: String((err && err.message) || err) }, 500);
   }
 }
 
@@ -377,9 +485,7 @@ async function fetchNayaxRows_(env) {
     if (cached) return cached.map(r => ({ ...r, datetime: new Date(r.datetime) }));
   }
 
-  const res = await fetch(env.NAYAX_SHEET_CSV_URL + (env.NAYAX_SHEET_CSV_URL.includes('?') ? '&' : '?') + 't=' + Date.now());
-  const text = await res.text();
-  const rows = parseNayaxCSV(text);
+  const rows = parseNayaxCSV(await ofd.nayaxCsv(env.DB));
 
   if (env.OFRESH_KV) {
     // JSON.stringify แปลง Date เป็น ISO string ให้เองผ่าน Date.prototype.toJSON — ตอนอ่านกลับ
@@ -394,7 +500,7 @@ async function fetchNayaxRows_(env) {
 // ?machine=OFresh_CentralFest (optional) — จำกัด "ชั่วโมงยอดนิยม" ให้ดูเฉพาะตู้นั้น ใช้กับจอที่ติดอยู่หน้าตู้
 // เฉพาะเครื่อง (เช่น realstat_central.html) ส่วน totalCups ยังเป็นยอดรวมทุกตู้เสมอ ไม่ผูกกับ query param นี้
 async function handlePublicHighlights(request, env) {
-  if (!env.NAYAX_SHEET_CSV_URL) return jsonResponse({ error: 'Not configured' }, 500);
+  if (!env.DB) return jsonResponse({ error: 'Not configured' }, 500);
 
   try {
     const url = new URL(request.url);
@@ -422,7 +528,7 @@ async function handlePublicHighlights(request, env) {
 // เพราะคืนยอดขาย ฿ แยกรายวันทั้งเดือน ละเอียดกว่า /api/public/highlights ที่เปิดสาธารณะเปล่าๆ ได้
 // ?month=YYYY-M (M เป็นเลข 0-11 ให้ตรงกับ toBangkokParts().month) — ไม่ระบุ = เดือนปัจจุบัน
 async function handleWidgetDailySales(request, env) {
-  if (!env.NAYAX_SHEET_CSV_URL) return jsonResponse({ error: 'Not configured' }, 500);
+  if (!env.DB) return jsonResponse({ error: 'Not configured' }, 500);
 
   const token = request.headers.get('X-Widget-Token') || '';
   if (!env.WIDGET_TOKEN || !timingSafeEqual(token, env.WIDGET_TOKEN)) {
@@ -846,7 +952,7 @@ function renderRealstatLamyaiHtml_(stats) {
 }
 
 async function handleRealstatCentral(request, env) {
-  if (!env.NAYAX_SHEET_CSV_URL) return htmlResponse_(renderRealstatErrorHtml_("O'Fresh — Central Fest"));
+  if (!env.DB) return htmlResponse_(renderRealstatErrorHtml_("O'Fresh — Central Fest"));
   try {
     const rows = await fetchNayaxRows_(env);
     const stats = computeHighlights_(rows, { machineFilter: 'OFresh_CentralFest', scopeCupsToMachine: false, monthParam: null });
@@ -858,7 +964,7 @@ async function handleRealstatCentral(request, env) {
 }
 
 async function handleRealstatLamyai(request, env) {
-  if (!env.NAYAX_SHEET_CSV_URL) return htmlResponse_(renderRealstatErrorHtml_("O'Fresh — งานลำไย"));
+  if (!env.DB) return htmlResponse_(renderRealstatErrorHtml_("O'Fresh — งานลำไย"));
   try {
     const rows = await fetchNayaxRows_(env);
     const stats = computeHighlights_(rows, { machineFilter: 'OFresh_Lamyai', scopeCupsToMachine: true, monthParam: null });
@@ -871,12 +977,10 @@ async function handleRealstatLamyai(request, env) {
 
 // เอนด์พอยต์สาธารณะสำหรับหน้าสั่งซื้อ — คืนแค่จำนวนออเดอร์/น้ำหนักรวม (ไม่มียอดขาย/ข้อมูลลูกค้า)
 async function handlePublicOrderHighlights(request, env) {
-  if (!env.ORDERS_SHEET_CSV_URL) return jsonResponse({ error: 'Not configured' }, 500);
+  if (!env.DB) return jsonResponse({ error: 'Not configured' }, 500);
 
   try {
-    const res = await fetch(env.ORDERS_SHEET_CSV_URL + (env.ORDERS_SHEET_CSV_URL.includes('?') ? '&' : '?') + 't=' + Date.now());
-    const text = await res.text();
-    const rows = parseOrdersCSV(text);
+    const rows = parseOrdersCSV(await ofd.ordersCsv(env.DB));
 
     const totalOrders = rows.length;
     const totalQty = rows.reduce((s, r) => s + r.qty, 0);
@@ -1032,10 +1136,9 @@ async function handleVisitUpload(request, env) {
   }
 
   let matchedTxnTime = '', matchedAmount = null;
-  if (env.NAYAX_SHEET_CSV_URL) {
+  if (env.DB) {
     try {
-      const res = await fetch(env.NAYAX_SHEET_CSV_URL + (env.NAYAX_SHEET_CSV_URL.includes('?') ? '&' : '?') + 't=' + Date.now());
-      const rows = parseNayaxCSV(await res.text());
+      const rows = parseNayaxCSV(await ofd.nayaxCsv(env.DB));
       let closest = null, closestDiff = Infinity;
       for (const r of rows) {
         const diff = Math.abs(r.datetime.getTime() - timestamp.getTime());
@@ -1322,11 +1425,9 @@ async function getCustomerHistory(env) {
     if (cached) return cached;
   }
 
-  if (!env.ORDERS_SHEET_CSV_URL) return [];
+  if (!env.DB) return [];
 
-  const res = await fetch(env.ORDERS_SHEET_CSV_URL);
-  const text = await res.text();
-  const rows = parseOrdersCSVFull(text);
+  const rows = parseOrdersCSVFull(await ofd.ordersCsv(env.DB));
 
   const map = new Map();
   rows.forEach(r => {
@@ -1693,27 +1794,21 @@ async function handleSlipImage(event, env) {
   }
 }
 
+// บันทึกออเดอร์จากบอทลง D1 (ใช้ id ที่บอทสร้าง เพื่อให้ปุ่มยกเลิกอ้างถึงได้ทันที)
 async function saveOrderToSheet(env, order, id) {
-  if (!env.SHEET_WEBHOOK_URL) throw new Error('SHEET_WEBHOOK_URL not configured');
   const total = (order.qty || 0) * ORDER_PRICE_PER_KG;
-  await fetch(env.SHEET_WEBHOOK_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      id, name: order.name, phone: order.phone, line: order.line,
-      qty: order.qty, total, address: order.address,
-      deliveryDate: order.deliveryDate, note: order.note,
-    }),
+  await ofd.createOrder(env.DB, {
+    id, name: order.name, phone: order.phone, line: order.line,
+    qty: order.qty, total, address: order.address,
+    deliveryDate: order.deliveryDate, note: order.note,
   });
+  await invalidateCaches_(env);
 }
 
 async function cancelOrderInSheet(env, id) {
-  if (!env.SHEET_WEBHOOK_URL) throw new Error('SHEET_WEBHOOK_URL not configured');
-  await fetch(env.SHEET_WEBHOOK_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify({ action: 'updateStatus', id, status: 'cancelled' }),
-  });
+  const result = await ofd.updateOrderStatus(env.DB, id, 'cancelled');
+  if (!result.success) throw new Error('Cancel rejected: ' + (result.error || 'unknown'));
+  await invalidateCaches_(env);
 }
 
 // รับข้อความใหม่จากกลุ่ม — parse แล้วบันทึกลงชีตทันที ไม่มีขั้นตอนยืนยัน

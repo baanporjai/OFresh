@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>อัปโหลดยอดขาย Nayax — O'Fresh</title>
+<link rel="icon" href="/favicon.png">
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--orange:#FF6B00;--orange-light:#FF9A3C;--dark:#1A1A2E;--off:#FFF8F0;--text:#2D2D2D;--muted:#6B7280;--ok:#15803d;--bad:#b91c1c;--warn:#b45309;--line:rgba(255,107,0,.18)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Prompt',sans-serif;background:var(--off);color:var(--text);min-height:100vh}
+.hidden{display:none!important}
+#gate{position:fixed;inset:0;background:var(--dark);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px;z-index:10}
+#gate img{width:120px}
+.pin-card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:28px;max-width:320px;width:100%;text-align:center}
+.pin-card h2{color:#fff;font-size:1.1rem;margin-bottom:6px}.pin-card p{color:rgba(255,255,255,.55);font-size:.82rem;margin-bottom:16px}
+.pin-card input{width:100%;padding:14px;border-radius:12px;border:1.5px solid rgba(255,255,255,.15);background:rgba(255,255,255,.08);color:#fff;font-size:1.3rem;text-align:center;letter-spacing:6px;font-family:inherit;margin-bottom:12px}
+.pin-card button{width:100%;padding:13px;border:0;border-radius:12px;cursor:pointer;background:linear-gradient(135deg,var(--orange),var(--orange-light));color:#fff;font:700 .95rem 'Prompt',sans-serif}
+#pinError{color:#f87171;font-size:.78rem;margin-top:10px;min-height:16px}
+header{background:var(--dark);color:#fff;padding:14px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+header img{height:34px}header h1{font-size:1.05rem;font-weight:600;flex:1}
+header a{color:#ffb347;font-size:.85rem;text-decoration:none}
+main{max-width:760px;margin:0 auto;padding:22px 16px 60px}
+.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:18px;box-shadow:0 4px 18px rgba(0,0,0,.05)}
+h2{font-size:1.02rem;margin-bottom:10px}
+.muted{color:var(--muted);font-size:.86rem}
+.status-row{display:flex;gap:18px;flex-wrap:wrap;margin-top:8px}
+.stat b{display:block;font-size:1.25rem}.stat span{font-size:.78rem;color:var(--muted)}
+ol{padding-left:20px;line-height:1.9;font-size:.92rem}
+.drop{border:2px dashed var(--orange-light);border-radius:14px;padding:26px 16px;text-align:center;cursor:pointer;background:#fffaf4}
+.drop.over{background:#fff0e0}.drop strong{display:block;margin-bottom:4px}
+.btn{display:inline-block;margin-top:14px;padding:12px 22px;border:0;border-radius:12px;cursor:pointer;background:linear-gradient(135deg,var(--orange),var(--orange-light));color:#fff;font:700 .95rem 'Prompt',sans-serif}
+.btn:disabled{opacity:.45;cursor:not-allowed}.btn.ghost{background:#fff;color:var(--orange);border:1.5px solid var(--orange)}
+.msg{padding:12px 14px;border-radius:12px;margin-top:14px;font-size:.92rem;line-height:1.6}
+.msg.ok{background:#dcfce7;color:var(--ok)}.msg.err{background:#fee2e2;color:var(--bad)}.msg.warn{background:#fef3c7;color:var(--warn)}
+table{width:100%;border-collapse:collapse;font-size:.85rem;margin-top:8px}
+th,td{padding:7px 8px;border-bottom:1px solid #eee;text-align:left;vertical-align:top}th{color:var(--muted);font-weight:500;white-space:nowrap}
+td.num,th.num{text-align:right}
+.wrap{overflow-x:auto}
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <img src="/OFresh_Logo_transparent.png" alt="O'Fresh">
+  <div class="pin-card">
+    <h2>อัปโหลดยอดขาย Nayax</h2>
+    <p>กรุณาใส่รหัส PIN เพื่อเข้าใช้งาน</p>
+    <input type="password" id="pinInput" inputmode="numeric" maxlength="6" placeholder="••••••" autocomplete="off">
+    <button id="pinBtn">เข้าสู่ระบบ</button>
+    <div id="pinError"></div>
+  </div>
+</div>
+
+<header>
+  <img src="/OFresh_Logo_transparent.png" alt="O'Fresh">
+  <h1>อัปโหลดยอดขาย Nayax</h1>
+  <a href="/admin">← สถิติ</a>
+</header>
+
+<main>
+  <section class="card">
+    <h2>ข้อมูลยอดขายตอนนี้</h2>
+    <div class="status-row" id="status"><span class="muted">กำลังโหลด...</span></div>
+  </section>
+
+  <section class="card">
+    <h2>วิธีอัปเดตยอดขาย</h2>
+    <ol>
+      <li>เมื่อมีอีเมล "Nayax Transactions Report" เข้ามา ให้กดลิงก์ดาวน์โหลดไฟล์ <b>.csv</b></li>
+      <li>เลือกไฟล์ด้านล่าง แล้วกด <b>ตรวจไฟล์</b> ระบบจะบอกว่าจะเพิ่มกี่รายการ ยังไม่บันทึกอะไร</li>
+      <li>ถ้าตัวเลขถูกต้อง กด <b>ยืนยันบันทึก</b></li>
+    </ol>
+    <p class="muted" style="margin-top:8px">อัปโหลดไฟล์เดิมซ้ำหรือไฟล์ที่ช่วงเวลาทับกันได้ ระบบข้ามรายการที่มีอยู่แล้วให้เอง ไม่นับซ้ำ</p>
+  </section>
+
+  <section class="card">
+    <h2>เลือกไฟล์</h2>
+    <label class="drop" id="drop" for="file">
+      <strong>แตะเพื่อเลือกไฟล์ CSV หรือลากไฟล์มาวางที่นี่</strong>
+      <span class="muted" id="fileName">ยังไม่ได้เลือกไฟล์</span>
+    </label>
+    <input type="file" id="file" accept=".csv,text/csv" class="hidden">
+    <button class="btn" id="checkBtn" disabled>ตรวจไฟล์</button>
+    <div id="result"></div>
+  </section>
+
+  <section class="card">
+    <h2>ประวัติการอัปโหลด</h2>
+    <div class="wrap"><table id="history"><tr><td class="muted">กำลังโหลด...</td></tr></table></div>
+  </section>
+</main>
+
+<script>
+const API_BASE = 'https://fancy-dust-060c.yai-taweewoot.workers.dev';
+const TOKEN_KEY = 'ofresh_admin_token';
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]));
+const fmt = (n) => Number(n || 0).toLocaleString('en-US');
+// "2026/07/02" -> "02/07/2569" (วัน/เดือน/ปี พ.ศ.)
+const thDate = (s) => { const m = /^(\d{4})\/(\d{2})\/(\d{2})$/.exec(s || ''); return m ? `${m[3]}/${m[2]}/${+m[1] + 543}` : '-'; };
+
+let fileText = '', fileNameText = '', checked = null;
+
+function authHeaders(extra) { return { Authorization: 'Bearer ' + sessionStorage.getItem(TOKEN_KEY), ...extra }; }
+function lockOut() { sessionStorage.removeItem(TOKEN_KEY); $('gate').classList.remove('hidden'); $('pinInput').value = ''; }
+
+async function login() {
+  $('pinError').textContent = '';
+  try {
+    const res = await fetch(API_BASE + '/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: $('pinInput').value.trim() }) });
+    const data = await res.json();
+    if (data.success && data.token) { sessionStorage.setItem(TOKEN_KEY, data.token); $('gate').classList.add('hidden'); loadInfo(); }
+    else { $('pinError').textContent = 'รหัส PIN ไม่ถูกต้อง'; $('pinInput').value = ''; }
+  } catch { $('pinError').textContent = 'เชื่อมต่อไม่สำเร็จ ลองใหม่อีกครั้ง'; }
+}
+
+async function loadInfo() {
+  try {
+    const res = await fetch(API_BASE + '/api/admin/upload-info', { headers: authHeaders() });
+    if (res.status === 401) return lockOut();
+    const d = await res.json();
+    const n = d.nayax;
+    $('status').innerHTML = `<div class="stat"><b>${fmt(n.rows)}</b><span>รายการทั้งหมด</span></div>
+      <div class="stat"><b>${thDate(n.firstDate)}</b><span>วันแรก</span></div>
+      <div class="stat"><b>${thDate(n.lastDate)}</b><span>วันล่าสุด</span></div>
+      <div class="stat"><b>${esc(n.lastSaleAt || '-')}</b><span>รายการล่าสุด (เวลาไทย)</span></div>`;
+    const rows = d.uploads || [];
+    $('history').innerHTML = rows.length
+      ? `<tr><th>เมื่อ</th><th>ไฟล์</th><th class="num">ทั้งหมด</th><th class="num">เพิ่ม</th><th class="num">ข้าม</th></tr>` +
+        rows.map((u) => `<tr><td>${esc(u.ts)}</td><td>${esc(u.filename)}</td><td class="num">${fmt(u.total_rows)}</td><td class="num">${fmt(u.added)}</td><td class="num">${fmt(u.skipped)}</td></tr>`).join('')
+      : '<tr><td class="muted">ยังไม่มีการอัปโหลดผ่านหน้านี้</td></tr>';
+  } catch { $('status').innerHTML = '<span class="muted">โหลดสถานะไม่สำเร็จ</span>'; }
+}
+
+function setFile(f) {
+  checked = null; $('result').innerHTML = '';
+  if (!f) return;
+  if (f.size > 5 * 1024 * 1024) { $('result').innerHTML = '<div class="msg err">ไฟล์ใหญ่เกิน 5 MB</div>'; return; }
+  fileNameText = f.name; $('fileName').textContent = `${f.name} (${(f.size / 1024).toFixed(0)} KB)`;
+  const reader = new FileReader();
+  reader.onload = () => { fileText = String(reader.result); $('checkBtn').disabled = false; };
+  reader.readAsText(f, 'utf-8');
+}
+
+async function send(mode) {
+  const res = await fetch(API_BASE + '/api/admin/nayax-upload?mode=' + mode, {
+    method: 'POST',
+    headers: authHeaders({ 'Content-Type': 'text/csv', 'X-Filename': encodeURIComponent(fileNameText) }),
+    body: fileText,
+  });
+  if (res.status === 401) { lockOut(); throw new Error('หมดเวลา กรุณาใส่ PIN ใหม่'); }
+  return res.json();
+}
+
+function renderPreview(r) {
+  if (!r.ok) {
+    const rowsHtml = (r.badRows || []).map((b) => `<tr><td class="num">${b.line}</td><td>${esc(b.reason)}</td></tr>`).join('');
+    return `<div class="msg err">${esc(r.error || 'ตรวจไฟล์ไม่ผ่าน')}</div>` +
+      (rowsHtml ? `<div class="wrap"><table><tr><th class="num">บรรทัด</th><th>ปัญหา</th></tr>${rowsHtml}</table></div>` : '');
+  }
+  const sample = (r.sample || []).map((s) => `<tr><td>${esc(s.time)}</td><td>${esc(s.machine)}</td><td>${esc(s.product)}</td><td class="num">${esc(s.value)}</td></tr>`).join('');
+  const nothing = r.toAdd === 0;
+  return `<div class="msg ${nothing ? 'warn' : 'ok'}">
+      <b>${nothing ? 'ไม่มีรายการใหม่ให้เพิ่ม' : `จะเพิ่ม ${fmt(r.toAdd)} รายการ`}</b><br>
+      ในไฟล์ ${fmt(r.totalRows)} แถว · มีอยู่แล้ว ${fmt(r.alreadyStored)} · ซ้ำกันเองในไฟล์ ${fmt(r.duplicatesInFile)} · ใช้ไม่ได้ ${fmt(r.bad)}<br>
+      ${r.firstDate ? `ช่วงวันที่ของรายการใหม่: ${thDate(r.firstDate)} – ${thDate(r.lastDate)}` : ''}
+    </div>` +
+    (sample ? `<div class="wrap"><table><tr><th>เวลา</th><th>ตู้</th><th>สินค้า</th><th class="num">ยอด</th></tr>${sample}</table></div><p class="muted">ตัวอย่าง 3 รายการแรก</p>` : '') +
+    (nothing ? '' : '<button class="btn" id="commitBtn">ยืนยันบันทึก</button> <button class="btn ghost" id="cancelBtn">ยกเลิก</button>');
+}
+
+async function check() {
+  $('checkBtn').disabled = true; $('result').innerHTML = '<div class="msg warn">กำลังตรวจไฟล์...</div>';
+  try {
+    const r = await send('preview'); checked = r; $('result').innerHTML = renderPreview(r);
+    if ($('commitBtn')) $('commitBtn').onclick = commit;
+    if ($('cancelBtn')) $('cancelBtn').onclick = () => { $('result').innerHTML = ''; };
+  } catch (e) { $('result').innerHTML = `<div class="msg err">${esc(e.message || 'เชื่อมต่อไม่สำเร็จ')}</div>`; }
+  $('checkBtn').disabled = false;
+}
+
+async function commit() {
+  $('commitBtn').disabled = true; $('commitBtn').textContent = 'กำลังบันทึก...';
+  try {
+    const r = await send('commit');
+    if (r.ok && r.committed) {
+      $('result').innerHTML = `<div class="msg ok"><b>บันทึกแล้ว ${fmt(r.toAdd)} รายการ</b><br>ข้ามรายการที่มีอยู่แล้ว ${fmt(r.alreadyStored + r.duplicatesInFile)} รายการ<br>ถ้าหน้าสถิติยังแสดงตัวเลขเดิม ให้กดปุ่มรีเฟรชในหน้านั้น</div>`;
+      fileText = ''; $('file').value = ''; $('fileName').textContent = 'ยังไม่ได้เลือกไฟล์'; $('checkBtn').disabled = true;
+      loadInfo();
+    } else $('result').innerHTML = renderPreview(r);
+  } catch (e) { $('result').innerHTML = `<div class="msg err">${esc(e.message || 'บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง')}</div>`; }
+}
+
+$('pinBtn').onclick = login;
+$('pinInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') login(); });
+$('file').addEventListener('change', (e) => setFile(e.target.files[0]));
+$('checkBtn').onclick = check;
+const drop = $('drop');
+['dragenter', 'dragover'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave', 'drop'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove('over'); }));
+drop.addEventListener('drop', (e) => { setFile(e.dataTransfer.files[0]); });
+
+if (sessionStorage.getItem(TOKEN_KEY)) { $('gate').classList.add('hidden'); loadInfo(); } else setTimeout(() => $('pinInput').focus(), 100);
+</script>
+</body>
+</html>
