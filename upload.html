@@ -100,6 +100,8 @@ const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]));
 const fmt = (n) => Number(n || 0).toLocaleString('en-US');
 // "2026/07/02" -> "02/07/2569" (วัน/เดือน/ปี พ.ศ.)
+// "24/10/2026 21:16:00" -> "24/10/2569 21:16:00" (ปี พ.ศ. ทุกที่ที่แสดงให้คน)
+const beText = (s) => String(s ?? '').replace(/(d{1,2})/(d{1,2})/(d{4})/, (m, d, mo, y) => `${d}/${mo}/${+y + 543}`);
 const thDate = (s) => { const m = /^(\d{4})\/(\d{2})\/(\d{2})$/.exec(s || ''); return m ? `${m[3]}/${m[2]}/${+m[1] + 543}` : '-'; };
 
 let fileText = '', fileNameText = '', checked = null;
@@ -126,11 +128,11 @@ async function loadInfo() {
     $('status').innerHTML = `<div class="stat"><b>${fmt(n.rows)}</b><span>รายการทั้งหมด</span></div>
       <div class="stat"><b>${thDate(n.firstDate)}</b><span>วันแรก</span></div>
       <div class="stat"><b>${thDate(n.lastDate)}</b><span>วันล่าสุด</span></div>
-      <div class="stat"><b>${esc(n.lastSaleAt || '-')}</b><span>รายการล่าสุด (เวลาไทย)</span></div>`;
+      <div class="stat"><b>${esc(beText(n.lastSaleAt) || '-')}</b><span>รายการล่าสุด (เวลาไทย)</span></div>`;
     const rows = d.uploads || [];
     $('history').innerHTML = rows.length
       ? `<tr><th>เมื่อ</th><th>ไฟล์</th><th class="num">ทั้งหมด</th><th class="num">เพิ่ม</th><th class="num">ข้าม</th></tr>` +
-        rows.map((u) => `<tr><td>${esc(u.ts)}</td><td>${esc(u.filename)}</td><td class="num">${fmt(u.total_rows)}</td><td class="num">${fmt(u.added)}</td><td class="num">${fmt(u.skipped)}</td></tr>`).join('')
+        rows.map((u) => `<tr><td>${esc(beText(u.ts))}</td><td>${esc(u.filename)}</td><td class="num">${fmt(u.total_rows)}</td><td class="num">${fmt(u.added)}</td><td class="num">${fmt(u.skipped)}</td></tr>`).join('')
       : '<tr><td class="muted">ยังไม่มีการอัปโหลดผ่านหน้านี้</td></tr>';
   } catch { $('status').innerHTML = '<span class="muted">โหลดสถานะไม่สำเร็จ</span>'; }
 }
@@ -161,7 +163,7 @@ function renderPreview(r) {
     return `<div class="msg err">${esc(r.error || 'ตรวจไฟล์ไม่ผ่าน')}</div>` +
       (rowsHtml ? `<div class="wrap"><table><tr><th class="num">บรรทัด</th><th>ปัญหา</th></tr>${rowsHtml}</table></div>` : '');
   }
-  const sample = (r.sample || []).map((s) => `<tr><td>${esc(s.time)}</td><td>${esc(s.machine)}</td><td>${esc(s.product)}</td><td class="num">${esc(s.value)}</td></tr>`).join('');
+  const sample = (r.sample || []).map((s) => `<tr><td>${esc(beText(s.time))}</td><td>${esc(s.machine)}</td><td>${esc(s.product)}</td><td class="num">${esc(s.value)}</td></tr>`).join('');
   const nothing = r.toAdd === 0;
   return `<div class="msg ${nothing ? 'warn' : 'ok'}">
       <b>${nothing ? 'ไม่มีรายการใหม่ให้เพิ่ม' : `จะเพิ่ม ${fmt(r.toAdd)} รายการ`}</b><br>
