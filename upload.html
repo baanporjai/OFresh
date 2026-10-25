@@ -101,7 +101,7 @@ const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (m) => ({ '&': '&amp;', '<
 const fmt = (n) => Number(n || 0).toLocaleString('en-US');
 // "2026/07/02" -> "02/07/2569" (วัน/เดือน/ปี พ.ศ.)
 // "24/10/2026 21:16:00" -> "24/10/2569 21:16:00" (ปี พ.ศ. ทุกที่ที่แสดงให้คน)
-const beText = (s) => String(s ?? '').replace(/(d{1,2})/(d{1,2})/(d{4})/, (m, d, mo, y) => `${d}/${mo}/${+y + 543}`);
+const beText = (s) => String(s ?? '').replace(/(\d{1,2})\/(\d{1,2})\/(\d{4})/, (m, d, mo, y) => `${d}/${mo}/${+y + 543}`);
 const thDate = (s) => { const m = /^(\d{4})\/(\d{2})\/(\d{2})$/.exec(s || ''); return m ? `${m[3]}/${m[2]}/${+m[1] + 543}` : '-'; };
 
 let fileText = '', fileNameText = '', checked = null;
