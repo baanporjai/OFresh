@@ -56,7 +56,9 @@ const ORDER_PRICE_PER_KG = 60;
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  // X-Filename: the Nayax CSV upload on stats.html sends the file name in it; a header missing here makes the browser
+  // block the request at the preflight ("Failed to fetch") before it ever reaches the Worker
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Filename',
 };
 
 export default {

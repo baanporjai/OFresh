@@ -134,6 +134,12 @@ const f1 = nayaxFile([{ id: "T-2001", when: `${today} 9:15:00` }, { id: "T-2002"
 const before = sql("select count(*) n from nayax_sales")[0].n;
 
 ok((await call("/api/admin/nayax-upload?mode=preview", { method: "POST", body: f1 })).status === 401, "upload needs the PIN token");
+// the browser asks first; every header the page sends must be allowed or it fails with "Failed to fetch"
+{
+  const pre = await call("/api/admin/nayax-upload?mode=preview", { method: "OPTIONS", headers: { Origin: "https://ofresh.baanporjai.com", "Access-Control-Request-Method": "POST", "Access-Control-Request-Headers": "authorization,content-type,x-filename" } });
+  const allowed = (pre.headers.get("Access-Control-Allow-Headers") || "").toLowerCase().split(",").map((h) => h.trim());
+  ok(pre.status === 200 && ["authorization", "content-type", "x-filename"].every((h) => allowed.includes(h)), "CORS preflight allows the headers the upload page sends: " + allowed.join(","));
+}
 let j = await (await upload(f1, "preview")).json();
 ok(j.ok && !j.committed && j.toAdd === 3 && j.alreadyStored === 0 && j.bad === 0, "preview reports 3 new rows " + JSON.stringify({ a: j.toAdd, b: j.bad }));
 ok(sql("select count(*) n from nayax_sales")[0].n === before, "preview writes nothing");
