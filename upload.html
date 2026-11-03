@@ -165,10 +165,11 @@ function renderPreview(r) {
   }
   const sample = (r.sample || []).map((s) => `<tr><td>${esc(beText(s.time))}</td><td>${esc(s.machine)}</td><td>${esc(s.product)}</td><td class="num">${esc(s.value)}</td></tr>`).join('');
   const nothing = r.toAdd === 0;
-  return `<div class="msg ${nothing ? 'warn' : 'ok'}">
+  return `<div class="msg ${nothing || r.warning ? 'warn' : 'ok'}">
       <b>${nothing ? 'ไม่มีรายการใหม่ให้เพิ่ม' : `จะเพิ่ม ${fmt(r.toAdd)} รายการ`}</b><br>
       ในไฟล์ ${fmt(r.totalRows)} แถว · มีอยู่แล้ว ${fmt(r.alreadyStored)} · ซ้ำกันเองในไฟล์ ${fmt(r.duplicatesInFile)} · ใช้ไม่ได้ ${fmt(r.bad)}<br>
       ${r.firstDate ? `ช่วงวันที่ของรายการใหม่: ${thDate(r.firstDate)} – ${thDate(r.lastDate)}` : ''}
+      ${r.warning ? `<br><b>⚠️ ${esc(r.warning)}</b>` : ''}
     </div>` +
     (sample ? `<div class="wrap"><table><tr><th>เวลา</th><th>ตู้</th><th>สินค้า</th><th class="num">ยอด</th></tr>${sample}</table></div><p class="muted">ตัวอย่าง 3 รายการแรก</p>` : '') +
     (nothing ? '' : '<button class="btn" id="commitBtn">ยืนยันบันทึก</button> <button class="btn ghost" id="cancelBtn">ยกเลิก</button>');

@@ -152,11 +152,28 @@ export async function nayaxCsv(db) {
   return [header, ...rows.results.map((r) => csvLine([...cols.map((c) => r[c]), r.sale_date]))].join('\n') + '\n';
 }
 
-/** "D/M/YYYY H:MM:SS" -> "YYYY/MM/DD" (column N of the old sheet), '' if it is not a date */
+/**
+ * Nayax times are normally "D/M/YYYY H:MM(:SS)" (24h). Some reports arrive in the US style "M/D/YYYY h:MM:SS AM|PM"
+ * (typically after the file was opened and re-saved in Excel with US regional settings) - reading those as D/M/YYYY
+ * put 2 Nov 2026 on 11 Feb 2026. Anything with AM/PM is US style; convert it to "DD/MM/YYYY HH:MM:SS" so what we
+ * store (and the dashboards read back) is always day-first.
+ */
+export function normalizeNayaxTime(s) {
+  const t = String(s ?? '').trim();
+  const us = /^(\d{1,2})\/(\d{1,2})\/(\d{4})[ T]+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*([AaPp][Mm])$/.exec(t);
+  if (!us) return t;
+  const pad = (n) => String(n).padStart(2, '0');
+  const hour = (Number(us[4]) % 12) + (/p/i.test(us[7]) ? 12 : 0);
+  return `${pad(us[2])}/${pad(us[1])}/${us[3]} ${pad(hour)}:${us[5]}:${us[6] ?? '00'}`;
+}
+
+/** "D/M/YYYY H:MM:SS" (or the US AM/PM style) -> "YYYY/MM/DD" (column N of the old sheet), '' if it is not a date */
 export function saleDateOf(machineAuTime) {
-  const m = /^\s*(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(machineAuTime ?? '');
+  const m = /^\s*(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(normalizeNayaxTime(machineAuTime));
   return m ? `${m[3]}/${m[2].padStart(2, '0')}/${m[1].padStart(2, '0')}` : '';
 }
+
+const NAYAX_TIME_COLUMNS = new Set(['machineAuTime', 'machineSeTime']);
 
 const MAX_NAYAX_UPLOAD_ROWS = 20000;
 
@@ -186,14 +203,14 @@ export async function importNayaxCsv(db, csvText, { commit = false } = {}) {
     const line = n + 1; // line number in the file (header = line 1)
     const get = (name) => (idx[name] === undefined ? '' : (r[idx[name]] ?? '').trim());
     const id = get('transaction_id');
-    const when = get('machineAuTime');
+    const when = normalizeNayaxTime(get('machineAuTime'));
     const value = get('auValue');
     if (!id) { bad.push({ line, reason: 'ไม่มี transaction_id' }); continue; }
     if (!saleDateOf(when)) { bad.push({ line, id, reason: `เวลา (machineAuTime) อ่านไม่ได้: "${when}" (ต้องเป็น วัน/เดือน/ปี ค.ศ. เวลา)` }); continue; }
     if (value === '' || !Number.isFinite(parseFloat(value.replace(/,/g, '')))) { bad.push({ line, id, reason: `ยอด (auValue) ไม่ใช่ตัวเลข: "${value}"` }); continue; }
     if (seen.has(id)) { duplicatesInFile++; continue; }
     seen.add(id);
-    fresh.push({ id, when, row: NAYAX_COLUMNS.map(([csvName]) => get(csvName)) });
+    fresh.push({ id, when, row: NAYAX_COLUMNS.map(([csvName]) => (NAYAX_TIME_COLUMNS.has(csvName) ? normalizeNayaxTime(get(csvName)) : get(csvName))) });
   }
 
   // which of these ids are already stored
@@ -207,6 +224,21 @@ export async function importNayaxCsv(db, csvText, { commit = false } = {}) {
   const toAdd = fresh.filter((f) => !existing.has(f.id));
 
   const dates = toAdd.map((f) => saleDateOf(f.when)).sort();
+
+  // Sanity check shown in the preview: a file whose dates are far from the data we already have usually means the
+  // day/month order was misread (this is how 2 Nov 2026 once landed on 11 Feb 2026), or a future-dated file.
+  let warning = null;
+  if (dates.length) {
+    const asTime = (d) => Date.parse(d.split('/').join('-'));
+    const latest = (await db.prepare('SELECT MAX(sale_date) AS d FROM nayax_sales').first())?.d;
+    const today = new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 10).split('-').join('/'); // Thai date
+    if (latest && (asTime(latest) - asTime(dates[0])) / 86400000 > 30) {
+      warning = `วันที่ในไฟล์ (เริ่ม ${dates[0]}) เก่ากว่าข้อมูลล่าสุดในระบบ (${latest}) มากกว่า 30 วัน — ตรวจดูว่าวัน/เดือนในไฟล์ไม่ถูกสลับก่อนกดยืนยัน`;
+    } else if ((asTime(dates[dates.length - 1]) - asTime(today)) / 86400000 > 1) {
+      warning = `ไฟล์มีรายการที่วันที่อยู่ในอนาคต (${dates[dates.length - 1]}) — ตรวจดูว่าวัน/เดือนในไฟล์ไม่ถูกสลับก่อนกดยืนยัน`;
+    }
+  }
+
   const result = {
     ok: true,
     committed: false,
@@ -216,6 +248,7 @@ export async function importNayaxCsv(db, csvText, { commit = false } = {}) {
     duplicatesInFile,
     bad: bad.length,
     badRows: bad.slice(0, 50),
+    warning,
     firstDate: dates[0] ?? null,
     lastDate: dates[dates.length - 1] ?? null,
     sample: toAdd.slice(0, 3).map((f) => ({ id: f.id, time: f.when, machine: f.row[0], product: f.row[3], value: f.row[8] })),

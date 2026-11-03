@@ -1463,9 +1463,10 @@ if ('serviceWorker' in navigator) {
     }
     const none = r.toAdd === 0;
     const sample = (r.sample || []).map((s) => '<tr><td>' + esc(beText(s.time)) + '</td><td>' + esc(s.machine) + '</td><td>' + esc(s.product) + '</td><td>' + esc(s.value) + '</td></tr>').join('');
-    return '<div class="um-msg ' + (none ? 'warn' : 'ok') + '"><b>' + (none ? 'ไม่มีรายการใหม่ให้เพิ่ม' : 'จะเพิ่ม ' + fmt(r.toAdd) + ' รายการ') + '</b><br>' +
+    return '<div class="um-msg ' + (none || r.warning ? 'warn' : 'ok') + '"><b>' + (none ? 'ไม่มีรายการใหม่ให้เพิ่ม' : 'จะเพิ่ม ' + fmt(r.toAdd) + ' รายการ') + '</b><br>' +
       'ในไฟล์ ' + fmt(r.totalRows) + ' แถว · มีอยู่แล้ว ' + fmt(r.alreadyStored) + ' · ซ้ำกันเองในไฟล์ ' + fmt(r.duplicatesInFile) + ' · ใช้ไม่ได้ ' + fmt(r.bad) +
-      (r.firstDate ? '<br>ช่วงวันที่ของรายการใหม่: ' + thDate(r.firstDate) + ' – ' + thDate(r.lastDate) : '') + '</div>' +
+      (r.firstDate ? '<br>ช่วงวันที่ของรายการใหม่: ' + thDate(r.firstDate) + ' – ' + thDate(r.lastDate) : '') +
+      (r.warning ? '<br><b>⚠️ ' + esc(r.warning) + '</b>' : '') + '</div>' +
       (sample ? '<div class="um-wrap"><table><tr><th>เวลา</th><th>ตู้</th><th>สินค้า</th><th>ยอด</th></tr>' + sample + '</table></div>' : '') +
       (none ? '' : '<button class="um-btn" id="umCommit">ยืนยันบันทึก</button>');
   }
