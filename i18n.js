@@ -88,14 +88,15 @@ const translations = {
     b2_h: 'ระบบปิดสะอาดปลอดภัย',
     b2_p: 'ทุกขั้นตอนการคั้นอยู่ในระบบปิด ไม่สัมผัสมือคน ลดความเสี่ยงจากเชื้อโรคและสิ่งปนเปื้อน',
     b3_h: 'ตั้งอยู่ในจุดที่สะดวก',
-    b3_p: 'ตู้ O\'Fresh ตั้งอยู่ในห้างเซ็นทรัล เฟสติวัล เชียงใหม่ ชั้น 4 โซนศูนย์อาหาร เข้าถึงง่าย พร้อมเสิร์ฟความสดชื่นทุกเวลา',
+    b3_p: 'ตู้ O\'Fresh ตั้งอยู่ในห้างเซ็นทรัล เฟสติวัล เชียงใหม่ ชั้น 4 โซนศูนย์อาหาร และห้างเซ็นทรัล แอร์พอร์ต เชียงใหม่ ชั้น 4 โซน Harborland เข้าถึงง่าย พร้อมเสิร์ฟความสดชื่นทุกเวลา',
     b4_h: 'ราคาคุ้มค่า จ่ายสะดวก',
     b4_p: 'น้ำส้มคั้นสดคุณภาพพรีเมียมในราคาที่เข้าถึงได้ รองรับหลายช่องทางการชำระเงิน ทั้งบัตรเครดิต และ QR Code',
 
     // CTA
     cta_h2: 'พร้อมลิ้มรสน้ำส้มคั้นสดแท้?',
-    cta_p: 'ตอนนี้ ตู้ตั้งอยู่ที่ห้างเซ็นทรัล เฟสติวัล เชียงใหม่ ชั้น 4 โซนศูนย์อาหาร มาสัมผัสความสดใหม่ในทุกแก้ว',
-    cta_btn: 'นำทางไปยังตู้ O\'Fresh',
+    cta_p: 'ตอนนี้ มีตู้ให้บริการ 2 แห่ง: ห้างเซ็นทรัล เฟสติวัล เชียงใหม่ ชั้น 4 โซนศูนย์อาหาร และห้างเซ็นทรัล แอร์พอร์ต เชียงใหม่ ชั้น 4 โซน Harborland มาสัมผัสความสดใหม่ในทุกแก้ว',
+    cta_btn: 'นำทางไปตู้ที่เซ็นทรัล เฟสติวัล',
+    cta_btn2: 'นำทางไปตู้ที่เซ็นทรัล แอร์พอร์ต',
 
     // Footer
     footer_desc: 'ตู้น้ำส้มคั้นสดอัตโนมัติ พร้อมดื่ม\n100% Natural · No Sugar Added\nTemperature kept within 3-9°C',
@@ -134,7 +135,7 @@ const translations = {
     faq1_a: 'ราคา 89 บาทต่อแก้ว (ปริมาณน้ำส้ม 280 ml) ชำระผ่าน QR Code หรือบัตรเครดิต/เดบิตได้เลย',
     notice_pill: '📢 แจ้งเปลี่ยนสายพันธุ์ส้ม & ปรับราคา',
     faq2_q: '📍 ตู้ตั้งอยู่ที่ไหน?',
-    faq2_a: 'ตู้ O\'Fresh ตั้งอยู่ที่ห้างเซ็นทรัล เฟสติวัล เชียงใหม่ ชั้น 4 โซนศูนย์อาหาร เปิดให้บริการตลอด 24 ชั่วโมง',
+    faq2_a: 'ตู้ O\'Fresh มี 2 จุด: (1) ห้างเซ็นทรัล เฟสติวัล เชียงใหม่ ชั้น 4 โซนศูนย์อาหาร เปิดให้บริการตลอด 24 ชั่วโมง (2) ห้างเซ็นทรัล แอร์พอร์ต เชียงใหม่ ชั้น 4 โซน Harborland',
     faq3_q: '💳 ชำระเงินด้วยอะไรได้บ้าง?',
     faq3_a: 'รองรับ QR Code / PromptPay, TrueMoney, WeChat Pay และบัตรเครดิต/เดบิต (VISA, Mastercard) ยังไม่รองรับ Google Wallet และ Apple Pay',
     faq4_q: '⏱️ ดื่มได้นานแค่ไหน?',
@@ -286,8 +287,9 @@ const translations = {
     b4_p: 'Premium fresh juice at an accessible price, supporting multiple payment channels including contactless.',
 
     cta_h2: 'Ready to Taste Real Freshness?',
-    cta_p: 'Our machine is currently located at Central Festival Chiang Mai, 4th floor, Food Court Zone. Come experience the freshness in every cup!',
-    cta_btn: 'Get Directions to O\'Fresh',
+    cta_p: 'We now have two machines: Central Festival Chiang Mai, 4th floor, Food Court Zone, and Central Airport Chiang Mai, 4th floor, Harborland Zone. Come experience the freshness in every cup!',
+    cta_btn: 'Directions to Central Festival',
+    cta_btn2: 'Directions to Central Airport',
 
     footer_desc: 'Automatic Fresh Orange Juice Vending Machine\n100% Natural · No Sugar Added\nTemperature kept within 3-9°C',
     footer_menu: 'Menu',
@@ -325,7 +327,7 @@ const translations = {
     faq1_a: '89 Baht per cup (280 ml of fresh orange juice). Pay via QR Code or credit/debit card.',
     notice_pill: '📢 New orange variety & price update',
     faq2_q: '📍 Where is the machine located?',
-    faq2_a: 'O\'Fresh is located at Central Festival Chiang Mai, 4th floor, Food Court Zone. Open 24 hours a day.',
+    faq2_a: 'O\'Fresh has two machines: (1) Central Festival Chiang Mai, 4th floor, Food Court Zone, open 24 hours a day; (2) Central Airport Chiang Mai, 4th floor, Harborland Zone.',
     faq3_q: '💳 What payment methods are accepted?',
     faq3_a: 'QR Code / PromptPay, TrueMoney, WeChat Pay, and VISA/Mastercard credit/debit cards. Google Wallet and Apple Pay are not supported.',
     faq4_q: '⏱️ How long can I keep it?',
@@ -477,8 +479,9 @@ const translations = {
     b4_p: '优质鲜榨橙汁，价格实惠，支持多种支付方式，包括非接触式支付。',
 
     cta_h2: '准备好品尝真正的新鲜了吗？',
-    cta_p: '我们的机器目前位于清迈 Central Festival 购物中心 4 楼美食广场。欢迎前来体验每一杯的新鲜！',
-    cta_btn: '前往 O\'Fresh 机器位置',
+    cta_p: '我们目前有两台机器：清迈 Central Festival 购物中心 4 楼美食广场，以及清迈 Central Airport 购物中心 4 楼 Harborland 区。欢迎前来体验每一杯的新鲜！',
+    cta_btn: '前往 Central Festival 的机器',
+    cta_btn2: '前往 Central Airport 的机器',
 
     footer_desc: '全自动鲜榨橙汁机\n100% 天然 · 不加糖\n全程控温 3-9°C',
     footer_menu: '菜单',
@@ -516,7 +519,7 @@ const translations = {
     faq1_a: '每杯 89 泰铢（280 ml），支持 QR Code 或信用卡/借记卡付款。',
     notice_pill: '📢 更换橙子品种 & 价格调整',
     faq2_q: '📍 机器在哪里？',
-    faq2_a: 'O\'Fresh 位于清迈 Central Festival 购物中心 4 楼美食广场，全天 24 小时开放。',
+    faq2_a: 'O\'Fresh 有两处机器：(1) 清迈 Central Festival 购物中心 4 楼美食广场，全天 24 小时开放；(2) 清迈 Central Airport 购物中心 4 楼 Harborland 区。',
     faq3_q: '💳 支持哪些付款方式？',
     faq3_a: '支持 QR Code / PromptPay、TrueMoney、微信支付及 VISA/Mastercard 刷卡。暂不支持 Google Wallet 和 Apple Pay。',
     faq4_q: '⏱️ 可以保存多久？',
@@ -668,8 +671,9 @@ const translations = {
     b4_p: '手の届く価格のプレミアムフレッシュジュース。タッチレス決済を含む複数の支払い方法に対応。',
 
     cta_h2: '本物の新鮮さを体験しませんか？',
-    cta_p: '現在、チェンマイ・セントラルフェスティバル4階フードコートに設置中。一杯一杯の新鮮さをぜひご体験ください！',
-    cta_btn: 'O\'Fresh の場所へ案内',
+    cta_p: '現在、2か所に設置中です：チェンマイ・セントラルフェスティバル4階フードコートと、チェンマイ・セントラル・エアポート4階ハーバーランドゾーン。一杯一杯の新鮮さをぜひご体験ください！',
+    cta_btn: 'セントラルフェスティバルの場所へ案内',
+    cta_btn2: 'セントラル・エアポートの場所へ案内',
 
     footer_desc: '全自動フレッシュオレンジジュース自販機\n100% ナチュラル · 砂糖不使用\n常時3〜9°C温度管理',
     footer_menu: 'メニュー',
@@ -707,7 +711,7 @@ const translations = {
     faq1_a: '1杯 89バーツ（280ml）。QRコードまたはクレジット/デビットカードでお支払いいただけます。',
     notice_pill: '📢 オレンジ品種変更＆価格改定のお知らせ',
     faq2_q: '📍 どこにありますか？',
-    faq2_a: 'O\'Fresh はチェンマイ・セントラルフェスティバル4階フードコートにあります。24時間営業です。',
+    faq2_a: 'O\'Fresh は2か所にあります：(1) チェンマイ・セントラルフェスティバル4階フードコート（24時間営業）、(2) チェンマイ・セントラル・エアポート4階ハーバーランドゾーン。',
     faq3_q: '💳 どの支払い方法が使えますか？',
     faq3_a: 'QRコード / PromptPay、TrueMoney、WeChat Pay、VISA/Mastercardに対応。Google WalletとApple Payは非対応です。',
     faq4_q: '⏱️ どのくらい保存できますか？',
@@ -858,8 +862,9 @@ const translations = {
     b4_p: '합리적인 가격의 프리미엄 신선 주스. 비접촉 결제를 포함한 다양한 결제 수단 지원.',
 
     cta_h2: '진짜 신선함을 맛볼 준비 되셨나요?',
-    cta_p: '현재 치앙마이 센트럴 페스티벌 4층 푸드코트에 설치되어 있습니다. 한 잔 한 잔의 신선함을 경험해 보세요!',
-    cta_btn: 'O\'Fresh 위치로 안내',
+    cta_p: '현재 두 곳에 설치되어 있습니다: 치앙마이 센트럴 페스티벌 4층 푸드코트, 그리고 치앙마이 센트럴 에어포트 4층 하버랜드 존. 한 잔 한 잔의 신선함을 경험해 보세요!',
+    cta_btn: '센트럴 페스티벌 위치로 안내',
+    cta_btn2: '센트럴 에어포트 위치로 안내',
 
     footer_desc: '완전 자동 신선 착즙 오렌지 주스 자판기\n100% 천연 · 설탕 무첨가\n상시 3~9°C 온도 유지',
     footer_menu: '메뉴',
@@ -897,7 +902,7 @@ const translations = {
     faq1_a: '한 컵 89바트（280ml）. QR코드 또는 신용카드/직불카드로 결제 가능합니다.',
     notice_pill: '📢 오렌지 품종 변경 및 가격 조정 안내',
     faq2_q: '📍 기계가 어디에 있나요?',
-    faq2_a: 'O\'Fresh는 치앙마이 센트럴 페스티벌 4층 푸드코트에 있습니다. 24시간 운영합니다.',
+    faq2_a: 'O\'Fresh는 두 곳에 있습니다: (1) 치앙마이 센트럴 페스티벌 4층 푸드코트(24시간 운영), (2) 치앙마이 센트럴 에어포트 4층 하버랜드 존.',
     faq3_q: '💳 어떤 결제 방법을 지원하나요?',
     faq3_a: 'QR코드 / PromptPay, TrueMoney, 위챗페이, VISA/Mastercard 카드 결제 지원. Google Wallet 및 Apple Pay는 미지원.',
     faq4_q: '⏱️ 얼마나 보관할 수 있나요?',
