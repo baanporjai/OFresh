@@ -94,7 +94,7 @@ const translations = {
 
     // CTA
     cta_h2: 'พร้อมลิ้มรสน้ำส้มคั้นสดแท้?',
-    cta_p: 'ตอนนี้ มีตู้ให้บริการ 2 แห่ง: ห้างเซ็นทรัล เฟสติวัล เชียงใหม่ ชั้น 4 โซนศูนย์อาหาร และห้างเซ็นทรัล แอร์พอร์ต เชียงใหม่ ชั้น 4 โซน Harborland มาสัมผัสความสดใหม่ในทุกแก้ว',
+    cta_p: 'ตอนนี้ มีตู้ให้บริการ 2 แห่ง:<br>(1) ห้างเซ็นทรัล เฟสติวัล เชียงใหม่ ชั้น 4 โซนศูนย์อาหาร<br>(2) ห้างเซ็นทรัล แอร์พอร์ต เชียงใหม่ ชั้น 4 โซน Harborland<br>มาสัมผัสความสดใหม่ในทุกแก้ว',
     cta_btn: 'นำทางไปตู้ที่เซ็นทรัล เฟสติวัล',
     cta_btn2: 'นำทางไปตู้ที่เซ็นทรัล แอร์พอร์ต',
 
@@ -287,7 +287,7 @@ const translations = {
     b4_p: 'Premium fresh juice at an accessible price, supporting multiple payment channels including contactless.',
 
     cta_h2: 'Ready to Taste Real Freshness?',
-    cta_p: 'We now have two machines: Central Festival Chiang Mai, 4th floor, Food Court Zone, and Central Airport Chiang Mai, 4th floor, Harborland Zone. Come experience the freshness in every cup!',
+    cta_p: 'We now have two machines:<br>(1) Central Festival Chiang Mai, 4th floor, Food Court Zone<br>(2) Central Airport Chiang Mai, 4th floor, Harborland Zone<br>Come experience the freshness in every cup!',
     cta_btn: 'Directions to Central Festival',
     cta_btn2: 'Directions to Central Airport',
 
@@ -479,7 +479,7 @@ const translations = {
     b4_p: '优质鲜榨橙汁，价格实惠，支持多种支付方式，包括非接触式支付。',
 
     cta_h2: '准备好品尝真正的新鲜了吗？',
-    cta_p: '我们目前有两台机器：清迈 Central Festival 购物中心 4 楼美食广场，以及清迈 Central Airport 购物中心 4 楼 Harborland 区。欢迎前来体验每一杯的新鲜！',
+    cta_p: '我们目前有两台机器：<br>(1) 清迈 Central Festival 购物中心 4 楼美食广场<br>(2) 清迈 Central Airport 购物中心 4 楼 Harborland 区<br>欢迎前来体验每一杯的新鲜！',
     cta_btn: '前往 Central Festival 的机器',
     cta_btn2: '前往 Central Airport 的机器',
 
@@ -671,7 +671,7 @@ const translations = {
     b4_p: '手の届く価格のプレミアムフレッシュジュース。タッチレス決済を含む複数の支払い方法に対応。',
 
     cta_h2: '本物の新鮮さを体験しませんか？',
-    cta_p: '現在、2か所に設置中です：チェンマイ・セントラルフェスティバル4階フードコートと、チェンマイ・セントラル・エアポート4階ハーバーランドゾーン。一杯一杯の新鮮さをぜひご体験ください！',
+    cta_p: '現在、2か所に設置中です：<br>(1) チェンマイ・セントラルフェスティバル4階フードコート<br>(2) チェンマイ・セントラル・エアポート4階ハーバーランドゾーン<br>一杯一杯の新鮮さをぜひご体験ください！',
     cta_btn: 'セントラルフェスティバルの場所へ案内',
     cta_btn2: 'セントラル・エアポートの場所へ案内',
 
@@ -862,7 +862,7 @@ const translations = {
     b4_p: '합리적인 가격의 프리미엄 신선 주스. 비접촉 결제를 포함한 다양한 결제 수단 지원.',
 
     cta_h2: '진짜 신선함을 맛볼 준비 되셨나요?',
-    cta_p: '현재 두 곳에 설치되어 있습니다: 치앙마이 센트럴 페스티벌 4층 푸드코트, 그리고 치앙마이 센트럴 에어포트 4층 하버랜드 존. 한 잔 한 잔의 신선함을 경험해 보세요!',
+    cta_p: '현재 두 곳에 설치되어 있습니다:<br>(1) 치앙마이 센트럴 페스티벌 4층 푸드코트<br>(2) 치앙마이 센트럴 에어포트 4층 하버랜드 존<br>한 잔 한 잔의 신선함을 경험해 보세요!',
     cta_btn: '센트럴 페스티벌 위치로 안내',
     cta_btn2: '센트럴 에어포트 위치로 안내',
 
