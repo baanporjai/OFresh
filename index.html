@@ -74,7 +74,7 @@
 }
 </script>
 
-<!-- ═══ Schema: ตู้ที่ 2 — เซ็นทรัล แอร์พอร์ต เชียงใหม่ ชั้น 4 โซน Harborland (ยังไม่ระบุเวลาเปิด/รหัสไปรษณีย์ จนกว่าจะยืนยันข้อมูล; พิกัดและลิงก์แผนที่จากหมุดของเจ้าของ) ═══ -->
+<!-- ═══ Schema: ตู้ที่ 2 — เซ็นทรัล แอร์พอร์ต เชียงใหม่ ชั้น 4 โซน Harborland (เปิด 24 ชั่วโมงเหมือนตู้แรก ตามที่เจ้าของยืนยัน; ยังไม่ระบุรหัสไปรษณีย์; พิกัดและลิงก์แผนที่จากหมุดของเจ้าของ) ═══ -->
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -93,6 +93,12 @@
     "addressRegion": "เชียงใหม่",
     "addressCountry": "TH"
   },
+  "openingHoursSpecification": [{
+    "@type": "OpeningHoursSpecification",
+    "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
+    "opens": "00:00",
+    "closes": "23:59"
+  }],
   "geo": { "@type": "GeoCoordinates", "latitude": 18.7690077, "longitude": 98.974213 },
   "hasMap": "https://maps.app.goo.gl/FjiJmdS5NCXnTUB66"
 }
@@ -117,7 +123,7 @@
       "name": "ตู้ O'Fresh อยู่ที่ไหน?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "ตู้ O'Fresh มี 2 จุด: (1) ห้างเซ็นทรัล เฟสติวัล เชียงใหม่ ชั้น 4 โซนศูนย์อาหาร เปิดให้บริการตลอด 24 ชั่วโมง (2) ห้างเซ็นทรัล แอร์พอร์ต เชียงใหม่ ชั้น 4 โซน Harborland"
+        "text": "ตู้ O'Fresh มี 2 จุด: (1) ห้างเซ็นทรัล เฟสติวัล เชียงใหม่ ชั้น 4 โซนศูนย์อาหาร เปิดให้บริการตลอด 24 ชั่วโมง (2) ห้างเซ็นทรัล แอร์พอร์ต เชียงใหม่ ชั้น 4 โซน Harborland เปิดให้บริการตลอด 24 ชั่วโมง"
       }
     },
     {
@@ -1138,7 +1144,7 @@
                     <span data-i18n="faq2_q">📍 ตู้ตั้งอยู่ที่ไหน?</span>
                     <i class="fas fa-chevron-down faq-icon"></i>
                 </button>
-                <div class="faq-a"><p data-i18n="faq2_a">ตู้ O'Fresh มี 2 จุด:<br>(1) ห้างเซ็นทรัล เฟสติวัล เชียงใหม่ ชั้น 4 โซนศูนย์อาหาร เปิดให้บริการตลอด 24 ชั่วโมง<br>(2) ห้างเซ็นทรัล แอร์พอร์ต เชียงใหม่ ชั้น 4 โซน Harborland</p></div>
+                <div class="faq-a"><p data-i18n="faq2_a">ตู้ O'Fresh มี 2 จุด:<br>(1) ห้างเซ็นทรัล เฟสติวัล เชียงใหม่ ชั้น 4 โซนศูนย์อาหาร เปิดให้บริการตลอด 24 ชั่วโมง<br>(2) ห้างเซ็นทรัล แอร์พอร์ต เชียงใหม่ ชั้น 4 โซน Harborland เปิดให้บริการตลอด 24 ชั่วโมง</p></div>
             </div>
 
             <div class="faq-item animate-on-scroll">
